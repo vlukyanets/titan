@@ -1,4 +1,7 @@
-"""Recording what an agent session used (docs/spec/domains/usage.md)."""
+"""Recording what an agent session used and checking the user's budget.
+
+docs/spec/domains/usage.md
+"""
 
 from __future__ import annotations
 
@@ -8,7 +11,10 @@ from claude_agent_sdk import ResultMessage
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from titan.agent.node import TokenUsage
+from titan.domains.notifications.service import NotificationsService
+from titan.domains.usage.budget import BudgetService
 from titan.domains.usage.service import UsageService
+from titan.notify import Pusher
 
 
 async def record_usage(
@@ -19,10 +25,13 @@ async def record_usage(
     source: str,
     model: str,
     reference: uuid.UUID | None = None,
+    pusher: Pusher | None = None,
 ) -> None:
     """Record a session's usage from its result message, failed sessions included.
 
     A session that ended without a result message reported nothing to record.
+    Then check the budget, which notifies the user when this session moved them
+    to warning or exceeded.
     """
     if result is None or (result.usage is None and result.total_cost_usd is None):
         return
@@ -39,3 +48,5 @@ async def record_usage(
             cost_usd=result.total_cost_usd,
             reference=reference,
         )
+        notifications = NotificationsService(session, pusher=pusher)
+        await BudgetService(session, notifications=notifications).check(user_id)

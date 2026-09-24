@@ -17,6 +17,6 @@ Branch `feature/m4-budget-caps`, stacked on `feature/m2-notes`.
 Tasks:
 
 - [x] Spec and this plan.
-- [ ] Budget table, service, notifications and migration.
-- [ ] Chat falls back to the `fast` tier; usage recording checks the budget.
+- [x] Budget table, service, notifications and migration.
+- [x] Chat falls back to the `fast` tier; usage recording checks the budget.
 - [ ] API and CLI, OpenAPI regenerated, docs updated.
