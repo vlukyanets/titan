@@ -9,4 +9,4 @@
 | 5 | When is the `titan-web` repository created, and with which stack? | M3 Web UI | Separate ADR in titan-web |
 | 6 | How does a client choose and fail over between nodes (fixed list, DNS on the tailnet, Tailscale Serve)? | M3 | Architecture update |
 | 7 | Which languages does the assistant speak to users (English only, or several)? | Prompts, embeddings | Product spec update |
-| 8 | Time zone handling for family members in different zones | Planner | Calendar spec update |
+| 8 | ~~Time zone handling for family members in different zones~~ Answered in the [calendar spec](../spec/domains/calendar.md#time-zones): a zone per user and per event. Tasks and reminders still repeat in UTC until they adopt it | Planner | Calendar spec update |
