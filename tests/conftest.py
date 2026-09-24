@@ -22,9 +22,28 @@ def test_database_url() -> str:
     return url
 
 
+@pytest.fixture(scope="session")
+def migrated_db_url() -> str:
+    """The test database, upgraded to the latest revision once per session."""
+    from alembic import command
+
+    from titan.cli.main import alembic_config
+
+    url = test_database_url()
+    command.upgrade(alembic_config(url), "head")
+    return url
+
+
 @pytest.fixture
-def db_url() -> str:
-    return test_database_url()
+def db_url(migrated_db_url: str) -> str:
+    """The migrated test database with every table emptied before the test."""
+    import sqlalchemy as sa
+
+    engine = sa.create_engine(migrated_db_url)
+    with engine.begin() as conn:
+        conn.execute(sa.text("TRUNCATE devices, users"))
+    engine.dispose()
+    return migrated_db_url
 
 
 @pytest.fixture

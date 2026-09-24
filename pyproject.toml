@@ -7,6 +7,7 @@ license = "Unlicense"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "alembic>=1.20",
+    "argon2-cffi>=25.1",
     "fastapi>=0.141",
     "pgvector>=0.5",
     "psycopg[binary]>=3.3",

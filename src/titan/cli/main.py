@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
+import getpass
 import json
 import sys
 from pathlib import Path
@@ -60,6 +62,65 @@ def write_openapi(path: Path) -> None:
     path.write_text(json.dumps(openapi_schema(), indent=2, ensure_ascii=False) + "\n")
 
 
+def _read_new_password(from_stdin: bool) -> str:
+    if from_stdin:
+        return sys.stdin.readline().rstrip("\n")
+    first = getpass.getpass("Password: ")
+    if getpass.getpass("Repeat password: ") != first:
+        raise SystemExit("passwords do not match")
+    return first
+
+
+async def _create_user(username: str, password: str, owner: bool, display_name: str | None) -> str:
+    from titan.domains.accounts.models import Role
+    from titan.domains.accounts.service import AccountsService
+    from titan.storage.db import create_engine as create_async_engine
+    from titan.storage.db import session_factory
+
+    engine = create_async_engine(Settings())
+    try:
+        async with session_factory(engine)() as session:
+            user = await AccountsService(session).create_user(
+                username,
+                password,
+                role=Role.OWNER if owner else Role.MEMBER,
+                display_name=display_name,
+            )
+            return f"created {user.role.value} {user.username} ({user.id})"
+    finally:
+        await engine.dispose()
+
+
+async def _list_users() -> list[str]:
+    from titan.domains.accounts.service import AccountsService
+    from titan.storage.db import create_engine as create_async_engine
+    from titan.storage.db import session_factory
+
+    engine = create_async_engine(Settings())
+    try:
+        async with session_factory(engine)() as session:
+            users = await AccountsService(session).list_users(actor=None)
+            return [f"{u.username}\t{u.role.value}\t{u.display_name}" for u in users]
+    finally:
+        await engine.dispose()
+
+
+def users_command(args: argparse.Namespace) -> int:
+    from titan.domains.accounts.errors import AccountsError
+
+    try:
+        if args.users_command == "create":
+            password = _read_new_password(args.password_stdin)
+            print(asyncio.run(_create_user(args.username, password, args.owner, args.display_name)))
+        else:
+            for line in asyncio.run(_list_users()):
+                print(line)
+    except AccountsError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="titan", description="TITAN administration")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -67,10 +128,22 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("target", nargs="?", default="head")
     o = sub.add_parser("openapi", help="export the OpenAPI schema")
     o.add_argument("--output", type=Path, default=Path("docs/api/openapi.json"))
+    u = sub.add_parser("users", help="manage accounts")
+    usub = u.add_subparsers(dest="users_command", required=True)
+    uc = usub.add_parser("create", help="create an account (the first one with --owner)")
+    uc.add_argument("username")
+    uc.add_argument("--owner", action="store_true", help="create the household owner")
+    uc.add_argument("--display-name")
+    uc.add_argument(
+        "--password-stdin", action="store_true", help="read the password from standard input"
+    )
+    usub.add_parser("list", help="list accounts")
     args = parser.parse_args(argv)
 
     if args.command == "migrate":
         migrate(args.target)
+    elif args.command == "users":
+        return users_command(args)
     elif args.command == "openapi":
         write_openapi(args.output)
         print(f"wrote {args.output}", file=sys.stderr)

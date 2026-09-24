@@ -26,6 +26,7 @@ Needs Docker and, for development, [uv](https://docs.astral.sh/uv/).
 cp .env.example .env          # set a database password
 docker compose up -d          # pgEdge Postgres 18, migrations, API
 curl http://127.0.0.1:8000/api/v1/health/ready
+docker compose run --rm migrate titan users create <name> --owner   # first account
 ```
 
 The API is published only on `TITAN_TAILSCALE_IP`. On a real node, set it to the
