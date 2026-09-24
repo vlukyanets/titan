@@ -15,6 +15,7 @@ from titan.api import (
     calendar,
     chat,
     health,
+    notes,
     notifications,
     problems,
     reminders,
@@ -68,4 +69,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(reminders.router, prefix=API_PREFIX)
     app.include_router(calendar.router, prefix=API_PREFIX)
     app.include_router(trackers.router, prefix=API_PREFIX)
+    app.include_router(notes.notes_router, prefix=API_PREFIX)
+    app.include_router(notes.memories_router, prefix=API_PREFIX)
     return app
