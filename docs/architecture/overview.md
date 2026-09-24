@@ -150,6 +150,12 @@ Database access goes through SQLAlchemy 2.x (async). Alembic manages schema
 changes, which are rolled out safely across peer nodes as described in
 [database-migrations.md](database-migrations.md).
 
+Nodes cannot rely on the locale their database was created with: the pgEdge
+images use `C`, where `lower()`, `ILIKE` and sorting treat only ASCII letters
+as letters. Case-insensitive matching in SQL uses the builtin
+`pg_unicode_fast` collation (`titan.storage.collation.UNICODE`), and names that
+people read are compared and sorted in Python.
+
 ## Scheduler and reminders
 
 Asynchronous replication cannot guarantee that only one node runs a job, so
