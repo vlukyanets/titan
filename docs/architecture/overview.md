@@ -53,7 +53,7 @@ can switch to another one; failover is a client setting in v1.
 | Container | Responsibility |
 |---|---|
 | `titan-api` | FastAPI app: REST + SSE/WebSocket API, auth (accounts, device tokens), domain services, OpenAPI schema |
-| `titan-worker` | Runs agent workflows (chat turns, daily plan, replanning), the scheduler and reminder firing |
+| `titan-worker` | Runs the scheduler and reminder firing; later the agent workflows (chat turns, daily plan, replanning) |
 | `embeddings` | Local embedding model behind a small HTTP API. Separate container so it can be sized, moved to the strongest node or swapped for another model |
 | `db` | Replicated database with vector table support. Engine *open*: [ADR 0006](../adr/0006-replicated-database-with-vectors.md) |
 | `ntfy` | UnifiedPush server for the phones. Push messages carry only notification ids ([ADR 0008](../adr/0008-push-messages-carry-references.md)) |
@@ -110,7 +110,7 @@ TITAN combines two frameworks ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-n
 - **Chat turns** (`titan.agent.chat`) keep only ids in their graph state, read
   the thread from the chat domain, and start a fresh Agent SDK session per turn
   ([ADR 0009](../adr/0009-chat-history-in-titan-tables.md)). The reply streams
-  through the LangGraph `custom` stream. Until `titan-worker` exists, the API
+  through the LangGraph `custom` stream. Until the worker runs agent workflows, the API
   process runs turns itself (`titan.agent.runtime`), each in a task of its own,
   so a closed connection does not stop a turn. A turn's checkpoints are deleted
   when it ends.
@@ -152,11 +152,29 @@ changes, which are rolled out safely across peer nodes as described in
 
 ## Scheduler and reminders
 
-- Jobs (workflow runs, reminders) are rows in a replicated job table.
-- A worker claims a job by taking a time-limited **lease** on it. Exactly-once
-  firing across peers depends on how the chosen database handles concurrent
-  writes. This is an acceptance criterion for
-  [ADR 0006](../adr/0006-replicated-database-with-vectors.md).
+Asynchronous replication cannot guarantee that only one node runs a job, so
+jobs run **at least once** and every effect is **idempotent**
+([ADR 0006](../adr/0006-replicated-database-with-vectors.md)):
+
+- `titan-worker` (`titan.scheduler`) runs the scheduler loop on every node.
+  Every few seconds (`TITAN_SCHEDULER_TICK_SECONDS`, default 5) it tries to hold
+  the lease of each sweep, and the holder does the sweep's work. The first sweep
+  fires due reminders.
+- A lease is a row in `scheduler_leases` with its holder and expiry
+  (`TITAN_SCHEDULER_LEASE_SECONDS`, default 30). The holder renews it on every
+  tick.
+- One node is **preferred** (`TITAN_PREFERRED_NODE`, the home server; by
+  default each node prefers itself, which is right for one node). The preferred
+  node takes a lease as soon as it has expired. Any other node waits for the
+  expiry plus a grace period (`TITAN_SCHEDULER_GRACE_SECONDS`, default 30), and
+  a non-preferred holder gives the lease up once it sees the preferred node
+  active again, so the preferred node gets it back after at most one lease
+  period. Nodes are named by `TITAN_NODE_NAME` (default: the host name).
+- Duplicates can then only happen during a real network partition, and their
+  effects collapse: a reminder's notification id is derived from the reminder
+  and the time it fired for ([reminders](../spec/domains/reminders.md)).
+- Firing a reminder is a status change in the same transaction as its
+  notification, taken with `SKIP LOCKED`, so on one node it fires once.
 
 ## Cost control
 
