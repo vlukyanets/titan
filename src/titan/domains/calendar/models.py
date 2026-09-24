@@ -84,4 +84,8 @@ class PlanningPrefs(Base):
         ARRAY(SmallInteger), default=lambda: [1, 2, 3, 4, 5], server_default="{1,2,3,4,5}"
     )
     buffer_minutes: Mapped[int] = mapped_column(SmallInteger, default=10, server_default="10")
+    # Lead time of the reminder every task with a due time gets; None turns it off.
+    default_reminder_minutes: Mapped[int | None] = mapped_column(
+        SmallInteger, default=15, server_default="15"
+    )
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

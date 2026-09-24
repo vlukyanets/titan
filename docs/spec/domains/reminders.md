@@ -49,8 +49,14 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
 - A fired reminder becomes a `reminder` notification whose data carries the
   `reminder_id`, with Snooze and Done actions, stored and pushed as described
   in [notifications](notifications.md).
-- Events and tasks with a due time get a default reminder (configurable per user,
-  default 15 minutes before).
+- Tasks with a due time get a default reminder, `default_reminder_minutes`
+  before it (15 by default; set in the owner's
+  [planning preferences](calendar.md#planning-preferences), `null` turns it
+  off). TITAN keeps it in step with the task: it moves with `due_at`, follows
+  the title, and goes away when the task is completed, cancelled, deleted or
+  loses its due time. A task due sooner than the lead time gets none. It
+  belongs to the task's owner and is marked `is_default`. Events get default
+  reminders later.
 - Approval requests from the [autonomy policy](../product.md#autonomy-policy)
   are delivered as `approval` notifications with Approve and Reject actions.
 

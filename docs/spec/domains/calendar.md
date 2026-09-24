@@ -53,7 +53,9 @@ TITAN keeps its own calendar. There is no sync with external calendars in v1.
 
 - `GET` and `PUT /calendar/prefs`: time zone, working hours (local start and
   end, 09:00–17:00 by default), working days (ISO weekdays, Monday to Friday
-  by default) and the buffer between blocks (10 minutes by default).
+  by default), the buffer between blocks (10 minutes by default) and how long
+  before its due time a task reminds its owner (`default_reminder_minutes`,
+  15 by default, `null` for none; see [reminders](reminders.md#delivery)).
 
 ## Planning behaviour
 
