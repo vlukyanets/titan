@@ -20,4 +20,5 @@ Tasks:
 - [x] Tables, migration, service, occurrence expansion and busy intervals.
 - [x] Calendar API, OpenAPI regenerated, docs updated.
 - [ ] Agent tools and the planner (after a live agent run).
-- [ ] Tasks and reminders repeat in the owner's time zone.
+- [x] Tasks and reminders repeat in the owner's time zone (branch
+      `feature/m2-local-recurrence`).

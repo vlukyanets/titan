@@ -39,8 +39,9 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
   skipped, not piled up. When the rule has ended there is no next occurrence.
 - The rule moves to the new occurrence, so the completed one no longer
   recurs: reopening and completing it again creates no second copy.
-- Rules are evaluated in UTC for now, so a local time of day can shift by an
-  hour across daylight saving changes (open question 8 in the roadmap).
+- Repeats keep their local time in the owner's time zone, from their
+  [planning preferences](calendar.md#time-zones) (UTC until they set one): a
+  daily 09:00 task stays at 09:00 across daylight saving changes.
 
 ## Status changes
 

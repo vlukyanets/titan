@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from titan.domains.accounts.models import Role
 from titan.domains.accounts.service import AccountsService
+from titan.domains.calendar.service import CalendarService
 from titan.domains.tasks.errors import (
     AlreadyDoneError,
     ForbiddenError,
@@ -253,3 +255,42 @@ async def test_shared_projects_follow_the_access_rules(
         assert moved.project_id is None
         assert [t.id for t in await tasks.tasks(boris, TaskQuery(inbox=True))] == [his.id]
         assert [t.id for t in await tasks.tasks(anna, TaskQuery(inbox=True))] == [hers.id]
+
+
+def test_repeats_keep_their_local_time_in_the_owners_zone() -> None:
+    kyiv = ZoneInfo("Europe/Kyiv")
+    # Saturday 24 October 2026, 09:00 summer time; winter time starts the next day.
+    saturday = datetime(2026, 10, 24, 9, 0, tzinfo=kyiv)
+    following = next_occurrence("FREQ=DAILY", saturday, saturday, kyiv)
+    assert following == datetime(2026, 10, 25, 7, 0, tzinfo=UTC)
+    assert following is not None
+    assert following.astimezone(kyiv).hour == 9
+    # In UTC the same rule keeps the UTC hour instead.
+    assert next_occurrence("FREQ=DAILY", saturday, saturday) == datetime(
+        2026, 10, 25, 6, 0, tzinfo=UTC
+    )
+
+
+@pytest.mark.db
+async def test_a_recurring_task_rolls_over_in_its_owners_zone(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    anna = await user(sessions, "anna", Role.OWNER)
+    kyiv = ZoneInfo("Europe/Kyiv")
+    async with sessions() as session:
+        await CalendarService(session).set_prefs(
+            anna,
+            time_zone="Europe/Kyiv",
+            work_start=time(9),
+            work_end=time(17),
+            work_days=[1, 2, 3, 4, 5],
+            buffer_minutes=10,
+        )
+        tasks = TasksService(session)
+        pills = await tasks.create_task(
+            anna, "Pills", due_at=datetime(2026, 10, 24, 9, 0, tzinfo=kyiv), recurrence="FREQ=DAILY"
+        )
+        done = await tasks.complete_task(anna, pills.id, now=datetime(2026, 10, 24, 7, tzinfo=UTC))
+        assert done.next is not None
+        assert done.next.due_at is not None
+        assert done.next.due_at.astimezone(kyiv) == datetime(2026, 10, 25, 9, 0, tzinfo=kyiv)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, tzinfo
 
 from dateutil.rrule import rrule, rrulestr
 
@@ -33,9 +33,10 @@ def normalize(value: str) -> str:
     return rule
 
 
-def parse(rule: str, start: datetime) -> rrule:
+def parse(rule: str, start: datetime, tz: tzinfo = UTC) -> rrule:
+    """The rule starting at `start`, repeating at the same local time in `tz`."""
     try:
-        parsed = rrulestr(rule, dtstart=start.astimezone(UTC))
+        parsed = rrulestr(rule, dtstart=start.astimezone(tz))
     except (ValueError, TypeError) as exc:
         raise InvalidRecurrenceError(f"not a valid RRULE: {exc}") from None
     if not isinstance(parsed, rrule):
@@ -43,13 +44,16 @@ def parse(rule: str, start: datetime) -> rrule:
     return parsed
 
 
-def next_occurrence(rule: str, due_at: datetime, completed_at: datetime) -> datetime | None:
-    """The first occurrence after both the old due date and the completion.
+def next_occurrence(
+    rule: str, due_at: datetime, completed_at: datetime, tz: tzinfo = UTC
+) -> datetime | None:
+    """The first occurrence after both the old due date and the completion, in UTC.
 
-    Occurrences missed while the task was open are skipped. `None` when the rule
-    has ended, or has no occurrence within `HORIZON`.
+    Repeats keep their local time in `tz`, the owner's zone, across daylight
+    saving changes. Occurrences missed while the task was open are skipped.
+    `None` when the rule has ended, or has no occurrence within `HORIZON`.
     """
-    parsed = parse(rule, due_at)
+    parsed = parse(rule, due_at, tz)
     after = max(due_at, completed_at).astimezone(UTC)
     upcoming = parsed.between(after, after + HORIZON, inc=False)
-    return upcoming[0] if upcoming else None
+    return upcoming[0].astimezone(UTC) if upcoming else None

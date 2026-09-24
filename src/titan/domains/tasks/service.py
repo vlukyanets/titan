@@ -16,6 +16,7 @@ from sqlalchemy import ColumnElement, delete, exists, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.domains.accounts.models import User
+from titan.domains.calendar.zones import user_zone
 from titan.domains.tasks import recurrence
 from titan.domains.tasks.errors import (
     AlreadyDoneError,
@@ -457,7 +458,8 @@ class TasksService:
         task.updated_at = now
         following = None
         if task.recurrence and task.due_at is not None:
-            due = recurrence.next_occurrence(task.recurrence, task.due_at, now)
+            tz = await user_zone(self.session, task.owner_id)
+            due = recurrence.next_occurrence(task.recurrence, task.due_at, now, tz)
             if due is not None:
                 following = Task(
                     owner_id=task.owner_id,
