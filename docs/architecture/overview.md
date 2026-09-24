@@ -75,7 +75,8 @@ src/titan/
   storage/      SQLAlchemy models, repositories, vector search
   migrations/   Alembic environment and revisions
   notify/       UnifiedPush sender (to ntfy), endpoint checks
-  cli/          `titan` command
+  cli/          `titan` command: node administration (database) and the
+                client commands (HTTP API, ADR 0011)
 ```
 
 Domain code never imports from `api/` or `agent/`. Both of those depend on

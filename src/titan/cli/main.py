@@ -1,8 +1,12 @@
-"""The `titan` command: administration from any node.
+"""The `titan` command: node administration, and the client commands.
 
-`main()` takes its settings and standard input as arguments, so callers other
-than the shell (tests, scripts) pass their own instead of changing the process
-environment. Without them it reads TITAN_* variables and the real stdin.
+Administration runs on a node against its database. The client commands in
+`titan.cli.commands` talk to a node's HTTP API from any machine (docs/spec/cli.md).
+
+`main()` takes its settings, standard input, client login file and HTTP transport
+as arguments, so callers other than the shell (tests, scripts) pass their own
+instead of changing the process environment. Without them it reads TITAN_*
+variables, the real stdin and the saved login.
 """
 
 from __future__ import annotations
@@ -11,6 +15,7 @@ import argparse
 import asyncio
 import getpass
 import json
+import os
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -18,11 +23,14 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TextIO
 
+import httpx
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, text
 
 import titan.migrations
+from titan.cli import commands
+from titan.cli.client import config_path
 from titan.settings import Settings
 
 MIGRATIONS_DIR = Path(titan.migrations.__file__).resolve().parent
@@ -330,8 +338,11 @@ def _decimal(value: str) -> Decimal:
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(prog="titan", description="TITAN administration")
+    root = argparse.ArgumentParser(
+        prog="titan", description="TITAN: node administration and the client commands"
+    )
     sub = root.add_subparsers(dest="command", required=True)
+    commands.add_parsers(sub)
     m = sub.add_parser("migrate", help="apply database migrations under a cluster-wide lock")
     m.add_argument("target", nargs="?", default="head")
     o = sub.add_parser("openapi", help="export the OpenAPI schema")
@@ -376,8 +387,19 @@ def main(
     *,
     settings: Settings | None = None,
     stdin: TextIO | None = None,
+    client_config: Path | None = None,
+    transport: httpx.AsyncBaseTransport | None = None,
 ) -> int:
     args = parser().parse_args(argv)
+    if args.command in commands.CLIENT_COMMANDS:
+        client = commands.ClientCommands(
+            config=client_config or config_path(os.environ),
+            stdin=stdin if stdin is not None else sys.stdin,
+            out=sys.stdout,
+            err=sys.stderr,
+            transport=transport,
+        )
+        return asyncio.run(commands.run(client, args))
     cli = Cli(
         load_settings=(lambda: settings) if settings is not None else Settings,
         stdin=stdin if stdin is not None else sys.stdin,
