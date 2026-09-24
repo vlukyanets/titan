@@ -62,4 +62,4 @@ Branch `spec/m0-sensitive-data`. Depends on task 1.
 
 - [x] Evaluate the options against the chosen database.
 - [x] Recommendation in ADR 0007.
-- [ ] Owner decision on ADR 0007.
+- [x] Owner decision on ADR 0007: accepted.

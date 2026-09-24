@@ -180,5 +180,8 @@ jobs run **at least once** and every effect is **idempotent**
 - Row-level ownership is checked in the domain services, not only in the API.
 - Secrets (Claude credentials, database passwords) come from environment or
   Docker secrets, never from the repository.
-- Protection of sensitive domains is *open*:
-  [ADR 0007](../adr/0007-sensitive-data-protection.md).
+- Sensitive domains ([ADR 0007](../adr/0007-sensitive-data-protection.md)):
+  full-disk encryption and encrypted backups on every node; health, finance
+  and memory tables replicate only to nodes marked `trusted` (Spock
+  replication set `sensitive`); scheduled workflows send only aggregates of
+  health and finance data to Claude.

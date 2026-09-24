@@ -12,6 +12,11 @@ kind of tracker needs no new code.
 | `Tracker` | id, owner, name, kind (`habit`, `health`, `finance`, `custom`), unit (`count`, `kg`, `min`, `EUR`, …), target? (for example "8 glasses per day"), schedule (RRULE)? |
 | `Entry` | id, tracker_id, at, value (number), note?, category? (finance: `groceries`, `transport`, …) |
 
+Entries of `health` and `finance` trackers are stored in their own tables
+(`health_entries`, `finance_entries`), separate from the other entries. Those
+tables belong to the `sensitive` replication set and exist only on trusted
+nodes ([ADR 0007](../../adr/0007-sensitive-data-protection.md)).
+
 Built-in templates for v1: habit check-in (`count`), weight (`kg`), sleep
 (`h`), workout (`min`), mood (1–5), expense (currency), income (currency).
 
@@ -23,8 +28,10 @@ Built-in templates for v1: habit check-in (`count`), weight (`kg`), sleep
 | `trackers.create` / `entries.log` / `entries.update` | `write-internal` |
 | `trackers.delete` / `entries.delete` | `destructive` |
 
-The default policy for `finance` and `health` trackers may be stricter once
-[ADR 0007](../../adr/0007-sensitive-data-protection.md) is decided.
+Exposure to Claude ([ADR 0007](../../adr/0007-sensitive-data-protection.md)):
+in a user's own chat, tools return their own `health` and `finance` entries in
+full. In scheduled workflows they return only aggregates (sums, averages,
+streaks). Users can change both settings per domain.
 
 ## Acceptance criteria (v1)
 
@@ -34,3 +41,5 @@ The default policy for `finance` and `health` trackers may be stricter once
   available on every surface.
 - Health and finance entries are private to their owner and cannot be shared in
   v1.
+- On an untrusted node, health and finance requests return "not available on
+  this node" instead of empty data.

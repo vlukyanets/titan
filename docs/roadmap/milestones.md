@@ -16,8 +16,9 @@ Goal: settle the decisions that block the platform.
 - [ ] Claude auth spike: confirm env sanitisation and pin the `apiKeySource`
       value expected in `oauth` mode ([claude-auth.md](../architecture/claude-auth.md)).
 - [ ] Pick the embedding model and container image (multilingual, CPU-friendly).
-- [ ] Draft [ADR 0007](../adr/0007-sensitive-data-protection.md) options with a
-      recommendation.
+- [x] Decide [ADR 0007](../adr/0007-sensitive-data-protection.md): disk
+      encryption, a `sensitive` replication set, aggregates for scheduled
+      workflows.
 
 Exit: ADR 0006 accepted, the spike code thrown away or folded into M1.
 

@@ -1,6 +1,6 @@
 # 0007. Protection of sensitive domains
 
-- Status: **Proposed**, recommendation ready
+- Status: Accepted
 - Date: 2026-09-24
 
 ## Context
@@ -45,7 +45,7 @@ least, and placement keeps sensitive tables off it entirely.
 
 ## Decision
 
-**Recommended, awaiting the owner's acceptance:** options 1, 3 and 4 together.
+Options 1, 3 and 4 together.
 Option 2 is rejected for v1.
 
 1. **Baseline on every node**: full-disk encryption (LUKS, FileVault or
@@ -70,9 +70,8 @@ Option 2 is rejected for v1.
 
 ## Consequences
 
-- Health and finance entries move out of the shared `entries` table into their
-  own tables so they can belong to the `sensitive` set. The trackers spec is
-  updated when this ADR is accepted.
+- Health and finance entries live in their own tables so they can belong to
+  the `sensitive` set ([trackers spec](../spec/domains/trackers.md)).
 - Every node has a `trusted` flag in the cluster configuration. Setup refuses
   to subscribe an untrusted node to the `sensitive` set.
 - A user whose only reachable node is the VPS cannot see health, finance or
