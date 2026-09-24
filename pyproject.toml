@@ -11,6 +11,7 @@ dependencies = [
     "claude-agent-sdk>=0.2.159",
     "fastapi>=0.141",
     "httpx>=0.28",
+    "jsonschema>=4.26",
     "langgraph>=1.2.12",
     "langgraph-checkpoint-postgres>=3.1.2",
     "pgvector>=0.5",
@@ -31,6 +32,7 @@ dev = [
     "pytest>=9.1",
     "pytest-asyncio>=1.4",
     "ruff>=0.16",
+    "types-jsonschema>=4.26",
 ]
 
 [build-system]

@@ -32,7 +32,7 @@ Tasks:
 - [x] Spec, ADR 0010 and this plan.
 - [x] Autonomy tables, services and migration: policy resolution, approval
       states and expiry, audit entries and undo with conflict detection.
-- [ ] Tool layer, policy hook and the first tools (`list_members`,
+- [x] Tool layer, policy hook and the first tools (`list_members`,
       `rename_thread`, `notify_member`), wired into `chat_turn`, with a fake
       Claude Code that calls hooks and tools the way the CLI does.
 - [ ] Policy, approvals and audit API, OpenAPI regenerated, docs updated.

@@ -240,6 +240,28 @@ class ChatService:
             assistant_message_id, status=MessageStatus.FAILED, error=error[:ERROR_LENGTH]
         )
 
+    async def post_note(
+        self, user_id: uuid.UUID, thread_id: uuid.UUID, content: str
+    ) -> ChatMessage | None:
+        """Add an assistant message written by TITAN, not a model, such as the result
+        of an approved action. Returns None if the thread is gone."""
+        thread = await self.session.scalar(
+            select(ChatThread).where(ChatThread.id == thread_id, ChatThread.user_id == user_id)
+        )
+        if thread is None:
+            return None
+        message = ChatMessage(
+            thread_id=thread.id,
+            role=MessageRole.ASSISTANT,
+            status=MessageStatus.COMPLETE,
+            content=content,
+            completed_at=_now(),
+        )
+        self.session.add(message)
+        thread.updated_at = _now()
+        await self.session.commit()
+        return message
+
     async def get_message(self, message_id: uuid.UUID) -> ChatMessage | None:
         return await self.session.get(ChatMessage, message_id, populate_existing=True)
 
