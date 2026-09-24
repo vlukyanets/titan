@@ -52,6 +52,7 @@ own spec:
 | Notifications | [domains/notifications.md](domains/notifications.md) | Notification history and push delivery through UnifiedPush and ntfy |
 | Chat | [domains/chat.md](domains/chat.md) | Threads with the assistant and replies streamed over SSE |
 | Autonomy | [domains/autonomy.md](domains/autonomy.md) | Policy, approval requests and the audit log with undo |
+| Usage | [domains/usage.md](domains/usage.md) | Token usage and cost per user and month |
 
 External integrations (Google Calendar, CalDAV, email and so on) are **out of
 scope for v1**. TITAN is the source of truth for its own data.
@@ -97,7 +98,8 @@ the audit log in detail: [autonomy](domains/autonomy.md).
   cheap model for classification and parsing; a strong model for planning and
   conversation).
 - **Prompt caching** for system prompts and stable domain context.
-- **Monthly budget per user**, tracked from token usage. At 80 % the user is
+- **Monthly budget per user**, tracked from token usage
+  ([usage](domains/usage.md)). At 80 % the user is
   warned. At 100 % scheduled workflows stop and chat falls back to the cheap tier
   until the owner raises the cap or the month rolls over.
 

@@ -1840,6 +1840,138 @@
           }
         }
       }
+    },
+    "/api/v1/usage": {
+      "get": {
+        "tags": [
+          "usage"
+        ],
+        "summary": "The caller's usage for a month",
+        "operationId": "my_usage_api_v1_usage_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Calendar month in UTC, YYYY-MM; the current month by default",
+              "examples": [
+                "2026-09"
+              ],
+              "title": "Month"
+            },
+            "description": "Calendar month in UTC, YYYY-MM; the current month by default"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthUsageOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/usage/household": {
+      "get": {
+        "tags": [
+          "usage"
+        ],
+        "summary": "Every user's usage for a month (owner only)",
+        "operationId": "household_usage_api_v1_usage_household_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Calendar month in UTC, YYYY-MM; the current month by default",
+              "examples": [
+                "2026-09"
+              ],
+              "title": "Month"
+            },
+            "description": "Calendar month in UTC, YYYY-MM; the current month by default"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberUsageOut"
+                  },
+                  "title": "Response Household Usage Api V1 Usage Household Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2287,6 +2419,42 @@
         ],
         "title": "Liveness"
       },
+      "MemberUsageOut": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "total": {
+            "$ref": "#/components/schemas/TotalsOut"
+          },
+          "by_model": {
+            "items": {
+              "$ref": "#/components/schemas/ModelTotalsOut"
+            },
+            "type": "array",
+            "title": "By Model"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "total",
+          "by_model",
+          "user_id",
+          "username"
+        ],
+        "title": "MemberUsageOut"
+      },
       "MessageIn": {
         "properties": {
           "content": {
@@ -2409,6 +2577,76 @@
           "failed"
         ],
         "title": "MessageStatus"
+      },
+      "ModelTotalsOut": {
+        "properties": {
+          "sessions": {
+            "type": "integer",
+            "title": "Sessions",
+            "description": "Agent sessions that reported usage"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens"
+          },
+          "cache_read_tokens": {
+            "type": "integer",
+            "title": "Cache Read Tokens"
+          },
+          "cache_creation_tokens": {
+            "type": "integer",
+            "title": "Cache Creation Tokens"
+          },
+          "cost_usd": {
+            "type": "number",
+            "title": "Cost Usd",
+            "description": "As Claude Code reports it; in oauth mode, what the tokens would cost on the API"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions",
+          "input_tokens",
+          "output_tokens",
+          "cache_read_tokens",
+          "cache_creation_tokens",
+          "cost_usd",
+          "model"
+        ],
+        "title": "ModelTotalsOut"
+      },
+      "MonthUsageOut": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "total": {
+            "$ref": "#/components/schemas/TotalsOut"
+          },
+          "by_model": {
+            "items": {
+              "$ref": "#/components/schemas/ModelTotalsOut"
+            },
+            "type": "array",
+            "title": "By Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "total",
+          "by_model"
+        ],
+        "title": "MonthUsageOut"
       },
       "NotificationKind": {
         "type": "string",
@@ -2765,6 +3003,46 @@
           "status"
         ],
         "title": "ToolEvent"
+      },
+      "TotalsOut": {
+        "properties": {
+          "sessions": {
+            "type": "integer",
+            "title": "Sessions",
+            "description": "Agent sessions that reported usage"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "type": "integer",
+            "title": "Output Tokens"
+          },
+          "cache_read_tokens": {
+            "type": "integer",
+            "title": "Cache Read Tokens"
+          },
+          "cache_creation_tokens": {
+            "type": "integer",
+            "title": "Cache Creation Tokens"
+          },
+          "cost_usd": {
+            "type": "number",
+            "title": "Cost Usd",
+            "description": "As Claude Code reports it; in oauth mode, what the tokens would cost on the API"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions",
+          "input_tokens",
+          "output_tokens",
+          "cache_read_tokens",
+          "cache_creation_tokens",
+          "cost_usd"
+        ],
+        "title": "TotalsOut"
       },
       "TurnStartedEvent": {
         "properties": {

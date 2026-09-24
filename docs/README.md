@@ -15,7 +15,8 @@ changes often lives separately in [`roadmap/`](roadmap/README.md).
   [reminders](spec/domains/reminders.md) ·
   [notifications](spec/domains/notifications.md) ·
   [chat](spec/domains/chat.md) ·
-  [autonomy](spec/domains/autonomy.md)
+  [autonomy](spec/domains/autonomy.md) ·
+  [usage](spec/domains/usage.md)
 
 ## Architecture: how it is built
 
