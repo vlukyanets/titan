@@ -2,7 +2,7 @@
 
 Status: **Draft v1**. This is the source of truth for what TITAN does. Client
 repositories ([titan-android](https://github.com/vlukyanets/titan-android),
-titan-web) link here instead of duplicating it.
+[titan-web](https://github.com/vlukyanets/titan-web)) link here instead of duplicating it.
 
 ## Vision
 
@@ -32,7 +32,7 @@ network, and its agent is built on the Claude Agent SDK.
 |---|---|---|
 | Android app | titan-android | Primary daily client: chat, today view, domain lists, approvals, notifications |
 | CLI (`titan`) | titan | Power use and administration from any node |
-| Web UI | titan-web (planned) | Dashboard and chat in a browser on the tailnet |
+| Web UI | titan-web | Chat, domains and household settings in a browser on the tailnet, served by every node |
 
 All surfaces use the same HTTP API ([API contract](../api/README.md)). The API is
 reachable **only over Tailscale**. Nothing is exposed to the public internet.
