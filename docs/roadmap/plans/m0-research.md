@@ -46,10 +46,13 @@ Branch `research/m0-claude-auth`. **Blocked** on the same credential.
 
 ### 4. Embedding model
 
-Branch `research/m0-embeddings`.
+Branch `research/m0-embeddings`. **Blocked**: the model hosts
+(`huggingface.co`, `cdn-lfs.huggingface.co`) are not in the environment's
+allowed network domains.
 
-- [ ] Shortlist multilingual CPU-friendly models (English and Russian at
-      least).
+- [x] Languages recorded in the product spec: Russian, English and Ukrainian,
+      often mixed in one text.
+- [ ] Shortlist multilingual CPU-friendly models.
 - [ ] Benchmark on a small bilingual note set: quality, latency, memory.
 - [ ] Decide the model and container image.
 

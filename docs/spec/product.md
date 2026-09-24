@@ -63,6 +63,17 @@ scope for v1**. TITAN is the source of truth for its own data.
 - The agent keeps **long-term memory** per user: facts, preferences and routines
   it learns, stored with embeddings for semantic recall.
 
+## Languages
+
+- Users write and speak **Russian, English and Ukrainian**, and often mix them
+  within one message or note.
+- The assistant answers in the language the user wrote in. Scheduled messages
+  (daily plan, reminders) use each user's preferred language, set in their
+  profile.
+- Search and memory must find a note regardless of the language of the query:
+  a Russian question has to find an English or mixed-language note. The
+  embedding model is chosen for this (M0).
+
 ## Autonomy policy
 
 Every domain tool declares an **action class**. What the agent may do for each
