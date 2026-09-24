@@ -35,5 +35,5 @@ Tasks:
 - [x] Tool layer, policy hook and the first tools (`list_members`,
       `rename_thread`, `notify_member`), wired into `chat_turn`, with a fake
       Claude Code that calls hooks and tools the way the CLI does.
-- [ ] Policy, approvals and audit API, OpenAPI regenerated, docs updated.
+- [x] Policy, approvals and audit API, OpenAPI regenerated, docs updated.
 - [ ] Live: the M1 exit scenario with a real credential (blocked).
