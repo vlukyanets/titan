@@ -140,6 +140,40 @@ def notifications_command(args: argparse.Namespace) -> int:
     return 0
 
 
+async def _usage(month: str) -> list[str]:
+    from titan.domains.usage.service import UsageService
+    from titan.storage.db import create_engine as create_async_engine
+    from titan.storage.db import session_factory
+
+    engine = create_async_engine(Settings())
+    try:
+        async with session_factory(engine)() as session:
+            members = await UsageService(session).household(None, month)
+    finally:
+        await engine.dispose()
+    lines = [f"{month}\tsessions\tinput\toutput\tcache read\tcache write\tcost USD"]
+    for member in members:
+        t = member.usage.total
+        lines.append(
+            f"{member.username}\t{t.sessions}\t{t.input_tokens}\t{t.output_tokens}\t"
+            f"{t.cache_read_tokens}\t{t.cache_creation_tokens}\t{t.cost_usd:.4f}"
+        )
+    return lines
+
+
+def usage_command(args: argparse.Namespace) -> int:
+    from titan.domains.usage.errors import UsageError
+    from titan.domains.usage.service import current_month
+
+    try:
+        for line in asyncio.run(_usage(args.month or current_month())):
+            print(line)
+    except UsageError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def claude_check() -> int:
     """Verify that Claude Code uses exactly the credential of the configured mode."""
     from claude_agent_sdk import ClaudeSDKError
@@ -203,6 +237,8 @@ def main(argv: list[str] | None = None) -> int:
     ns.add_argument("username")
     ns.add_argument("title")
     ns.add_argument("--body", default="")
+    us = sub.add_parser("usage", help="token usage and cost of every user for a month")
+    us.add_argument("--month", help="YYYY-MM in UTC, the current month by default")
     args = parser.parse_args(argv)
 
     if args.command == "migrate":
@@ -211,6 +247,8 @@ def main(argv: list[str] | None = None) -> int:
         return users_command(args)
     elif args.command == "notifications":
         return notifications_command(args)
+    elif args.command == "usage":
+        return usage_command(args)
     elif args.command == "claude":
         return claude_check()
     elif args.command == "openapi":

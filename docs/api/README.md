@@ -50,3 +50,7 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   result; a decided or expired request answers `409`. The audit log
   (`GET /api/v1/audit`, `POST /api/v1/audit/{id}/undo`) and the policy
   (`/api/v1/policy`) are described in [autonomy](../spec/domains/autonomy.md).
+- Usage: `GET /api/v1/usage?month=YYYY-MM` gives the caller's token usage and
+  cost for a UTC calendar month, overall and per model;
+  `GET /api/v1/usage/household` gives everyone's (owner only)
+  ([usage](../spec/domains/usage.md)).

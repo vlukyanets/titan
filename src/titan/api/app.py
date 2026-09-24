@@ -9,7 +9,7 @@ from fastapi import FastAPI
 
 from titan import __version__
 from titan.agent.runtime import ChatRuntime
-from titan.api import accounts, autonomy, chat, health, notifications, problems
+from titan.api import accounts, autonomy, chat, health, notifications, problems, usage
 from titan.notify import UnifiedPushSender, new_client
 from titan.settings import Settings
 from titan.storage.db import create_engine, session_factory
@@ -50,4 +50,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(notifications.router, prefix=API_PREFIX)
     app.include_router(chat.router, prefix=API_PREFIX)
     app.include_router(autonomy.router, prefix=API_PREFIX)
+    app.include_router(usage.router, prefix=API_PREFIX)
     return app
