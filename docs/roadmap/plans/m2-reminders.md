@@ -21,6 +21,6 @@ Tasks:
 
 - [x] Spec and this plan.
 - [x] Reminders table, service and firing.
-- [ ] Reminders API, OpenAPI regenerated, docs updated.
+- [x] Reminders API, OpenAPI regenerated, docs updated.
 - [ ] Scheduler with leases and the `titan-worker` entry point (separate branch).
 - [ ] Default reminders for tasks, agent tools.
