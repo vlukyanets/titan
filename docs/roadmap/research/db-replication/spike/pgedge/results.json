@@ -1,0 +1,1130 @@
+{
+ "candidate": "PostgreSQL + pgEdge Spock + pgvector",
+ "run_started": "2026-09-24T09:44:48.651951+00:00",
+ "bootstrap": {
+  "containers_healthy_s": 4.79,
+  "versions": {
+   "postgres": "17.11",
+   "spock_available": "5.0.11",
+   "pgvector_available": "0.8.6"
+  },
+  "subscriptions_replicating_s": 0.14,
+  "sub_status": {
+   "node1": [
+    [
+     "sub_n1_n2",
+     "replicating"
+    ],
+    [
+     "sub_n1_n3",
+     "replicating"
+    ]
+   ],
+   "node2": [
+    [
+     "sub_n2_n1",
+     "replicating"
+    ],
+    [
+     "sub_n2_n3",
+     "replicating"
+    ]
+   ],
+   "node3": [
+    [
+     "sub_n3_n1",
+     "replicating"
+    ],
+    [
+     "sub_n3_n2",
+     "replicating"
+    ]
+   ]
+  },
+  "gucs": {
+   "shared_buffers": "16384",
+   "spock.allow_ddl_from_functions": "on",
+   "spock.batch_inserts": "on",
+   "spock.channel_counters": "on",
+   "spock.check_all_uc_indexes": "off",
+   "spock.conflict_log_level": "log",
+   "spock.conflict_resolution": "last_update_wins",
+   "spock.country": "??",
+   "spock.deny_all_ddl": "off",
+   "spock.drop_extra_slots": "on",
+   "spock.enable_ddl_replication": "on",
+   "spock.exception_behaviour": "transdiscard",
+   "spock.exception_logging": "all",
+   "spock.exception_replay_queue_size": "4194304",
+   "spock.extra_connection_options": "",
+   "spock.failover_slots_feedback_naptime": "10000",
+   "spock.failover_slots_naptime": "1000",
+   "spock.feedback_frequency": "200",
+   "spock.include_ddl_repset": "on",
+   "spock.log_origin_change": "none",
+   "spock.pause_timeout": "10",
+   "spock.pg_standby_slot_names": "",
+   "spock.primary_dsn": "",
+   "spock.readonly": "off",
+   "spock.replication_repair_mode": "off",
+   "spock.restart_delay_default": "5000",
+   "spock.restart_delay_on_exception": "0",
+   "spock.save_resolutions": "on",
+   "spock.standby_slots_min_confirmed": "-1",
+   "spock.stats_max_entries": "-1",
+   "spock.synchronize_slot_names": "name_like:%%",
+   "spock.synchronous_commit": "off",
+   "spock.temp_directory": "",
+   "spock.use_native_failover_slots": "off",
+   "spock.use_spi": "off",
+   "track_commit_timestamp": "on",
+   "wal_level": "logical"
+  }
+ },
+ "S5": {
+  "upgrade_0001_s": 0.065,
+  "0001_visible_on_node2_node3_s": 0.2780039770004805,
+  "after_0001": {
+   "node1": {
+    "tables": [
+     "alembic_version",
+     "embeddings",
+     "jobs",
+     "tasks"
+    ],
+    "tasks_columns": [
+     "id",
+     "owner",
+     "title",
+     "status",
+     "updated_at",
+     "version"
+    ],
+    "hnsw_index": [],
+    "alembic_version": [
+     "0001_initial"
+    ],
+    "extensions": [
+     "plpgsql 1.0",
+     "spock 5.0.11",
+     "vector 0.8.6"
+    ]
+   },
+   "node2": {
+    "tables": [
+     "alembic_version",
+     "embeddings",
+     "jobs",
+     "tasks"
+    ],
+    "tasks_columns": [
+     "id",
+     "owner",
+     "title",
+     "status",
+     "updated_at",
+     "version"
+    ],
+    "hnsw_index": [],
+    "alembic_version": [
+     "0001_initial"
+    ],
+    "extensions": [
+     "plpgsql 1.0",
+     "spock 5.0.11",
+     "vector 0.8.6"
+    ]
+   },
+   "node3": {
+    "tables": [
+     "alembic_version",
+     "embeddings",
+     "jobs",
+     "tasks"
+    ],
+    "tasks_columns": [
+     "id",
+     "owner",
+     "title",
+     "status",
+     "updated_at",
+     "version"
+    ],
+    "hnsw_index": [],
+    "alembic_version": [
+     "0001_initial"
+    ],
+    "extensions": [
+     "plpgsql 1.0",
+     "spock 5.0.11",
+     "vector 0.8.6"
+    ]
+   }
+  },
+  "repsets_after_0001": {
+   "node1": [
+    [
+     "default",
+     "alembic_version"
+    ],
+    [
+     "default",
+     "embeddings"
+    ],
+    [
+     "default",
+     "jobs"
+    ],
+    [
+     "default",
+     "tasks"
+    ]
+   ],
+   "node2": [
+    [
+     "default",
+     "alembic_version"
+    ],
+    [
+     "default",
+     "embeddings"
+    ],
+    [
+     "default",
+     "jobs"
+    ],
+    [
+     "default",
+     "tasks"
+    ]
+   ],
+   "node3": [
+    [
+     "default",
+     "alembic_version"
+    ],
+    [
+     "default",
+     "embeddings"
+    ],
+    [
+     "default",
+     "jobs"
+    ],
+    [
+     "default",
+     "tasks"
+    ]
+   ]
+  },
+  "upgrade_head_s": 0.038,
+  "0002_visible_on_node2_s": 0.10870430100021622,
+  "node3_healthy_after_start_s": 2.89,
+  "0002_on_node3_after_start_s": 2.96,
+  "final": {
+   "node1": {
+    "tables": [
+     "alembic_version",
+     "embeddings",
+     "jobs",
+     "tasks"
+    ],
+    "tasks_columns": [
+     "id",
+     "owner",
+     "title",
+     "status",
+     "updated_at",
+     "version",
+     "priority"
+    ],
+    "hnsw_index": [
+     "CREATE INDEX embeddings_vec_hnsw ON public.embeddings USING hnsw (vec vector_cosine_ops)"
+    ],
+    "alembic_version": [
+     "0002_priority_and_ann_index"
+    ],
+    "extensions": [
+     "plpgsql 1.0",
+     "spock 5.0.11",
+     "vector 0.8.6"
+    ]
+   },
+   "node2": {
+    "tables": [
+     "alembic_version",
+     "embeddings",
+     "jobs",
+     "tasks"
+    ],
+    "tasks_columns": [
+     "id",
+     "owner",
+     "title",
+     "status",
+     "updated_at",
+     "version",
+     "priority"
+    ],
+    "hnsw_index": [
+     "CREATE INDEX embeddings_vec_hnsw ON public.embeddings USING hnsw (vec vector_cosine_ops)"
+    ],
+    "alembic_version": [
+     "0002_priority_and_ann_index"
+    ],
+    "extensions": [
+     "plpgsql 1.0",
+     "spock 5.0.11",
+     "vector 0.8.6"
+    ]
+   },
+   "node3": {
+    "tables": [
+     "alembic_version",
+     "embeddings",
+     "jobs",
+     "tasks"
+    ],
+    "tasks_columns": [
+     "id",
+     "owner",
+     "title",
+     "status",
+     "updated_at",
+     "version",
+     "priority"
+    ],
+    "hnsw_index": [
+     "CREATE INDEX embeddings_vec_hnsw ON public.embeddings USING hnsw (vec vector_cosine_ops)"
+    ],
+    "alembic_version": [
+     "0002_priority_and_ann_index"
+    ],
+    "extensions": [
+     "plpgsql 1.0",
+     "spock 5.0.11",
+     "vector 0.8.6"
+    ]
+   }
+  },
+  "all_subs_replicating_s_after_0002_check": 1.17,
+  "sub_status_final": {
+   "node1": [
+    [
+     "sub_n1_n2",
+     "replicating"
+    ],
+    [
+     "sub_n1_n3",
+     "replicating"
+    ]
+   ],
+   "node2": [
+    [
+     "sub_n2_n1",
+     "replicating"
+    ],
+    [
+     "sub_n2_n3",
+     "replicating"
+    ]
+   ],
+   "node3": [
+    [
+     "sub_n3_n1",
+     "replicating"
+    ],
+    [
+     "sub_n3_n2",
+     "replicating"
+    ]
+   ]
+  },
+  "ok": true,
+  "scenario_wall_s": 6.0
+ },
+ "S1": {
+  "trials": [
+   {
+    "task_id": "dd6c5b49-232a-4e12-ae42-2660170c846d",
+    "writes": {
+     "node2": {
+      "ok": true,
+      "title": "from-node2-trial0",
+      "latency_ms": 3.16,
+      "commit_ts": "2026-09-24T09:45:05.789472+00:00"
+     },
+     "node1": {
+      "ok": true,
+      "title": "from-node1-trial0",
+      "latency_ms": 12.76,
+      "commit_ts": "2026-09-24T09:45:05.796563+00:00"
+     }
+    },
+    "final": {
+     "node1": {
+      "title": "from-node1-trial0",
+      "version": 3,
+      "row_commit_ts": "2026-09-24 09:45:05.796563+00"
+     },
+     "node2": {
+      "title": "from-node1-trial0",
+      "version": 3,
+      "row_commit_ts": "2026-09-24 09:45:05.796563+00"
+     },
+     "node3": {
+      "title": "from-node1-trial0",
+      "version": 3,
+      "row_commit_ts": "2026-09-24 09:45:05.796563+00"
+     }
+    },
+    "converged": true,
+    "convergence_ms_after_both_commits": 49.5,
+    "winner_title": "from-node1-trial0",
+    "winner_is_later_commit_ts": true
+   },
+   {
+    "task_id": "e838a0e5-2765-4b53-b033-4f99a4373adc",
+    "writes": {
+     "node1": {
+      "ok": true,
+      "title": "from-node1-trial1",
+      "latency_ms": 3.57,
+      "commit_ts": "2026-09-24T09:45:06.087387+00:00"
+     },
+     "node2": {
+      "ok": true,
+      "title": "from-node2-trial1",
+      "latency_ms": 3.41,
+      "commit_ts": "2026-09-24T09:45:06.087115+00:00"
+     }
+    },
+    "final": {
+     "node1": {
+      "title": "from-node1-trial1",
+      "version": 2,
+      "row_commit_ts": "2026-09-24 09:45:06.087387+00"
+     },
+     "node2": {
+      "title": "from-node1-trial1",
+      "version": 2,
+      "row_commit_ts": "2026-09-24 09:45:06.087387+00"
+     },
+     "node3": {
+      "title": "from-node1-trial1",
+      "version": 2,
+      "row_commit_ts": "2026-09-24 09:45:06.087387+00"
+     }
+    },
+    "converged": true,
+    "convergence_ms_after_both_commits": 50.4,
+    "winner_title": "from-node1-trial1",
+    "winner_is_later_commit_ts": true
+   },
+   {
+    "task_id": "47635e68-b6f1-43df-8005-d8ab56d003e4",
+    "writes": {
+     "node2": {
+      "ok": true,
+      "title": "from-node2-trial2",
+      "latency_ms": 4.39,
+      "commit_ts": "2026-09-24T09:45:06.250401+00:00"
+     },
+     "node1": {
+      "ok": true,
+      "title": "from-node1-trial2",
+      "latency_ms": 4.6,
+      "commit_ts": "2026-09-24T09:45:06.252659+00:00"
+     }
+    },
+    "final": {
+     "node1": {
+      "title": "from-node1-trial2",
+      "version": 2,
+      "row_commit_ts": "2026-09-24 09:45:06.252659+00"
+     },
+     "node2": {
+      "title": "from-node1-trial2",
+      "version": 2,
+      "row_commit_ts": "2026-09-24 09:45:06.252659+00"
+     },
+     "node3": {
+      "title": "from-node1-trial2",
+      "version": 2,
+      "row_commit_ts": "2026-09-24 09:45:06.252659+00"
+     }
+    },
+    "converged": true,
+    "convergence_ms_after_both_commits": 45.7,
+    "winner_title": "from-node1-trial2",
+    "winner_is_later_commit_ts": true
+   },
+   {
+    "task_id": "23fdd4b4-dce6-482a-be23-74636dcbd0aa",
+    "writes": {
+     "node1": {
+      "ok": true,
+      "title": "from-node1-trial3",
+      "latency_ms": 4.62,
+      "commit_ts": "2026-09-24T09:45:06.407194+00:00"
+     },
+     "node2": {
+      "ok": true,
+      "title": "from-node2-trial3",
+      "latency_ms": 4.18,
+      "commit_ts": "2026-09-24T09:45:06.407357+00:00"
+     }
+    },
+    "final": {
+     "node1": {
+      "title": "from-node2-trial3",
+      "version": 2,
+      "row_commit_ts": "2026-09-24 09:45:06.407357+00"
+     },
+     "node2": {
+      "title": "from-node2-trial3",
+      "version": 2,
+      "row_commit_ts": "2026-09-24 09:45:06.407357+00"
+     },
+     "node3": {
+      "title": "from-node2-trial3",
+      "version": 2,
+      "row_commit_ts": "2026-09-24 09:45:06.407357+00"
+     }
+    },
+    "converged": true,
+    "convergence_ms_after_both_commits": 27.1,
+    "winner_title": "from-node2-trial3",
+    "winner_is_later_commit_ts": true
+   },
+   {
+    "task_id": "8c687271-c33a-435f-8d11-beb5d9aad267",
+    "writes": {
+     "node2": {
+      "ok": true,
+      "title": "from-node2-trial4",
+      "latency_ms": 3.39,
+      "commit_ts": "2026-09-24T09:45:06.594871+00:00"
+     },
+     "node1": {
+      "ok": true,
+      "title": "from-node1-trial4",
+      "latency_ms": 10.73,
+      "commit_ts": "2026-09-24T09:45:06.598640+00:00"
+     }
+    },
+    "final": {
+     "node1": {
+      "title": "from-node1-trial4",
+      "version": 3,
+      "row_commit_ts": "2026-09-24 09:45:06.59864+00"
+     },
+     "node2": {
+      "title": "from-node1-trial4",
+      "version": 3,
+      "row_commit_ts": "2026-09-24 09:45:06.59864+00"
+     },
+     "node3": {
+      "title": "from-node1-trial4",
+      "version": 3,
+      "row_commit_ts": "2026-09-24 09:45:06.59864+00"
+     }
+    },
+    "converged": true,
+    "convergence_ms_after_both_commits": 31.3,
+    "winner_title": "from-node1-trial4",
+    "winner_is_later_commit_ts": true
+   }
+  ],
+  "spock_resolutions_rows_added": {
+   "node1": 2,
+   "node2": 1,
+   "node3": 2
+  },
+  "resolutions_sample": {
+   "node1": [
+    {
+     "id": 2,
+     "node_name": "n1",
+     "log_time": "2026-09-24 09:45:06.283848+00:00",
+     "relname": "public.tasks",
+     "idxname": "tasks_pkey",
+     "conflict_type": "update_update",
+     "conflict_resolution": "keep_local",
+     "local_origin": 0,
+     "local_tuple": "{\"id\":\"47635e68-b6f1-43df-8005-d8ab56d003e4\",\"owner\":\"s1\",\"title\":\"from-node1-trial2\",\"status\":\"open\",\"updated_at\":\"2026-09-24T09:45:06.250989+00:00\",\"version\":2,\"priority\":0}",
+     "local_xid": "765",
+     "local_timestamp": "2026-09-24 09:45:06.252659+00:00",
+     "remote_origin": 26863,
+     "remote_tuple": "{\"id\":\"47635e68-b6f1-43df-8005-d8ab56d003e4\",\"owner\":\"s1\",\"title\":\"from-node2-trial2\",\"status\":\"open\",\"updated_at\":\"2026-09-24T09:45:06.250057+00:00\",\"version\":2,\"priority\":0}",
+     "remote_xid": "764",
+     "remote_timestamp": "2026-09-24 09:45:06.250401+00:00",
+     "remote_lsn": "0/1B19760"
+    },
+    {
+     "id": 1,
+     "node_name": "n1",
+     "log_time": "2026-09-24 09:45:06.089540+00:00",
+     "relname": "public.tasks",
+     "idxname": "tasks_pkey",
+     "conflict_type": "update_update",
+     "conflict_resolution": "keep_local",
+     "local_origin": 0,
+     "local_tuple": "{\"id\":\"e838a0e5-2765-4b53-b033-4f99a4373adc\",\"owner\":\"s1\",\"title\":\"from-node1-trial1\",\"status\":\"open\",\"updated_at\":\"2026-09-24T09:45:06.086627+00:00\",\"version\":2,\"priority\":0}",
+     "local_xid": "762",
+     "local_timestamp": "2026-09-24 09:45:06.087387+00:00",
+     "remote_origin": 26863,
+     "remote_tuple": "{\"id\":\"e838a0e5-2765-4b53-b033-4f99a4373adc\",\"owner\":\"s1\",\"title\":\"from-node2-trial1\",\"status\":\"open\",\"updated_at\":\"2026-09-24T09:45:06.086542+00:00\",\"version\":2,\"priority\":0}",
+     "remote_xid": "761",
+     "remote_timestamp": "2026-09-24 09:45:06.087115+00:00",
+     "remote_lsn": "0/1B19498"
+    }
+   ],
+   "node2": [
+    {
+     "id": 1,
+     "node_name": "n2",
+     "log_time": "2026-09-24 09:45:06.410393+00:00",
+     "relname": "public.tasks",
+     "idxname": "tasks_pkey",
+     "conflict_type": "update_update",
+     "conflict_resolution": "keep_local",
+     "local_origin": 0,
+     "local_tuple": "{\"id\":\"23fdd4b4-dce6-482a-be23-74636dcbd0aa\",\"owner\":\"s1\",\"title\":\"from-node2-trial3\",\"status\":\"open\",\"updated_at\":\"2026-09-24T09:45:06.406852+00:00\",\"version\":2,\"priority\":0}",
+     "local_xid": "767",
+     "local_timestamp": "2026-09-24 09:45:06.407357+00:00",
+     "remote_origin": 49708,
+     "remote_tuple": "{\"id\":\"23fdd4b4-dce6-482a-be23-74636dcbd0aa\",\"owner\":\"s1\",\"title\":\"from-node1-trial3\",\"status\":\"open\",\"updated_at\":\"2026-09-24T09:45:06.405809+00:00\",\"version\":2,\"priority\":0}",
+     "remote_xid": "768",
+     "remote_timestamp": "2026-09-24 09:45:06.407194+00:00",
+     "remote_lsn": "0/1B1B440"
+    }
+   ],
+   "node3": [
+    {
+     "id": 2,
+     "node_name": "n3",
+     "log_time": "2026-09-24 09:45:06.271839+00:00",
+     "relname": "public.tasks",
+     "idxname": "tasks_pkey",
+     "conflict_type": "update_update",
+     "conflict_resolution": "keep_local",
+     "local_origin": 49708,
+     "local_tuple": "{\"id\":\"47635e68-b6f1-43df-8005-d8ab56d003e4\",\"owner\":\"s1\",\"title\":\"from-node1-trial2\",\"status\":\"open\",\"updated_at\":\"2026-09-24T09:45:06.250989+00:00\",\"version\":2,\"priority\":0}",
+     "local_xid": "763",
+     "local_timestamp": "2026-09-24 09:45:06.252659+00:00",
+     "remote_origin": 26863,
+     "remote_tuple": "{\"id\":\"47635e68-b6f1-43df-8005-d8ab56d003e4\",\"owner\":\"s1\",\"title\":\"from-node2-trial2\",\"status\":\"open\",\"updated_at\":\"2026-09-24T09:45:06.250057+00:00\",\"version\":2,\"priority\":0}",
+     "remote_xid": "764",
+     "remote_timestamp": "2026-09-24 09:45:06.250401+00:00",
+     "remote_lsn": "0/1B19760"
+    },
+    {
+     "id": 1,
+     "node_name": "n3",
+     "log_time": "2026-09-24 09:45:06.092362+00:00",
+     "relname": "public.tasks",
+     "idxname": "tasks_pkey",
+     "conflict_type": "update_update",
+     "conflict_resolution": "keep_local",
+     "local_origin": 49708,
+     "local_tuple": "{\"id\":\"e838a0e5-2765-4b53-b033-4f99a4373adc\",\"owner\":\"s1\",\"title\":\"from-node1-trial1\",\"status\":\"open\",\"updated_at\":\"2026-09-24T09:45:06.086627+00:00\",\"version\":2,\"priority\":0}",
+     "local_xid": "760",
+     "local_timestamp": "2026-09-24 09:45:06.087387+00:00",
+     "remote_origin": 26863,
+     "remote_tuple": "{\"id\":\"e838a0e5-2765-4b53-b033-4f99a4373adc\",\"owner\":\"s1\",\"title\":\"from-node2-trial1\",\"status\":\"open\",\"updated_at\":\"2026-09-24T09:45:06.086542+00:00\",\"version\":2,\"priority\":0}",
+     "remote_xid": "761",
+     "remote_timestamp": "2026-09-24 09:45:06.087115+00:00",
+     "remote_lsn": "0/1B19498"
+    }
+   ]
+  },
+  "conflict_resolution_guc": "last_update_wins",
+  "scenario_wall_s": 2.3
+ },
+ "S2": {
+  "insert_wall_s": 10.7,
+  "writes_ok": {
+   "node1": 5000,
+   "node2": 5000
+  },
+  "write_errors": 0,
+  "write_error_samples": [],
+  "latency_ms": {
+   "p50": 0.777,
+   "p95": 2.039,
+   "p50_node1": 0.791,
+   "p50_node2": 0.767
+  },
+  "node1_node2_converged_s_after_last_insert": 0.05060833500010631,
+  "reference_checksum": [
+   10005,
+   "1d3dc9685bb9c3100aa7dfa60f1ffe11"
+  ],
+  "wal_retained_for_node3_while_down": {
+   "node1": [
+    [
+     "spk_titan_n1_sub_n3_n1",
+     "3521 kB"
+    ]
+   ],
+   "node2": [
+    [
+     "spk_titan_n2_sub_n3_n2",
+     "3523 kB"
+    ]
+   ]
+  },
+  "node3_accepting_connections_s": 0.67,
+  "node3_caught_up_s_from_start_command": 1.94,
+  "node3_checksum": [
+   10005,
+   "1d3dc9685bb9c3100aa7dfa60f1ffe11"
+  ],
+  "identical_checksum": true,
+  "all_subs_replicating_s_after_catchup": 1.71,
+  "scenario_wall_s": 15.4
+ },
+ "S3": {
+  "a_healthy_settle": {
+   "mode": "settle",
+   "partition": false,
+   "work_ms": 50,
+   "settle_ms": 500,
+   "all_done_and_converged_s": 56.7,
+   "wall_s": 59.93,
+   "fired_exactly_once": 200,
+   "fired_more_than_once": 0,
+   "extra_fires": 0,
+   "never_fired": 0,
+   "fires_by_worker": {
+    "w1": 100,
+    "w2": 100
+   },
+   "worker_stats": {
+    "w1": {
+     "claimed": 100,
+     "fired": 100,
+     "lost_race_after_settle": 0,
+     "done_update_missed": 0,
+     "idle_polls": 17,
+     "errors": []
+    },
+    "w2": {
+     "claimed": 100,
+     "fired": 100,
+     "lost_race_after_settle": 0,
+     "done_update_missed": 0,
+     "idle_polls": 16,
+     "errors": []
+    }
+   },
+   "final_undone": {
+    "node1": 0,
+    "node2": 0,
+    "node3": 0
+   },
+   "final_jobs_converged": true
+  },
+  "a_healthy_naive": {
+   "mode": "naive",
+   "partition": false,
+   "work_ms": 50,
+   "settle_ms": 0,
+   "all_done_and_converged_s": 6.63,
+   "wall_s": 9.96,
+   "fired_exactly_once": 183,
+   "fired_more_than_once": 17,
+   "extra_fires": 17,
+   "never_fired": 0,
+   "fires_by_worker": {
+    "w1": 108,
+    "w2": 109
+   },
+   "worker_stats": {
+    "w1": {
+     "claimed": 108,
+     "fired": 108,
+     "lost_race_after_settle": 0,
+     "done_update_missed": 14,
+     "idle_polls": 16,
+     "errors": []
+    },
+    "w2": {
+     "claimed": 109,
+     "fired": 109,
+     "lost_race_after_settle": 0,
+     "done_update_missed": 3,
+     "idle_polls": 17,
+     "errors": []
+    }
+   },
+   "final_undone": {
+    "node1": 0,
+    "node2": 0,
+    "node3": 0
+   },
+   "final_jobs_converged": true
+  },
+  "a_healthy_naive_no_work_delay": {
+   "mode": "naive",
+   "partition": false,
+   "work_ms": 0,
+   "settle_ms": 0,
+   "all_done_and_converged_s": 1.0,
+   "wall_s": 4.36,
+   "fired_exactly_once": 156,
+   "fired_more_than_once": 44,
+   "extra_fires": 44,
+   "never_fired": 0,
+   "fires_by_worker": {
+    "w1": 199,
+    "w2": 45
+   },
+   "worker_stats": {
+    "w1": {
+     "claimed": 199,
+     "fired": 199,
+     "lost_race_after_settle": 0,
+     "done_update_missed": 5,
+     "idle_polls": 16,
+     "errors": []
+    },
+    "w2": {
+     "claimed": 45,
+     "fired": 45,
+     "lost_race_after_settle": 0,
+     "done_update_missed": 19,
+     "idle_polls": 16,
+     "errors": []
+    }
+   },
+   "final_undone": {
+    "node1": 0,
+    "node2": 0,
+    "node3": 0
+   },
+   "final_jobs_converged": true
+  },
+  "b_partition_settle": {
+   "mode": "settle",
+   "partition": true,
+   "work_ms": 50,
+   "settle_ms": 500,
+   "fired_when_partitioned": 100,
+   "partitioned_at_s": 28.66,
+   "fired_during_partition_window": 200,
+   "undone_at_heal": {
+    "node1": 0,
+    "node2": 0,
+    "node3": 0
+   },
+   "converged_after_heal_s": 56.3,
+   "sub_status_after_heal": {
+    "node1": [
+     [
+      "sub_n1_n2",
+      "replicating"
+     ],
+     [
+      "sub_n1_n3",
+      "replicating"
+     ]
+    ],
+    "node2": [
+     [
+      "sub_n2_n1",
+      "replicating"
+     ],
+     [
+      "sub_n2_n3",
+      "replicating"
+     ]
+    ],
+    "node3": [
+     [
+      "sub_n3_n1",
+      "replicating"
+     ],
+     [
+      "sub_n3_n2",
+      "replicating"
+     ]
+    ]
+   },
+   "all_subs_replicating_s_after_convergence": 0.05,
+   "wall_s": 148.38,
+   "fired_exactly_once": 100,
+   "fired_more_than_once": 100,
+   "extra_fires": 100,
+   "never_fired": 0,
+   "fires_by_worker": {
+    "w1": 150,
+    "w2": 150
+   },
+   "worker_stats": {
+    "w1": {
+     "claimed": 150,
+     "fired": 150,
+     "lost_race_after_settle": 0,
+     "done_update_missed": 0,
+     "idle_polls": 320,
+     "errors": []
+    },
+    "w2": {
+     "claimed": 150,
+     "fired": 150,
+     "lost_race_after_settle": 0,
+     "done_update_missed": 0,
+     "idle_polls": 318,
+     "errors": []
+    }
+   },
+   "final_undone": {
+    "node1": 0,
+    "node2": 0,
+    "node3": 0
+   },
+   "final_jobs_converged": true
+  },
+  "b_partition_naive": {
+   "mode": "naive",
+   "partition": true,
+   "work_ms": 50,
+   "settle_ms": 0,
+   "fired_when_partitioned": 100,
+   "partitioned_at_s": 2.93,
+   "fired_during_partition_window": 230,
+   "undone_at_heal": {
+    "node1": 0,
+    "node2": 0,
+    "node3": 0
+   },
+   "converged_after_heal_s": 58.08,
+   "sub_status_after_heal": {
+    "node1": [
+     [
+      "sub_n1_n2",
+      "replicating"
+     ],
+     [
+      "sub_n1_n3",
+      "replicating"
+     ]
+    ],
+    "node2": [
+     [
+      "sub_n2_n1",
+      "replicating"
+     ],
+     [
+      "sub_n2_n3",
+      "replicating"
+     ]
+    ],
+    "node3": [
+     [
+      "sub_n3_n1",
+      "replicating"
+     ],
+     [
+      "sub_n3_n2",
+      "replicating"
+     ]
+    ]
+   },
+   "all_subs_replicating_s_after_convergence": 0.05,
+   "wall_s": 124.52,
+   "fired_exactly_once": 70,
+   "fired_more_than_once": 130,
+   "extra_fires": 130,
+   "never_fired": 0,
+   "fires_by_worker": {
+    "w1": 165,
+    "w2": 165
+   },
+   "worker_stats": {
+    "w1": {
+     "claimed": 165,
+     "fired": 165,
+     "lost_race_after_settle": 0,
+     "done_update_missed": 10,
+     "idle_polls": 573,
+     "errors": []
+    },
+    "w2": {
+     "claimed": 165,
+     "fired": 165,
+     "lost_race_after_settle": 0,
+     "done_update_missed": 5,
+     "idle_polls": 573,
+     "errors": []
+    }
+   },
+   "final_undone": {
+    "node1": 0,
+    "node2": 0,
+    "node3": 0
+   },
+   "final_jobs_converged": true
+  },
+  "scenario_wall_s": 348.5
+ },
+ "S4": {
+  "index_present_before_insert": [
+   [
+    "CREATE INDEX embeddings_vec_hnsw ON public.embeddings USING hnsw (vec vector_cosine_ops)"
+   ]
+  ],
+  "insert_with_hnsw_s_node1": 98.66,
+  "replicated_to_node2_s_after_insert": 10.34,
+  "node3_count": 20000,
+  "hnsw_index_size": {
+   "node1": "39 MB",
+   "node2": "39 MB",
+   "node3": "39 MB"
+  },
+  "standalone_hnsw_build_s_node1": 20.17,
+  "node2_plan": [
+   "Limit  (cost=613.82..632.55 rows=10 width=24)",
+   "  ->  Index Scan using embeddings_vec_hnsw on embeddings  (cost=613.82..36385.92 rows=19096 width=24)",
+   "        Order By: (vec <=> '[6.753696e-05,0.016401503,-0.015050511,-0.048894607,-0.024961995,-0.054442633,0.003301959,0."
+  ],
+  "exact_scan_vs_numpy_truth_recall_10_queries": 1.0,
+  "ef_search_40": {
+   "p50_ms": 2.26,
+   "p95_ms": 3.61,
+   "recall_at_10": 0.22
+  },
+  "ef_search_100": {
+   "p50_ms": 3.72,
+   "p95_ms": 4.2,
+   "recall_at_10": 0.388
+  },
+  "ef_search_400": {
+   "p50_ms": 10.28,
+   "p95_ms": 21.06,
+   "recall_at_10": 0.794
+  },
+  "usable_on_node2_without_extra_steps": true,
+  "scenario_wall_s": 132.1
+ },
+ "S6": {
+  "node1": {
+   "mem": "305.4MiB / 1GiB",
+   "mem_pct": "29.82%",
+   "cpu_pct": "2.40%",
+   "pgdata_du": "264M",
+   "db_size_titan": "81 MB",
+   "rows": {
+    "tasks": 10005,
+    "jobs": 200,
+    "embeddings": 20000
+   }
+  },
+  "node2": {
+   "mem": "229.1MiB / 1GiB",
+   "mem_pct": "22.37%",
+   "cpu_pct": "0.43%",
+   "pgdata_du": "217M",
+   "db_size_titan": "81 MB",
+   "rows": {
+    "tasks": 10005,
+    "jobs": 200,
+    "embeddings": 20000
+   }
+  },
+  "node3": {
+   "mem": "207.9MiB / 1GiB",
+   "mem_pct": "20.31%",
+   "cpu_pct": "0.01%",
+   "pgdata_du": "217M",
+   "db_size_titan": "81 MB",
+   "rows": {
+    "tasks": 10005,
+    "jobs": 200,
+    "embeddings": 20000
+   }
+  },
+  "image": "titan-spike-pgedge:local",
+  "image_content_size_mb": 57.2,
+  "image_disk_usage": "220MB",
+  "scenario_wall_s": 22.8
+ },
+ "S7": {
+  "method": "pg_dump -Fc -n public (logical) from node1; pg_restore into a fresh node without Spock",
+  "dump_s": 8.84,
+  "dump_size_mb": 37.4,
+  "dump_contains_create_extension_vector": false,
+  "restore_s": 24.62,
+  "pg_restore_rc": 1,
+  "pg_restore_stderr": "pg_restore: error: could not execute query: ERROR:  schema \"public\" already exists\nCommand was: CREATE SCHEMA public;\n\n\npg_restore: warning: errors ignored on restore: 1",
+  "manual_steps": [
+   "CREATE EXTENSION vector before pg_restore (-n public does not dump extensions)"
+  ],
+  "row_counts_node1": {
+   "tasks": 10005,
+   "jobs": 200,
+   "embeddings": 20000,
+   "alembic_version": 1
+  },
+  "row_counts_restored": {
+   "tasks": 10005,
+   "jobs": 200,
+   "embeddings": 20000,
+   "alembic_version": 1
+  },
+  "counts_match": true,
+  "tasks_checksum_match": true,
+  "restored_hnsw_index": [
+   [
+    "embeddings_vec_hnsw"
+   ]
+  ],
+  "scenario_wall_s": 37.6
+ },
+ "run_finished": "2026-09-24T09:54:24.261416+00:00",
+ "versions": {
+  "postgres": "17.11 (REL_17_11 + spock/patches/17/*.diff, built from source)",
+  "spock": "5.0.11",
+  "pgvector": "0.8.6",
+  "base_image": "ubuntu:24.04",
+  "docker": "29.3.1",
+  "compose": "v5.1.1",
+  "python": {
+   "python": "3.11",
+   "psycopg": "3.3.6",
+   "sqlalchemy": "2.0.54",
+   "alembic": "1.20.0",
+   "pgvector-python": "0.5.0",
+   "numpy": "2.4.6"
+  }
+ },
+ "S8": {
+  "postgresql": {
+   "licence": "PostgreSQL License",
+   "source": "https://github.com/postgres/postgres/blob/REL_17_11/COPYRIGHT",
+   "release_used": "17.11, tag REL_17_11 'Stamp 17.11.' commit dated 2026-08-10 (https://github.com/postgres/postgres/tree/REL_17_11)",
+   "latest_18": "REL_18_6 tag exists"
+  },
+  "spock": {
+   "licence": "PostgreSQL License (LICENSE.md)",
+   "source": "https://github.com/pgEdge/spock/blob/v5.0.11/LICENSE.md",
+   "previous_licence": "pgEdge Community License 1.0 up to 4.x (https://github.com/pgEdge/spock/blob/v4.0.10/PGEDGE-COMMUNITY-LICENSE.md)",
+   "latest_stable": "v5.0.11 tag, commit dated 2026-07-29; notes in docs/spock_release_notes.md",
+   "latest_prerelease": "v6.0.0-beta.1 tag, commit dated 2026-07-01",
+   "github_releases_page": "empty (tags only): https://github.com/pgEdge/spock/releases",
+   "main_branch_last_commit": "2026-09-23"
+  },
+  "pgvector": {
+   "licence": "PostgreSQL License",
+   "source": "https://github.com/pgvector/pgvector/blob/v0.8.6/LICENSE",
+   "latest": "0.8.6 (2026-07-29) per https://github.com/pgvector/pgvector/blob/v0.8.6/CHANGELOG.md"
+  },
+  "pgedge_images": {
+   "licence": "PostgreSQL-style licence",
+   "source": "https://github.com/pgEdge/postgres-images/blob/main/LICENSE",
+   "note": "ghcr.io/pgedge/pgedge-postgres not pullable from the spike host (egress 403 on pkg-containers.githubusercontent.com)"
+  }
+ }
+}

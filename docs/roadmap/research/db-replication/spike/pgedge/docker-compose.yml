@@ -1,0 +1,70 @@
+# Three Spock nodes. Replication DSNs use the aliases nX.cluster, which exist
+# only on the `cluster` network; the harness uses the published ports, which
+# go through the `client` network (gw_priority makes it the default route).
+name: spike-pgedge
+
+x-node: &node
+  image: ${PGEDGE_IMAGE:-titan-spike-pgedge:local}
+  environment:
+    POSTGRES_PASSWORD: spike
+    POSTGRES_DB: titan
+  stop_signal: SIGINT
+  stop_grace_period: 30s
+  shm_size: 256m
+  mem_limit: 1g
+  healthcheck:
+    test: ["CMD", "pg_isready", "-U", "postgres", "-d", "titan", "-h", "127.0.0.1"]
+    interval: 2s
+    timeout: 3s
+    retries: 30
+
+services:
+  node1:
+    <<: *node
+    hostname: node1
+    ports: ["127.0.0.1:16001:5432"]
+    networks:
+      client: {gw_priority: 10}
+      cluster: {aliases: [n1.cluster]}
+    volumes: [node1-data:/var/lib/postgresql]
+
+  node2:
+    <<: *node
+    hostname: node2
+    ports: ["127.0.0.1:16002:5432"]
+    networks:
+      client: {gw_priority: 10}
+      cluster: {aliases: [n2.cluster]}
+    volumes: [node2-data:/var/lib/postgresql]
+
+  node3:
+    <<: *node
+    hostname: node3
+    ports: ["127.0.0.1:16003:5432"]
+    networks:
+      client: {gw_priority: 10}
+      cluster: {aliases: [n3.cluster]}
+    volumes: [node3-data:/var/lib/postgresql]
+
+  # S7 only: fresh single node (no Spock preloaded) to restore a backup into.
+  restore:
+    <<: *node
+    profiles: [restore]
+    hostname: restore
+    environment:
+      POSTGRES_PASSWORD: spike
+      POSTGRES_DB: titan
+      SPOCK_DISABLED: "1"
+    ports: ["127.0.0.1:16004:5432"]
+    networks: [client]
+    volumes: [restore-data:/var/lib/postgresql]
+
+networks:
+  client: {}
+  cluster: {}
+
+volumes:
+  node1-data: {}
+  node2-data: {}
+  node3-data: {}
+  restore-data: {}
