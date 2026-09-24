@@ -30,7 +30,7 @@ Branch `feature/m1-policy-approvals`, stacked on `feature/m1-chat-turn`.
 Tasks:
 
 - [x] Spec, ADR 0010 and this plan.
-- [ ] Autonomy tables, services and migration: policy resolution, approval
+- [x] Autonomy tables, services and migration: policy resolution, approval
       states and expiry, audit entries and undo with conflict detection.
 - [ ] Tool layer, policy hook and the first tools (`list_members`,
       `rename_thread`, `notify_member`), wired into `chat_turn`, with a fake
