@@ -1,0 +1,1001 @@
+{
+  "candidate": "CockroachDB",
+  "run_date": "2026-09-24",
+  "scenarios": {
+    "S5": {
+      "upgrade_0001_on_node1": {
+        "cmd": "alembic upgrade 0001_initial",
+        "rc": 0,
+        "seconds": 0.82,
+        "stdout": "",
+        "stderr": "INFO  [alembic.runtime.migration] Context impl CockroachDBImpl.\nINFO  [alembic.runtime.migration] Will assume non-transactional DDL.\nINFO  [alembic.runtime.migration] Running upgrade  -> 0001_initial, initial schema"
+      },
+      "after_0001_seen_on": {
+        "node2": {
+          "tables": [
+            "alembic_version",
+            "embeddings",
+            "jobs",
+            "tasks"
+          ],
+          "alembic_version": "0001_initial",
+          "embeddings.vec type": "vector"
+        },
+        "node3": {
+          "tables": [
+            "alembic_version",
+            "embeddings",
+            "jobs",
+            "tasks"
+          ],
+          "alembic_version": "0001_initial",
+          "embeddings.vec type": "vector"
+        }
+      },
+      "after_0001_check_seconds": 0.13,
+      "stop_node3_seconds": 2.95,
+      "upgrade_head_on_node1_with_node3_stopped": {
+        "cmd": "alembic upgrade head",
+        "rc": 0,
+        "seconds": 1.98,
+        "stdout": "",
+        "stderr": "INFO  [alembic.runtime.migration] Context impl CockroachDBImpl.\nINFO  [alembic.runtime.migration] Will assume non-transactional DDL.\nINFO  [alembic.runtime.migration] Running upgrade 0001_initial -> 0002_priority_and_ann_index, tasks.priority and ANN index on embeddings.vec"
+      },
+      "node3_sql_ready_seconds": 1.36,
+      "node3_after_head": {
+        "priority_column": [
+          [
+            "priority",
+            "bigint",
+            "NO",
+            "0"
+          ]
+        ],
+        "indexes_on_embeddings": [
+          [
+            "embeddings_pkey"
+          ],
+          [
+            "embeddings_vec_idx"
+          ]
+        ],
+        "create_table_embeddings": "CREATE TABLE public.embeddings (\n\tid UUID NOT NULL,\n\tentity_id UUID NOT NULL,\n\tchunk INT8 NOT NULL,\n\tvec VECTOR(384) NOT NULL,\n\tCONSTRAINT embeddings_pkey PRIMARY KEY (id ASC),\n\tVECTOR INDEX embeddings_vec_idx (vec vector_l2_ops)\n) WITH (schema_locked = true);",
+        "alembic_version": "0002_priority_and_ann_index",
+        "vector_index_setting": true
+      },
+      "node3_alembic_current": {
+        "cmd": "alembic current",
+        "rc": 0,
+        "seconds": 0.57,
+        "stdout": "0002_priority_and_ann_index (head)",
+        "stderr": "INFO  [alembic.runtime.migration] Context impl CockroachDBImpl.\nINFO  [alembic.runtime.migration] Will assume non-transactional DDL."
+      },
+      "alembic_check_node1": {
+        "cmd": "alembic check",
+        "rc": 255,
+        "seconds": 1.07,
+        "stdout": "FAILED: New upgrade operations detected: [('remove_index', Index('embeddings_vec_idx', <sqlalchemy.sql.elements.UnaryExpression object at 0x7f1e9bba7f50>)), ('add_index', Index('embeddings_vec_idx', Column('vec', VECTOR(dim=384), table=<embeddings>, nullable=False))), [('modify_type', None, 'jobs', 'kind', {'existing_nullable': False, 'existing_server_default': False, 'existing_comment': None}, VARCHAR(), Text())], [('modify_type', None, 'jobs', 'lease_owner', {'existing_nullable': True, 'existing_server_default': False, 'existing_comment': None}, VARCHAR(), Text())], [('modify_type', None, 'tasks', 'owner', {'existing_nullable': False, 'existing_server_default': False, 'existing_comment': None}, VARCHAR(), Text())], [('modify_type', None, 'tasks', 'title', {'existing_nullable': False, 'existing_server_default': False, 'existing_comment': None}, VARCHAR(), Text())], [('modify_type', None, 'tasks', 'status', {'existing_nullable': False, 'existing_server_default': False, 'existing_comment': None}, VARCHAR(), Text())]]",
+        "stderr": "INFO  [alembic.runtime.migration] Context impl CockroachDBImpl.\nINFO  [alembic.runtime.migration] Will assume non-transactional DDL.\nINFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.schemas\nINFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.tables\nINFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.types\nINFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.constraints\nINFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.defaults\nINFO  [alembic.runtime.plugins] setting up autogenerate plugin alembic.autogenerate.comments\n/home/user/titan/docs/roadmap/research/db-replication/spike/cockroach/.venv/lib/python3.11/site-packages/sqlalchemy_cockroachdb/base.py:239: SAWarning: Did not recognize type 'vector' of column 'vec'\n  warn(f\"Did not recognize type '{type_name}' of column '{name}'\")\nINFO  [alembic.autogenerate.compare.types] Couldn't determine database type for column 'embeddings.vec'\nINFO  [alembic.autogenerate.compare.types] Couldn't determine database type for column 'embeddings.vec'\nINFO  [alembic.autogenerate.compare.constraints] Detected changed index 'embeddings_vec_idx' on 'embeddings': expression #1 'vec NULLS FIRST' to 'vec'\nINFO  [alembic.autogenerate.compare.types] Detected type change from VARCHAR() to Text() on 'jobs.kind'\nINFO  [alembic.autogenerate.compare.types] Detected type change from VARCHAR() to Text() on 'jobs.lease_owner'\nINFO  [alembic.autogenerate.compare.types] Detected type change from VARCHAR() to Text() on 'tasks.owner'\nINFO  [alembic.autogenerate.compare.types] Detected type change from VARCHAR() to Text() on 'tasks.title'\nINFO  [alembic.autogenerate.compare.types] Detected type change from VARCHAR() to Text() on 'tasks.status'\nERROR [alembic.util.messaging] New upgrade operations detected: [('remove_index', Index('embeddings_vec_idx', <sqlalchemy.sql.elements.UnaryExpression object at 0x7f1e9bba7f50>)), ('add_index', Index('embeddings_vec_idx', Column('vec', VECTOR(dim=384), table=<embeddings>, nullable=False))), [('modify_type', None, 'jobs', 'kind', {'existing_nullable': False, 'existing_server_default': False, 'existing_comment': None}, VARCHAR(), Text())], [('modify_type', None, 'jobs', 'lease_owner', {'existing_nullable': True, 'existing_server_default': False, 'existing_comment': None}, VARCHAR(), Text())], [('modify_type', None, 'tasks', 'owner', {'existing_nullable': False, 'existing_server_default': False, 'existing_comment': None}, VARCHAR(), Text())], [('modify_type', None, 'tasks', 'title', {'existing_nullable': False, 'existing_server_default': False, 'existing_comment': None}, VARCHAR(), Text())], [('modify_type', None, 'tasks', 'status', {'existing_nullable': False, 'existing_server_default': False, 'existing_comment': None}, VARCHAR(), Text())]]"
+      },
+      "status": "ran",
+      "scenario_seconds": 9.5
+    },
+    "S1": {
+      "insert_visible_on_all_nodes_seconds": 0.0334,
+      "autocommit": {
+        "trials": [
+          {
+            "trial": 0,
+            "node1": {
+              "value": "autocommit-0-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 23.26
+            },
+            "node2": {
+              "value": "autocommit-0-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 16.53
+            },
+            "value_per_node": {
+              "node1": "autocommit-0-node1",
+              "node2": "autocommit-0-node1",
+              "node3": "autocommit-0-node1"
+            },
+            "winner_write_from": "node1",
+            "last_committer": "node1",
+            "converged": true,
+            "convergence_ms_after_both_returned": 14.75,
+            "version_after": 3
+          },
+          {
+            "trial": 1,
+            "node1": {
+              "value": "autocommit-1-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 6.57
+            },
+            "node2": {
+              "value": "autocommit-1-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 9.27
+            },
+            "value_per_node": {
+              "node1": "autocommit-1-node2",
+              "node2": "autocommit-1-node2",
+              "node3": "autocommit-1-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 5.32,
+            "version_after": 5
+          },
+          {
+            "trial": 2,
+            "node1": {
+              "value": "autocommit-2-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 11.61
+            },
+            "node2": {
+              "value": "autocommit-2-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 11.49
+            },
+            "value_per_node": {
+              "node1": "autocommit-2-node2",
+              "node2": "autocommit-2-node2",
+              "node3": "autocommit-2-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node1",
+            "converged": true,
+            "convergence_ms_after_both_returned": 8.3,
+            "version_after": 7
+          },
+          {
+            "trial": 3,
+            "node1": {
+              "value": "autocommit-3-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 4.76
+            },
+            "node2": {
+              "value": "autocommit-3-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 10.9
+            },
+            "value_per_node": {
+              "node1": "autocommit-3-node2",
+              "node2": "autocommit-3-node2",
+              "node3": "autocommit-3-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 7.41,
+            "version_after": 9
+          },
+          {
+            "trial": 4,
+            "node1": {
+              "value": "autocommit-4-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 4.74
+            },
+            "node2": {
+              "value": "autocommit-4-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 18.72
+            },
+            "value_per_node": {
+              "node1": "autocommit-4-node2",
+              "node2": "autocommit-4-node2",
+              "node3": "autocommit-4-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 6.7,
+            "version_after": 11
+          },
+          {
+            "trial": 5,
+            "node1": {
+              "value": "autocommit-5-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 5.36
+            },
+            "node2": {
+              "value": "autocommit-5-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 9.17
+            },
+            "value_per_node": {
+              "node1": "autocommit-5-node2",
+              "node2": "autocommit-5-node2",
+              "node3": "autocommit-5-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 10.65,
+            "version_after": 13
+          },
+          {
+            "trial": 6,
+            "node1": {
+              "value": "autocommit-6-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 5.72
+            },
+            "node2": {
+              "value": "autocommit-6-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 11.17
+            },
+            "value_per_node": {
+              "node1": "autocommit-6-node2",
+              "node2": "autocommit-6-node2",
+              "node3": "autocommit-6-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 22.16,
+            "version_after": 15
+          },
+          {
+            "trial": 7,
+            "node1": {
+              "value": "autocommit-7-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 21.15
+            },
+            "node2": {
+              "value": "autocommit-7-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 19.09
+            },
+            "value_per_node": {
+              "node1": "autocommit-7-node1",
+              "node2": "autocommit-7-node1",
+              "node3": "autocommit-7-node1"
+            },
+            "winner_write_from": "node1",
+            "last_committer": "node1",
+            "converged": true,
+            "convergence_ms_after_both_returned": 8.14,
+            "version_after": 17
+          },
+          {
+            "trial": 8,
+            "node1": {
+              "value": "autocommit-8-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 7.45
+            },
+            "node2": {
+              "value": "autocommit-8-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 11.3
+            },
+            "value_per_node": {
+              "node1": "autocommit-8-node2",
+              "node2": "autocommit-8-node2",
+              "node3": "autocommit-8-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 4.62,
+            "version_after": 19
+          },
+          {
+            "trial": 9,
+            "node1": {
+              "value": "autocommit-9-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 6.97
+            },
+            "node2": {
+              "value": "autocommit-9-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 15.81
+            },
+            "value_per_node": {
+              "node1": "autocommit-9-node2",
+              "node2": "autocommit-9-node2",
+              "node3": "autocommit-9-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 12.74,
+            "version_after": 21
+          }
+        ],
+        "trials_both_writes_succeeded": 10,
+        "trials_with_any_client_error": 0,
+        "total_client_retries_40001": 0,
+        "winner_counts": {
+          "node1": 2,
+          "node2": 8
+        },
+        "winner_is_last_committer": 9,
+        "all_converged": true,
+        "max_convergence_ms": 22.16,
+        "write_latency_ms_p50": 11.035
+      },
+      "explicit_rmw": {
+        "trials": [
+          {
+            "trial": 0,
+            "node1": {
+              "value": "explicit_rmw-0-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 10.9
+            },
+            "node2": {
+              "value": "explicit_rmw-0-node2",
+              "ok": true,
+              "retries": 1,
+              "errors": [
+                "40001"
+              ],
+              "latency_ms": 22.46
+            },
+            "value_per_node": {
+              "node1": "explicit_rmw-0-node2",
+              "node2": "explicit_rmw-0-node2",
+              "node3": "explicit_rmw-0-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 6.09,
+            "version_after": 23
+          },
+          {
+            "trial": 1,
+            "node1": {
+              "value": "explicit_rmw-1-node1",
+              "ok": true,
+              "retries": 1,
+              "errors": [
+                "40001"
+              ],
+              "latency_ms": 15.59
+            },
+            "node2": {
+              "value": "explicit_rmw-1-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 5.2
+            },
+            "value_per_node": {
+              "node1": "explicit_rmw-1-node1",
+              "node2": "explicit_rmw-1-node1",
+              "node3": "explicit_rmw-1-node1"
+            },
+            "winner_write_from": "node1",
+            "last_committer": "node1",
+            "converged": true,
+            "convergence_ms_after_both_returned": 5.01,
+            "version_after": 25
+          },
+          {
+            "trial": 2,
+            "node1": {
+              "value": "explicit_rmw-2-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 8.47
+            },
+            "node2": {
+              "value": "explicit_rmw-2-node2",
+              "ok": true,
+              "retries": 1,
+              "errors": [
+                "40001"
+              ],
+              "latency_ms": 14.73
+            },
+            "value_per_node": {
+              "node1": "explicit_rmw-2-node2",
+              "node2": "explicit_rmw-2-node2",
+              "node3": "explicit_rmw-2-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 4.57,
+            "version_after": 27
+          },
+          {
+            "trial": 3,
+            "node1": {
+              "value": "explicit_rmw-3-node1",
+              "ok": true,
+              "retries": 1,
+              "errors": [
+                "40001"
+              ],
+              "latency_ms": 15.52
+            },
+            "node2": {
+              "value": "explicit_rmw-3-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 6.62
+            },
+            "value_per_node": {
+              "node1": "explicit_rmw-3-node1",
+              "node2": "explicit_rmw-3-node1",
+              "node3": "explicit_rmw-3-node1"
+            },
+            "winner_write_from": "node1",
+            "last_committer": "node1",
+            "converged": true,
+            "convergence_ms_after_both_returned": 4.82,
+            "version_after": 29
+          },
+          {
+            "trial": 4,
+            "node1": {
+              "value": "explicit_rmw-4-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 7.23
+            },
+            "node2": {
+              "value": "explicit_rmw-4-node2",
+              "ok": true,
+              "retries": 1,
+              "errors": [
+                "40001"
+              ],
+              "latency_ms": 22.34
+            },
+            "value_per_node": {
+              "node1": "explicit_rmw-4-node2",
+              "node2": "explicit_rmw-4-node2",
+              "node3": "explicit_rmw-4-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 7.22,
+            "version_after": 31
+          },
+          {
+            "trial": 5,
+            "node1": {
+              "value": "explicit_rmw-5-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 6.36
+            },
+            "node2": {
+              "value": "explicit_rmw-5-node2",
+              "ok": true,
+              "retries": 1,
+              "errors": [
+                "40001"
+              ],
+              "latency_ms": 17.53
+            },
+            "value_per_node": {
+              "node1": "explicit_rmw-5-node2",
+              "node2": "explicit_rmw-5-node2",
+              "node3": "explicit_rmw-5-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 6.58,
+            "version_after": 33
+          },
+          {
+            "trial": 6,
+            "node1": {
+              "value": "explicit_rmw-6-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 7.64
+            },
+            "node2": {
+              "value": "explicit_rmw-6-node2",
+              "ok": true,
+              "retries": 1,
+              "errors": [
+                "40001"
+              ],
+              "latency_ms": 18.65
+            },
+            "value_per_node": {
+              "node1": "explicit_rmw-6-node2",
+              "node2": "explicit_rmw-6-node2",
+              "node3": "explicit_rmw-6-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 5.81,
+            "version_after": 35
+          },
+          {
+            "trial": 7,
+            "node1": {
+              "value": "explicit_rmw-7-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 12.08
+            },
+            "node2": {
+              "value": "explicit_rmw-7-node2",
+              "ok": true,
+              "retries": 1,
+              "errors": [
+                "40001"
+              ],
+              "latency_ms": 32.69
+            },
+            "value_per_node": {
+              "node1": "explicit_rmw-7-node2",
+              "node2": "explicit_rmw-7-node2",
+              "node3": "explicit_rmw-7-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 6.4,
+            "version_after": 37
+          },
+          {
+            "trial": 8,
+            "node1": {
+              "value": "explicit_rmw-8-node1",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 7.51
+            },
+            "node2": {
+              "value": "explicit_rmw-8-node2",
+              "ok": true,
+              "retries": 1,
+              "errors": [
+                "40001"
+              ],
+              "latency_ms": 21.55
+            },
+            "value_per_node": {
+              "node1": "explicit_rmw-8-node2",
+              "node2": "explicit_rmw-8-node2",
+              "node3": "explicit_rmw-8-node2"
+            },
+            "winner_write_from": "node2",
+            "last_committer": "node2",
+            "converged": true,
+            "convergence_ms_after_both_returned": 7.57,
+            "version_after": 39
+          },
+          {
+            "trial": 9,
+            "node1": {
+              "value": "explicit_rmw-9-node1",
+              "ok": true,
+              "retries": 1,
+              "errors": [
+                "40001"
+              ],
+              "latency_ms": 39.3
+            },
+            "node2": {
+              "value": "explicit_rmw-9-node2",
+              "ok": true,
+              "retries": 0,
+              "errors": [],
+              "latency_ms": 28.17
+            },
+            "value_per_node": {
+              "node1": "explicit_rmw-9-node1",
+              "node2": "explicit_rmw-9-node1",
+              "node3": "explicit_rmw-9-node1"
+            },
+            "winner_write_from": "node1",
+            "last_committer": "node1",
+            "converged": true,
+            "convergence_ms_after_both_returned": 4.59,
+            "version_after": 41
+          }
+        ],
+        "trials_both_writes_succeeded": 10,
+        "trials_with_any_client_error": 10,
+        "total_client_retries_40001": 10,
+        "winner_counts": {
+          "node1": 3,
+          "node2": 7
+        },
+        "winner_is_last_committer": 10,
+        "all_converged": true,
+        "max_convergence_ms": 7.57,
+        "write_latency_ms_p50": 15.125
+      },
+      "status": "ran",
+      "scenario_seconds": 0.8
+    },
+    "S2": {
+      "stop_node3_seconds": 2.94,
+      "insert_seconds": 29.9,
+      "writes_ok": 10000,
+      "write_errors": 0,
+      "write_error_samples": [],
+      "latency_ms": {
+        "p50": 2.677103000223724,
+        "p95": 4.810611750144743,
+        "node1_p50": 2.4488669996571844,
+        "node1_p95": 4.4634758495249125,
+        "node2_p50": 2.872046499760472,
+        "node2_p95": 5.057542999520592
+      },
+      "reference": {
+        "count": 10000,
+        "md5": "560f19a1c5f04693a2de56c726d47bde"
+      },
+      "tasks_table_ranges": [
+        [
+          88,
+          1,
+          [
+            1,
+            2
+          ]
+        ]
+      ],
+      "underreplicated_or_unavailable_ranges_before_restart": {
+        "node1": 69,
+        "node2": 20,
+        "node3": "err OperationalError"
+      },
+      "catch_up_seconds_after_start": {
+        "sql_ready": 1.88,
+        "gateway_checksum_match": 1.97,
+        "local_replica_point_read": 3.06,
+        "underreplicated_zero": 173.75
+      },
+      "local_read_errors_before_success": [
+        "t=1.97 XCUBS: bounded staleness read with minimum timestamp bound of 1790242479.513355000,0 could not be satisfied by a local resolved timestamp of 1790242478.382979839,0",
+        "t=2.3 XCUBS: bounded staleness read with minimum timestamp bound of 1790242479.513355000,0 could not be satisfied by a local resolved timestamp of 1790242478.787558552,0",
+        "t=2.55 XCUBS: bounded staleness read with minimum timestamp bound of 1790242479.513355000,0 could not be satisfied by a local resolved timestamp of 1790242478.989268754,0",
+        "t=2.81 XCUBS: bounded staleness read with minimum timestamp bound of 1790242479.513355000,0 could not be satisfied by a local resolved timestamp of 1790242479.393493397,0"
+      ],
+      "underreplicated_last_seen": {
+        "node1": 0,
+        "node2": 0,
+        "node3": 0
+      },
+      "status": "ran",
+      "scenario_seconds": 209.0
+    },
+    "S3": {
+      "claim_sql": "UPDATE jobs SET lease_owner = %(w)s, lease_until = now() + INTERVAL '30 seconds'\nWHERE id = (\n    SELECT id FROM jobs\n    WHERE done_at IS NULL AND run_at <= now() AND (lease_until IS NULL OR lease_until < now())\n    ORDER BY run_at LIMIT 1\n    FOR UPDATE SKIP LOCKED)\nRETURNING id",
+      "a_healthy": {
+        "jobs_table_ranges(range_id, leaseholder_node_id, replicas)": [
+          [
+            88,
+            1,
+            [
+              1,
+              2,
+              3
+            ]
+          ]
+        ],
+        "wall_seconds": 4.9,
+        "stats_w1": {
+          "worker": "w1",
+          "claims": 85,
+          "fired": 85,
+          "done": 85,
+          "retries_40001": 0,
+          "errors": {},
+          "lost_lease_on_done": 0,
+          "error_samples": [],
+          "slow_or_failed_calls": [],
+          "exit": "no jobs left"
+        },
+        "stats_w2": {
+          "worker": "w2",
+          "claims": 115,
+          "fired": 115,
+          "done": 115,
+          "retries_40001": 0,
+          "errors": {},
+          "lost_lease_on_done": 0,
+          "error_samples": [],
+          "slow_or_failed_calls": [],
+          "exit": "no jobs left"
+        },
+        "fired_exactly_once": 200,
+        "fired_more_than_once": 0,
+        "never_fired": 0,
+        "duplicates_detail": {},
+        "db_done": 200
+      },
+      "b_partition_node1": {
+        "jobs_table_ranges(range_id, leaseholder_node_id, replicas)": [
+          [
+            88,
+            1,
+            [
+              1,
+              2,
+              3
+            ]
+          ]
+        ],
+        "fired_when_partitioned": 100,
+        "partitioned_at_s": 2.73,
+        "partitioned_at_wall": "09:37:42",
+        "fired_during_partition_window_end": 201,
+        "healed_at_s": 62.96,
+        "healed_at_wall": "09:38:42",
+        "wall_seconds": 64.8,
+        "stats_w1": {
+          "worker": "w1",
+          "claims": 59,
+          "fired": 59,
+          "done": 58,
+          "retries_40001": 0,
+          "errors": {
+            "57014": 1
+          },
+          "lost_lease_on_done": 1,
+          "error_samples": [
+            "09:38:44 57014: query execution canceled due to statement timeout"
+          ],
+          "slow_or_failed_calls": [
+            "09:38:44 mark_done ERR 61.5s 57014 query execution canceled due to statement timeout"
+          ],
+          "exit": "no jobs left"
+        },
+        "stats_w2": {
+          "worker": "w2",
+          "claims": 142,
+          "fired": 142,
+          "done": 142,
+          "retries_40001": 0,
+          "errors": {
+            "57014": 1
+          },
+          "lost_lease_on_done": 0,
+          "error_samples": [
+            "09:37:47 57014: query execution canceled due to statement timeout"
+          ],
+          "slow_or_failed_calls": [
+            "09:37:47 mark_done ERR 5.0s 57014 query execution canceled due to statement timeout"
+          ],
+          "exit": "no jobs left"
+        },
+        "fired_exactly_once": 199,
+        "fired_more_than_once": 1,
+        "never_fired": 0,
+        "duplicates_detail": {
+          "9054eaba-5e93-44da-8703-590117a19ad1": [
+            "w1",
+            "w2"
+          ]
+        },
+        "db_done": 200
+      },
+      "after_heal_underreplicated_zero_seconds": 39.3,
+      "status": "ran",
+      "scenario_seconds": 110.4
+    },
+    "S4": {
+      "index_exists_before_insert": true,
+      "insert_20000_with_index_seconds": 239.9,
+      "insert_batch_rows": 100,
+      "node2_plan": [
+        "distribution: local",
+        "",
+        "\u2022 top-k",
+        "\u2502 estimated row count: 10",
+        "\u2502 order: +column9",
+        "\u2502 k: 10",
+        "\u2502",
+        "\u2514\u2500\u2500 \u2022 render",
+        "    \u2502",
+        "    \u2514\u2500\u2500 \u2022 lookup join",
+        "        \u2502 table: embeddings@embeddings_pkey",
+        "        \u2502 equality: (id) = (id)",
+        "        \u2502 equality cols are key",
+        "        \u2502",
+        "        \u2514\u2500\u2500 \u2022 vector search",
+        "              table: embeddings@embeddings_vec_idx",
+        "              target count: 10"
+      ],
+      "node2_uses_vector_index": true,
+      "node2_row_count": 20000,
+      "beam": {
+        "32": {
+          "recall_at_10": 0.304,
+          "p50_ms": 33.23250099947472,
+          "p95_ms": 100.9473660499225
+        },
+        "64": {
+          "recall_at_10": 0.515,
+          "p50_ms": 34.967909999977564,
+          "p95_ms": 95.35665684998092
+        },
+        "128": {
+          "recall_at_10": 0.768,
+          "p50_ms": 58.8335460001872,
+          "p95_ms": 195.5008035998162
+        },
+        "256": {
+          "recall_at_10": 0.959,
+          "p50_ms": 128.51105250001638,
+          "p95_ms": 464.58463384997225
+        },
+        "512": {
+          "recall_at_10": 0.959,
+          "p50_ms": 106.30208200018387,
+          "p95_ms": 272.3629173499375
+        }
+      },
+      "exact_scan_20q": {
+        "p50_ms": 208.3933599997181,
+        "p95_ms": 407.762501150728
+      },
+      "index_build_on_populated_20000_seconds": 259.6,
+      "status": "ran",
+      "scenario_seconds": 565.8
+    },
+    "S6": {
+      "per_node": {
+        "node1": {
+          "mem_usage": [
+            "541.4MiB / 15.72GiB",
+            "542.8MiB / 15.72GiB",
+            "550.7MiB / 15.72GiB",
+            "558.5MiB / 15.72GiB",
+            "558.8MiB / 15.72GiB"
+          ],
+          "cpu": [
+            "17.71%",
+            "8.46%",
+            "7.91%",
+            "9.87%",
+            "10.43%"
+          ],
+          "data_dir_bytes_total": 1509677912,
+          "emergency_ballast_bytes": null,
+          "logs_bytes": null
+        },
+        "node2": {
+          "mem_usage": [
+            "473.1MiB / 15.72GiB",
+            "483MiB / 15.72GiB",
+            "493.8MiB / 15.72GiB",
+            "472.9MiB / 15.72GiB",
+            "475.3MiB / 15.72GiB"
+          ],
+          "cpu": [
+            "11.95%",
+            "9.13%",
+            "7.74%",
+            "24.16%",
+            "15.31%"
+          ],
+          "data_dir_bytes_total": 1403757445,
+          "emergency_ballast_bytes": null,
+          "logs_bytes": null
+        },
+        "node3": {
+          "mem_usage": [
+            "526.9MiB / 15.72GiB",
+            "527.1MiB / 15.72GiB",
+            "525.6MiB / 15.72GiB",
+            "526.6MiB / 15.72GiB",
+            "527.3MiB / 15.72GiB"
+          ],
+          "cpu": [
+            "14.25%",
+            "10.24%",
+            "8.05%",
+            "10.78%",
+            "17.76%"
+          ],
+          "data_dir_bytes_total": 1403876251,
+          "emergency_ballast_bytes": null,
+          "logs_bytes": null
+        }
+      },
+      "image": "cockroachdb/cockroach:v26.3.2",
+      "image_size_bytes": 192614951,
+      "row_counts": {
+        "tasks": 10000,
+        "jobs": 200,
+        "embeddings": 20000
+      },
+      "status": "ran",
+      "scenario_seconds": 97.6
+    }
+  },
+  "packages": {
+    "sqlalchemy": "2.0.54",
+    "sqlalchemy-cockroachdb": "2.0.4",
+    "alembic": "1.20.0",
+    "psycopg": "3.3.6",
+    "pgvector": "0.5.0",
+    "numpy": "2.4.6"
+  },
+  "image": "cockroachdb/cockroach:v26.3.2",
+  "cluster_init_seconds": 2.0,
+  "version": "CockroachDB CCL v26.3.2 (x86_64-pc-linux-gnu, built 2026/09/16 12:26:01, go1.26.6)",
+  "node_ids": {
+    "node1": 1,
+    "node2": 2,
+    "node3": 3
+  },
+  "defaults": {
+    "isolation": "serializable",
+    "autocommit_before_ddl": "on",
+    "diagnostics.reporting.enabled": true,
+    "feature.vector_index.enabled": true,
+    "enterprise.license": "",
+    "num_replicas": "ALTER RANGE default CONFIGURE ZONE USING\n\trange_min_bytes = 134217728,\n\trange_max_bytes = 536870912,\n\tgc.ttlseconds = 14400,\n\tnum_replicas = 3,\n\tconstraints = '[]',\n\tlease_preferences = '[]'"
+  }
+}
