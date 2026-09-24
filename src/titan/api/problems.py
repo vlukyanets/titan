@@ -11,6 +11,7 @@ from titan.domains.accounts import errors as accounts_errors
 from titan.domains.autonomy import errors as autonomy_errors
 from titan.domains.chat import errors as chat_errors
 from titan.domains.notifications import errors as notifications_errors
+from titan.domains.reminders import errors as reminders_errors
 from titan.domains.tasks import errors as tasks_errors
 from titan.domains.usage import errors as usage_errors
 
@@ -46,6 +47,7 @@ def install(app: FastAPI) -> None:
     app.add_exception_handler(autonomy_errors.AutonomyError, _domain)
     app.add_exception_handler(usage_errors.UsageError, _domain)
     app.add_exception_handler(tasks_errors.TasksError, _domain)
+    app.add_exception_handler(reminders_errors.RemindersError, _domain)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -82,6 +84,9 @@ _DOMAIN_STATUS: dict[type[Exception], int] = {
     tasks_errors.InvalidTaskError: 422,
     tasks_errors.InvalidRecurrenceError: 422,
     tasks_errors.AlreadyDoneError: 409,
+    reminders_errors.NotFoundError: 404,
+    reminders_errors.InvalidReminderError: 422,
+    reminders_errors.ReminderClosedError: 409,
 }
 
 

@@ -23,6 +23,7 @@ from titan.domains.accounts.service import Principal
 from titan.domains.notifications.errors import InvalidPushEndpointError, NotFoundError
 from titan.domains.notifications.models import Notification, NotificationKind, PushSubscription
 from titan.notify import Pusher, PushResult, endpoint_allowed
+from titan.storage.ids import uuid7
 
 DEFAULT_PAGE = 50
 MAX_PAGE = 100
@@ -63,9 +64,16 @@ class NotificationsService:
         title: str,
         body: str = "",
         data: dict[str, Any] | None = None,
+        *,
+        notification_id: uuid.UUID | None = None,
     ) -> Notification:
-        """Store a notification for a user, then push it to their devices."""
+        """Store a notification for a user, then push it to their devices.
+
+        Scheduled jobs pass a deterministic `notification_id`, so a job that ran
+        on two nodes produces one notification once they replicate (ADR 0006).
+        """
         notification = Notification(
+            id=notification_id or uuid7(),
             user_id=user_id,
             kind=kind,
             title=title.strip()[:TITLE_LENGTH] or kind.value,

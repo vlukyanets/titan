@@ -60,3 +60,9 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   task and, for a recurring one, its next occurrence. Items shared with the
   caller behave like their own; anything else answers `404`
   ([tasks](../spec/domains/tasks.md)).
+- Reminders: `/api/v1/reminders`. A fired reminder is a `reminder`
+  notification whose data carries `reminder_id`; its Snooze and Done actions
+  call `POST /api/v1/reminders/{id}/snooze` (optional `minutes`) and
+  `POST /api/v1/reminders/{id}/dismiss`. Snoozing a recurring reminder answers
+  a new one-off reminder, because the series has already moved on
+  ([reminders](../spec/domains/reminders.md)).

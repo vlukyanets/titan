@@ -50,7 +50,7 @@ confirm-class action.
 - [ ] Calendar and planner (daily plan, replanning).
 - [ ] Notes, memory and semantic search.
 - [ ] Trackers (habits, health, finance templates).
-- [ ] Reminders with exactly-once firing.
+- [ ] Reminders with exactly-once firing ([plan](plans/m2-reminders.md)).
 
 Exit: every acceptance criterion in `docs/spec/domains/` passes on one node.
 
