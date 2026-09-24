@@ -36,6 +36,11 @@ domain.
 - A push server that answers `404` or `410` has forgotten the endpoint. The
   server then deletes the subscription, and the app registers again when its
   distributor hands it a new endpoint.
+- A scheduled job can run on two nodes during a network partition
+  ([ADR 0006](../../adr/0006-replicated-database-with-vectors.md)). Such jobs
+  give their notification a deterministic id, so the copies become one row once
+  the nodes replicate, and a client shows a notification id it has already shown
+  only once.
 - A failed push is not retried yet. The notification stays in the history.
   Retries move to the worker when it exists.
 
