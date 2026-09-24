@@ -17,13 +17,14 @@ Branch `research/m0-db-replication`. Notes and spike code:
 
 - [x] Shared spike specification: same schema, scenarios and result format for
       every candidate ([spike/SPEC.md](../research/db-replication/spike/SPEC.md)).
-- [ ] Spike: PostgreSQL + pgEdge Spock + pgvector.
-- [ ] Spike: SQLite + cr-sqlite + sqlite-vec.
-- [ ] Spike: CockroachDB.
-- [ ] Spike: YugabyteDB + pgvector.
-- [ ] Comparison table and recommendation in the research notes.
-- [ ] ADR 0006 updated with the recommendation. It stays Proposed until the
+- [x] Spike: PostgreSQL + pgEdge Spock + pgvector.
+- [x] Spike: SQLite + cr-sqlite + sqlite-vec.
+- [x] Spike: CockroachDB (stopped early: backup and licence not checked).
+- [x] Spike: YugabyteDB + pgvector.
+- [x] Comparison table and recommendation in the research notes.
+- [x] ADR 0006 updated with the recommendation. It stays Proposed until the
       owner accepts it.
+- [ ] Owner decision on ADR 0006.
 
 ### 2. LangGraph + Agent SDK spike (ADR 0002)
 
