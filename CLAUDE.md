@@ -81,6 +81,8 @@ The stack is fixed by the ADRs. Update this section when the commands change.
   ([ADR 0002](docs/adr/0002-langgraph-with-agent-sdk-nodes.md)).
 - Docker Compose for local runs: copy `.env.example` to `.env`, then
   `docker compose up -d`. Nodes communicate over Tailscale only.
+- `uv run titan-worker`: the scheduler loop that fires due reminders
+  ([scheduler](docs/architecture/overview.md#scheduler-and-reminders)).
 - `uv run titan claude check`: verify that Claude Code uses exactly the credential
   of `TITAN_CLAUDE_AUTH_MODE` ([claude-auth.md](docs/architecture/claude-auth.md)).
 - After an API change, run `uv run titan openapi` and commit

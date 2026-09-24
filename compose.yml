@@ -56,6 +56,29 @@ services:
       migrate: {condition: service_completed_successfully}
     restart: unless-stopped
 
+  worker:
+    # Same image, other entry point: the scheduler loop that fires reminders.
+    # No ports: it only talks to the database and the push server.
+    image: titan:dev
+    command: ["titan-worker"]
+    environment:
+      <<: *app-env
+      TITAN_PUSH_ALLOWED_ORIGINS: http://${TITAN_TAILSCALE_IP}:8080
+      # Names this node in scheduler leases; the preferred node (the home server)
+      # runs the sweeps while it is up. Both default to this node.
+      TITAN_NODE_NAME: ${TITAN_NODE_NAME:-titan}
+      TITAN_PREFERRED_NODE: ${TITAN_PREFERRED_NODE:-}
+      TITAN_WORKER_HEARTBEAT_FILE: /tmp/titan-worker.alive
+    healthcheck:
+      # Healthy while ticks succeed; a lost database makes the heartbeat go stale.
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/titan-worker.alive') > 60)"]
+      interval: 15s
+      timeout: 3s
+      start_period: 20s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    restart: unless-stopped
+
   ntfy:
     # UnifiedPush server for the phones' ntfy app (ADR 0008). Messages carry only
     # notification ids, so its cache holds no user content.

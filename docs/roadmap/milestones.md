@@ -26,7 +26,8 @@ Exit: ADR 0006 accepted, the spike code thrown away or folded into M1.
 - [x] `uv` project skeleton, lint (ruff), type checks (mypy), pytest,
       GitHub Actions CI ([plan](plans/m1-project-skeleton.md)).
 - [ ] Docker images for `titan-api`, `titan-worker` and `embeddings`, plus a
-      Compose file for one node. `titan-api` and the Compose file are done.
+      Compose file for one node. `titan-api`, `titan-worker` and the Compose
+      file are done; `embeddings` waits for the model choice in M0.
 - [x] SQLAlchemy + Alembic setup with CI migration tests
       ([database-migrations.md](../architecture/database-migrations.md)).
 - [x] Accounts, device pairing and device tokens
