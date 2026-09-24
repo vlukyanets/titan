@@ -1,11 +1,23 @@
-"""One record per agent session that reported usage. Numbers only, no content."""
+"""Usage records, one per agent session (numbers only, no content), and budgets."""
 
 from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, String, Uuid, func
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Uuid,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from titan.storage.base import Base
@@ -30,3 +42,14 @@ class UsageRecord(Base):
     cache_creation_tokens: Mapped[int] = mapped_column(Integer)
     cost_usd: Mapped[float | None] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Budget(Base):
+    """A user's monthly limit. Users without a row have no cap."""
+
+    __tablename__ = "budgets"
+    __table_args__ = (CheckConstraint("limit_usd >= 0", name="limit"),)
+
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    limit_usd: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
