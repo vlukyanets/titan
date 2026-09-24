@@ -45,8 +45,39 @@ Tasks:
 - [ ] Live: one real session per mode once a credential is available
       (blocked).
 
-## Stage 2: LangGraph and the chat turn
+## Stage 2: the chat turn and the chat API
 
-Separate branch, after stage 1. `chat_turn` graph around one node, the
-LangGraph Postgres checkpointer on the main database, and streaming of SDK
-messages as graph events. The chat API with SSE builds on it.
+Branch `feature/m1-chat-turn`, stacked on stage 1. Implements the
+[chat spec](../../spec/domains/chat.md) and
+[ADR 0009](../../adr/0009-chat-history-in-titan-tables.md), and with it the
+"Chat API with SSE streaming" item of M1.
+
+- `titan.domains.chat`: threads and messages, ownership checks, the one-turn
+  rule with stale `streaming` messages counted as failed, and the history
+  window for a turn.
+- LangGraph checkpoint tables in the main database, created by an Alembic
+  revision instead of `AsyncPostgresSaver.setup()`, so every schema change
+  stays an Alembic revision. A test runs `setup()` in a scratch schema and
+  compares the result, so a LangGraph upgrade that changes the tables fails
+  CI.
+- `titan.agent.chat`: the `chat_turn` graph. State holds only ids. The `reply`
+  node loads the history, runs one Agent SDK session with partial messages on,
+  and turns SDK messages into `text` and `tool` events through the LangGraph
+  stream writer. The turn's checkpoints are deleted when it ends.
+- The API process runs turns itself until `titan-worker` exists. A turn runs
+  in a task of its own, so a closed connection does not stop it.
+- Chat routes with SSE through FastAPI's `EventSourceResponse`, keep-alive
+  comments, `503` when the Claude credential is missing, and the event types in
+  the OpenAPI schema.
+- LangSmith tracing is switched off: agent startup removes every
+  `LANGSMITH_*` and `LANGCHAIN_*` variable next to the credential cleaning, so
+  conversations never leave the cluster.
+
+Tasks:
+
+- [x] Spec, ADR 0009 and this plan.
+- [x] Chat tables, service and migration, with the checkpoint tables.
+- [x] `chat_turn` graph with the Postgres checkpointer, tested with a fake
+      `query`.
+- [x] Chat API with SSE, OpenAPI regenerated, docs updated.
+- [ ] Live: one real chat turn once a credential is available (blocked).

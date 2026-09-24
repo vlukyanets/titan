@@ -50,6 +50,7 @@ own spec:
 | Trackers | [domains/trackers.md](domains/trackers.md) | Habits, health metrics, finance entries |
 | Reminders | [domains/reminders.md](domains/reminders.md) | Time-based reminders delivered as push notifications |
 | Notifications | [domains/notifications.md](domains/notifications.md) | Notification history and push delivery through UnifiedPush and ntfy |
+| Chat | [domains/chat.md](domains/chat.md) | Threads with the assistant and replies streamed over SSE |
 
 External integrations (Google Calendar, CalDAV, email and so on) are **out of
 scope for v1**. TITAN is the source of truth for its own data.

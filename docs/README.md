@@ -13,7 +13,8 @@ changes often lives separately in [`roadmap/`](roadmap/README.md).
   [notes and memory](spec/domains/notes-memory.md) ·
   [trackers](spec/domains/trackers.md) ·
   [reminders](spec/domains/reminders.md) ·
-  [notifications](spec/domains/notifications.md)
+  [notifications](spec/domains/notifications.md) ·
+  [chat](spec/domains/chat.md)
 
 ## Architecture: how it is built
 
@@ -34,6 +35,7 @@ changes often lives separately in [`roadmap/`](roadmap/README.md).
 | [0006](adr/0006-replicated-database-with-vectors.md) | Replicated database with vector support | Proposed |
 | [0007](adr/0007-sensitive-data-protection.md) | Protection of sensitive domains | Proposed |
 | [0008](adr/0008-push-messages-carry-references.md) | Push messages carry only references | Accepted |
+| [0009](adr/0009-chat-history-in-titan-tables.md) | Chat history lives in TITAN tables | Accepted |
 
 New ADRs start from the [template](adr/0000-template.md).
 
