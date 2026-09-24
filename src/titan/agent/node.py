@@ -85,6 +85,7 @@ def agent_options(
     allowed_tools: Sequence[str] = (),
     hooks: dict[HookEvent, list[HookMatcher]] | None = None,
     max_turns: int | None = None,
+    partial_messages: bool = False,
 ) -> ClaudeAgentOptions:
     workdir = settings.claude_config_dir / "work"
     workdir.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -103,6 +104,8 @@ def agent_options(
         cwd=workdir,
         env={"CLAUDE_CONFIG_DIR": str(settings.claude_config_dir)},
         max_turns=max_turns,
+        # Token-by-token StreamEvents, for replies shown while they are written.
+        include_partial_messages=partial_messages,
     )
 
 
@@ -164,6 +167,11 @@ async def run_agent(
     async for message in stream:
         if isinstance(message, ResultMessage):
             result = message
+    return agent_run(result, options)
+
+
+def agent_run(result: ResultMessage | None, options: ClaudeAgentOptions) -> AgentRun:
+    """The outcome of a session from its result message, or AgentRunError."""
     if result is None:
         raise AgentRunError("the session ended without a result")
     if result.is_error:
