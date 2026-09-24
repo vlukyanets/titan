@@ -57,7 +57,8 @@ Exit: every acceptance criterion in `docs/spec/domains/` passes on one node.
 
 ## M3: Surfaces and cluster
 
-- [ ] `titan` CLI covering chat, domains and admin.
+- [ ] `titan` CLI covering chat, domains and admin
+      ([plan](plans/m3-cli-client.md)).
 - [ ] Web UI in `titan-web` (the repository still has to be created).
 - [ ] Multi-node deployment over Tailscale with the engine from ADR 0006.
 - [ ] Rolling upgrades with expand/contract migrations.

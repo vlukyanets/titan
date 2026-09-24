@@ -37,14 +37,14 @@ through it, and the API sends pushes to it.
 Chat needs a Claude credential in `.env`: `ANTHROPIC_API_KEY`, or
 `TITAN_CLAUDE_AUTH_MODE=oauth` with `CLAUDE_CODE_OAUTH_TOKEN` for the owner's own
 subscription ([details](docs/architecture/claude-auth.md)). Without one, chat
-answers `503` and everything else works. With a device token from pairing:
+answers `503` and everything else works. Chat from any machine in the tailnet
+with the `titan` client commands ([CLI](docs/spec/cli.md)):
 
 ```bash
-T="Authorization: Bearer <device token>"
-thread=$(curl -s -X POST -H "$T" http://127.0.0.1:8000/api/v1/chat/threads | jq -r .id)
-curl -N -X POST -H "$T" -H 'Content-Type: application/json' \
-  -d '{"content": "Hi! What can you do?"}' \
-  http://127.0.0.1:8000/api/v1/chat/threads/$thread/messages
+uv run titan login http://127.0.0.1:8000 <name>   # pairs this machine, asks the password
+uv run titan chat "Hi! What can you do?"           # streams the reply
+uv run titan chat --continue "And tomorrow?"
+uv run titan approvals list                        # answer what the agent asked for
 ```
 
 Development without containers:
