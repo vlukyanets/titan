@@ -49,7 +49,7 @@ confirm-class action.
 
 - [ ] Tasks and projects ([plan](plans/m2-tasks-projects.md)).
 - [ ] Calendar and planner (daily plan, replanning) ([plan](plans/m2-calendar.md)).
-- [ ] Notes, memory and semantic search.
+- [ ] Notes, memory and semantic search ([plan](plans/m2-notes.md)).
 - [ ] Trackers (habits, health, finance templates) ([plan](plans/m2-trackers.md)).
 - [ ] Reminders with exactly-once firing ([plan](plans/m2-reminders.md)).
 
