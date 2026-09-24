@@ -1,6 +1,6 @@
 # 0011. The CLI client talks HTTP and keeps its token in a private file
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-09-24
 
 ## Context
