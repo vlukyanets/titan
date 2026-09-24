@@ -2,8 +2,8 @@
 
 **A self-hosted AI assistant, planner and tracker for your household, built on the Claude Agent SDK.**
 
-![status](https://img.shields.io/badge/status-pre--alpha%20%C2%B7%20spec%20phase-orange)
-![python](https://img.shields.io/badge/python-uv-blue)
+![status](https://img.shields.io/badge/status-pre--alpha-orange)
+![python](https://img.shields.io/badge/python-3.12-blue)
 ![license](https://img.shields.io/badge/license-Unlicense-lightgrey)
 
 TITAN keeps track of everything you and your family care about (tasks, time,
@@ -14,9 +14,29 @@ Nothing is exposed to the internet.
 
 This repository is the **backend**: API, agent runtime, scheduler and CLI.
 
-> **Status:** the project is in its specification phase. There is no runnable
-> code yet. Start with the [product spec](docs/spec/product.md) and the
+> **Status:** pre-alpha. The platform skeleton (API, migrations, CI) exists; the
+> features in the [product spec](docs/spec/product.md) are being built along the
 > [roadmap](docs/roadmap/milestones.md).
+
+## Running locally
+
+Needs Docker and, for development, [uv](https://docs.astral.sh/uv/).
+
+```bash
+cp .env.example .env          # set a database password
+docker compose up -d          # pgEdge Postgres 18, migrations, API
+curl http://127.0.0.1:8000/api/v1/health/ready
+```
+
+The API is published only on `TITAN_TAILSCALE_IP`. On a real node, set it to the
+node's Tailscale address (`tailscale ip -4`).
+
+Development without containers:
+
+```bash
+uv sync
+uv run pytest
+```
 
 ## Features (v1 target)
 
