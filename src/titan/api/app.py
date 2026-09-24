@@ -19,6 +19,7 @@ from titan.api import (
     notifications,
     problems,
     reminders,
+    security,
     tasks,
     trackers,
     usage,
@@ -51,12 +52,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         version=__version__,
         summary="Self-hosted AI assistant, planner and tracker",
         lifespan=lifespan,
+        # The interactive docs load scripts from a CDN, which the node's CSP and
+        # security rules forbid. docs/api/openapi.json is the reference.
+        docs_url=None,
+        redoc_url=None,
     )
     app.state.settings = settings
     app.state.engine = engine
     app.state.sessions = sessions
     app.state.pusher = UnifiedPushSender(push_client)
     app.state.chat_runtime = ChatRuntime(settings, sessions, pusher=app.state.pusher)
+    app.add_middleware(security.SecurityHeadersMiddleware)
     problems.install(app)
     app.include_router(health.router, prefix=API_PREFIX)
     app.include_router(accounts.router, prefix=API_PREFIX)
