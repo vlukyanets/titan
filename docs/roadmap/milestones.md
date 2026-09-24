@@ -31,7 +31,9 @@ Exit: ADR 0006 accepted, the spike code thrown away or folded into M1.
       ([database-migrations.md](../architecture/database-migrations.md)).
 - [x] Accounts, device pairing and device tokens
       ([plan](plans/m1-accounts-devices.md)).
-- [ ] Agent runtime: LangGraph + Agent SDK node wrapper, model tiers, auth modes.
+- [ ] Agent runtime: LangGraph + Agent SDK node wrapper, model tiers, auth modes
+      ([plan](plans/m1-agent-runtime.md); stage 1 done: auth modes, tiers, node
+      wrapper).
 - [ ] Policy hook, approvals API, audit log with undo.
 - [ ] Chat API with SSE streaming.
 - [x] ntfy notifier and the notification store

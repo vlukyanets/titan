@@ -140,6 +140,27 @@ def notifications_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def claude_check() -> int:
+    """Verify that Claude Code uses exactly the credential of the configured mode."""
+    from claude_agent_sdk import ClaudeSDKError
+
+    from titan.agent import auth
+    from titan.agent.node import self_check
+
+    settings = Settings()
+    try:
+        mode = auth.install(settings)
+        source = asyncio.run(self_check(settings))
+    except auth.ClaudeAuthError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    except ClaudeSDKError as exc:
+        print(f"error: Claude Code could not start: {type(exc).__name__}", file=sys.stderr)
+        return 1
+    print(f"ok: {mode.value} mode, credential source {source}")
+    return 0
+
+
 def users_command(args: argparse.Namespace) -> int:
     from titan.domains.accounts.errors import AccountsError
 
@@ -173,6 +194,9 @@ def main(argv: list[str] | None = None) -> int:
         "--password-stdin", action="store_true", help="read the password from standard input"
     )
     usub.add_parser("list", help="list accounts")
+    c = sub.add_parser("claude", help="Claude credentials")
+    csub = c.add_subparsers(dest="claude_command", required=True)
+    csub.add_parser("check", help="check that only the configured credential is used")
     n = sub.add_parser("notifications", help="send notifications")
     nsub = n.add_subparsers(dest="notifications_command", required=True)
     ns = nsub.add_parser("send", help="send a system notification to a user's devices")
@@ -187,6 +211,8 @@ def main(argv: list[str] | None = None) -> int:
         return users_command(args)
     elif args.command == "notifications":
         return notifications_command(args)
+    elif args.command == "claude":
+        return claude_check()
     elif args.command == "openapi":
         write_openapi(args.output)
         print(f"wrote {args.output}", file=sys.stderr)
