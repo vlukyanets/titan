@@ -76,7 +76,7 @@ Branch `feature/m1-chat-turn`, stacked on stage 1. Implements the
 Tasks:
 
 - [x] Spec, ADR 0009 and this plan.
-- [ ] Chat tables, service and migration, with the checkpoint tables.
+- [x] Chat tables, service and migration, with the checkpoint tables.
 - [ ] `chat_turn` graph with the Postgres checkpointer, tested with a fake
       `query`.
 - [ ] Chat API with SSE, OpenAPI regenerated, docs updated.
