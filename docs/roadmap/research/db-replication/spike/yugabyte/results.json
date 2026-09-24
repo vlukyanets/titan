@@ -1,0 +1,1122 @@
+{
+ "setup": {
+  "seconds_to_ysql_ready": 20.5,
+  "seconds_to_fully_replicated": 133.3,
+  "server_version": "PostgreSQL 15.12-YB-2026.1.2.0-b0 on x86_64-pc-linux-gnu, compiled by clang version 21.1.1 (https://github.com/yugabyte/llvm-project.git efca861cc42178cc4c555d605b36c79d7d121cc1), 64-bit",
+  "default_transaction_isolation": "read committed",
+  "tserver_master_list_fix": {
+   "before": {
+    "node1": {
+     "cmdline": "node1-cluster:7100",
+     "client_log": "[node1-cluster:7100]"
+    },
+    "node2": {
+     "cmdline": "node2-cluster:7100,node1-cluster:7100",
+     "client_log": "[node2-cluster:7100,node1-cluster:7100]"
+    },
+    "node3": {
+     "cmdline": "node2-cluster:7100,node1-cluster:7100,node3-cluster:7100",
+     "client_log": "[node2-cluster:7100,node1-cluster:7100,node3-cluster:7100]"
+    }
+   },
+   "seconds_until_conf_lists_3_masters": 0.3,
+   "restarted": [
+    "node1",
+    "node2"
+   ],
+   "seconds_total": 11.8,
+   "after": {
+    "node1": {
+     "cmdline": "node1-cluster:7100,node2-cluster:7100,node3-cluster:7100",
+     "client_log": "[node1-cluster:7100,node2-cluster:7100,node3-cluster:7100]"
+    },
+    "node2": {
+     "cmdline": "node1-cluster:7100,node2-cluster:7100,node3-cluster:7100",
+     "client_log": "[node1-cluster:7100,node2-cluster:7100,node3-cluster:7100]"
+    },
+    "node3": {
+     "cmdline": "node2-cluster:7100,node1-cluster:7100,node3-cluster:7100",
+     "client_log": "[node2-cluster:7100,node1-cluster:7100,node3-cluster:7100]"
+    }
+   }
+  },
+  "masters": [
+   "Master UUID                      \tRPC Host/Port        \tState    \tRole \tBroadcast Host/Port ",
+   "7e077a5249d84f69b846a6b1072a5a88 \tnode1-cluster:7100   \tALIVE    \tFOLLOWER \tnode1-cluster:7100  ",
+   "e2687464d2e047159d3fd54c131cdccb \tnode2-cluster:7100   \tALIVE    \tFOLLOWER \tnode2-cluster:7100  ",
+   "57b11565fb31450c85d3a7f9a72c657b \tnode3-cluster:7100   \tALIVE    \tLEADER \tnode3-cluster:7100"
+  ],
+  "tservers_alive": 3,
+  "replication_factor": 3
+ },
+ "step_seconds": {
+  "setup": 148.7,
+  "S5": 45.4,
+  "S5x": 17.9,
+  "S1": 9.2,
+  "S2": 50.4,
+  "S3": 74.0,
+  "S4": 62.6,
+  "S6": 81.8,
+  "S7": 39.7,
+  "S2b": 349.4
+ },
+ "run_date": "2026-09-24",
+ "S5": {
+  "upgrade_0001_on_node1": {
+   "ok": true,
+   "seconds": 4.03
+  },
+  "after_0001": {
+   "node2": {
+    "seconds_until_visible": 1.346,
+    "tables": [
+     "alembic_version",
+     "embeddings",
+     "jobs",
+     "tasks"
+    ],
+    "tasks_columns": [
+     "id",
+     "owner",
+     "title",
+     "status",
+     "updated_at",
+     "version"
+    ],
+    "vector_index": [],
+    "vector_extension": "0.8.0-yb-1.0",
+    "alembic_version": [
+     "0001_initial"
+    ]
+   },
+   "node3": {
+    "seconds_until_visible": 1.864,
+    "tables": [
+     "alembic_version",
+     "embeddings",
+     "jobs",
+     "tasks"
+    ],
+    "tasks_columns": [
+     "id",
+     "owner",
+     "title",
+     "status",
+     "updated_at",
+     "version"
+    ],
+    "vector_index": [],
+    "vector_extension": "0.8.0-yb-1.0",
+    "alembic_version": [
+     "0001_initial"
+    ]
+   }
+  },
+  "ddl_rollback_probe_default_flags": {
+   "create_table_survives_rollback": true,
+   "rows_in_probe_after_rollback": 0,
+   "create_index_survives_rollback": true,
+   "notices": []
+  },
+  "upgrade_head_on_node1_with_node3_stopped": {
+   "ok": true,
+   "seconds": 31.48
+  },
+  "upgrade_head_started_seconds_after_node3_stop": 31.5,
+  "node1_after_head": {
+   "tables": [
+    "alembic_version",
+    "embeddings",
+    "jobs",
+    "tasks"
+   ],
+   "tasks_columns": [
+    "id",
+    "owner",
+    "title",
+    "status",
+    "updated_at",
+    "version",
+    "priority"
+   ],
+   "vector_index": [
+    [
+     "embeddings_vec_ybhnsw",
+     "ybhnsw",
+     "['m=16', 'ef_construction=64']"
+    ]
+   ],
+   "vector_extension": "0.8.0-yb-1.0",
+   "alembic_version": [
+    "0002_priority_and_ann_index"
+   ]
+  },
+  "node3_ysql_ready_seconds": 2.7,
+  "node3_after_restart": {
+   "tables": [
+    "alembic_version",
+    "embeddings",
+    "jobs",
+    "tasks"
+   ],
+   "tasks_columns": [
+    "id",
+    "owner",
+    "title",
+    "status",
+    "updated_at",
+    "version",
+    "priority"
+   ],
+   "vector_index": [
+    [
+     "embeddings_vec_ybhnsw",
+     "ybhnsw",
+     "['m=16', 'ef_construction=64']"
+    ]
+   ],
+   "vector_extension": "0.8.0-yb-1.0",
+   "alembic_version": [
+    "0002_priority_and_ann_index"
+   ]
+  },
+  "node3_schema_check_seconds_after_start": 4.5,
+  "seconds_until_fully_replicated_after_node3_start": 0.5
+ },
+ "S5_extra_transactional_ddl": {
+  "probe": {
+   "create_table_survives_rollback": false
+  },
+  "alembic_head": {
+   "ok": true,
+   "seconds": 3.14
+  },
+  "schema": {
+   "tables": [
+    "alembic_version",
+    "embeddings",
+    "jobs",
+    "tasks"
+   ],
+   "tasks_columns": [
+    "id",
+    "owner",
+    "title",
+    "status",
+    "updated_at",
+    "version",
+    "priority"
+   ],
+   "vector_index": [
+    [
+     "embeddings_vec_ybhnsw",
+     "ybhnsw",
+     "['m=16', 'ef_construction=64']"
+    ]
+   ],
+   "vector_extension": "0.8.0-yb-1.0",
+   "alembic_version": [
+    "0002_priority_and_ann_index"
+   ]
+  }
+ },
+ "S1": {
+  "trials": [
+   {
+    "isolation": "read committed",
+    "insert_visible_on_all_nodes_s": 0.533,
+    "writers": {
+     "node2": {
+      "value": "from-node2-0",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 70.47
+     },
+     "node1": {
+      "value": "from-node1-0",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 76.55
+     }
+    },
+    "finished_order": [
+     "node2",
+     "node1"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node1-0",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node1-0",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node1-0",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.229
+   },
+   {
+    "isolation": "read committed",
+    "insert_visible_on_all_nodes_s": 0.21,
+    "writers": {
+     "node2": {
+      "value": "from-node2-1",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 87.86
+     },
+     "node1": {
+      "value": "from-node1-1",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 92.94
+     }
+    },
+    "finished_order": [
+     "node2",
+     "node1"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node1-1",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node1-1",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node1-1",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.276
+   },
+   {
+    "isolation": "read committed",
+    "insert_visible_on_all_nodes_s": 0.317,
+    "writers": {
+     "node2": {
+      "value": "from-node2-2",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 51.49
+     },
+     "node1": {
+      "value": "from-node1-2",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 85.72
+     }
+    },
+    "finished_order": [
+     "node2",
+     "node1"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node1-2",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node1-2",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node1-2",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.31
+   },
+   {
+    "isolation": "read committed",
+    "insert_visible_on_all_nodes_s": 0.232,
+    "writers": {
+     "node2": {
+      "value": "from-node2-3",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 104.26
+     },
+     "node1": {
+      "value": "from-node1-3",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 118.49
+     }
+    },
+    "finished_order": [
+     "node2",
+     "node1"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node1-3",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node1-3",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node1-3",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.297
+   },
+   {
+    "isolation": "read committed",
+    "insert_visible_on_all_nodes_s": 0.224,
+    "writers": {
+     "node1": {
+      "value": "from-node1-4",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 39.76
+     },
+     "node2": {
+      "value": "from-node2-4",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 63.66
+     }
+    },
+    "finished_order": [
+     "node1",
+     "node2"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node2-4",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node2-4",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node2-4",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.182
+   },
+   {
+    "isolation": "repeatable read",
+    "insert_visible_on_all_nodes_s": 0.278,
+    "writers": {
+     "node1": {
+      "value": "from-node1-10",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 50.15
+     },
+     "node2": {
+      "value": "from-node2-10",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 107.42
+     }
+    },
+    "finished_order": [
+     "node1",
+     "node2"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node2-10",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node2-10",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node2-10",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.293
+   },
+   {
+    "isolation": "repeatable read",
+    "insert_visible_on_all_nodes_s": 0.23,
+    "writers": {
+     "node1": {
+      "value": "from-node1-11",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 53.45
+     },
+     "node2": {
+      "value": "from-node2-11",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 88.72
+     }
+    },
+    "finished_order": [
+     "node1",
+     "node2"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node2-11",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node2-11",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node2-11",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.291
+   },
+   {
+    "isolation": "repeatable read",
+    "insert_visible_on_all_nodes_s": 0.352,
+    "writers": {
+     "node1": {
+      "value": "from-node1-12",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 41.97
+     },
+     "node2": {
+      "value": "from-node2-12",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 72.31
+     }
+    },
+    "finished_order": [
+     "node1",
+     "node2"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node2-12",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node2-12",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node2-12",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.266
+   },
+   {
+    "isolation": "serializable",
+    "insert_visible_on_all_nodes_s": 0.39,
+    "writers": {
+     "node1": {
+      "value": "from-node1-20",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 48.81
+     },
+     "node2": {
+      "value": "from-node2-20",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 82.87
+     }
+    },
+    "finished_order": [
+     "node1",
+     "node2"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node2-20",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node2-20",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node2-20",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.218
+   },
+   {
+    "isolation": "serializable",
+    "insert_visible_on_all_nodes_s": 0.265,
+    "writers": {
+     "node2": {
+      "value": "from-node2-21",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 50.86
+     },
+     "node1": {
+      "value": "from-node1-21",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 106.88
+     }
+    },
+    "finished_order": [
+     "node2",
+     "node1"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node1-21",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node1-21",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node1-21",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.293
+   },
+   {
+    "isolation": "serializable",
+    "insert_visible_on_all_nodes_s": 0.28,
+    "writers": {
+     "node1": {
+      "value": "from-node1-22",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 71.07
+     },
+     "node2": {
+      "value": "from-node2-22",
+      "attempts": 1,
+      "retries": 0,
+      "errors": [],
+      "rowcount": 1,
+      "latency_ms": 97.07
+     }
+    },
+    "finished_order": [
+     "node1",
+     "node2"
+    ],
+    "final": {
+     "node1": {
+      "title": "from-node2-22",
+      "version": 3
+     },
+     "node2": {
+      "title": "from-node2-22",
+      "version": 3
+     },
+     "node3": {
+      "title": "from-node2-22",
+      "version": 3
+     }
+    },
+    "converged_s_after_both_returned": 0.228
+   }
+  ]
+ },
+ "S2": {
+  "baseline_rows_before": 11,
+  "insert": {
+   "rows": 10000,
+   "seconds": 38.0,
+   "ok_by_node": {
+    "node1": 5000,
+    "node2": 5000
+   },
+   "write_errors": 0,
+   "errors": {},
+   "p50_ms": 1.34,
+   "p95_ms": 4.6,
+   "p99_ms": 25.19,
+   "max_ms": 612.57,
+   "per_node_p50_ms": {
+    "node1": 1.39,
+    "node2": 1.28
+   },
+   "per_node_p95_ms": {
+    "node1": 4.48,
+    "node2": 4.62
+   }
+  },
+  "insert_started_s_after_stop": 0.0,
+  "insert_finished_s_after_stop": 38.2,
+  "health_while_node3_down": {
+   "dead_nodes": [],
+   "most_recent_uptime": 26,
+   "under_replicated_tablets": 0
+  },
+  "expected_rows": 10011,
+  "expected_md5": "e342885efb1e4eb3c3bf2f98b01f8343",
+  "tasks_tablet_watermarks_before_node3_start": {
+   "7062b2f1de2f4f5cbb1829dae8d6ca9c": {
+    "leader": "node2-cluster",
+    "peers": {
+     "node3-cluster": {
+      "received": 65,
+      "applied": 65
+     },
+     "node1-cluster": {
+      "received": 10065,
+      "applied": 10065
+     },
+     "node2-cluster": {
+      "received": 10065,
+      "applied": 10065
+     }
+    }
+   }
+  },
+  "node3_ysql_ready_s": 4.88,
+  "node3_tasks_replica_caught_up_s_after_start": 7.2,
+  "tasks_tablet_watermarks_at_catch_up": {
+   "7062b2f1de2f4f5cbb1829dae8d6ca9c": {
+    "leader": "node2-cluster",
+    "peers": {
+     "node3-cluster": {
+      "received": 10065,
+      "applied": 10065
+     },
+     "node1-cluster": {
+      "received": 10065,
+      "applied": 10065
+     },
+     "node2-cluster": {
+      "received": 10065,
+      "applied": 10065
+     }
+    }
+   }
+  },
+  "node3_checksum_match_s_after_start": 7.3,
+  "node3_checksum": [
+   10011,
+   "e342885efb1e4eb3c3bf2f98b01f8343"
+  ],
+  "node3_fully_replicated_s_after_start": 7.64,
+  "node3_follower_read_checksum": [
+   10011,
+   "e342885efb1e4eb3c3bf2f98b01f8343"
+  ]
+ },
+ "S3": {
+  "claim_sql": "update jobs set lease_owner = %(w)s, lease_until = now() + interval '30 seconds'\nwhere id = (\n    select id from jobs\n    where done_at is null and run_at <= now() and (lease_until is null or lease_until < now())\n    order by run_at\n    limit 1\n    for update skip locked)\nreturning id",
+  "a_healthy": {
+   "jobs": 200,
+   "exactly_once": 200,
+   "more_than_once": 0,
+   "never": 0,
+   "duplicate_job_ids": [],
+   "fired_by_worker": {
+    "w1": 80,
+    "w2": 120
+   },
+   "jobs_not_marked_done_in_db": 0,
+   "seconds": 4.0,
+   "events": {},
+   "worker_stats": {
+    "w1": {
+     "worker": "w1",
+     "node": "node1",
+     "claimed": 80,
+     "fired": 80,
+     "marked_done": 80,
+     "done_update_matched_0_rows": 0,
+     "retries": 0,
+     "errors": {},
+     "idle_polls": 0,
+     "timed_out": false
+    },
+    "w2": {
+     "worker": "w2",
+     "node": "node2",
+     "claimed": 120,
+     "fired": 120,
+     "marked_done": 120,
+     "done_update_matched_0_rows": 0,
+     "retries": 0,
+     "errors": {},
+     "idle_polls": 0,
+     "timed_out": false
+    }
+   }
+  },
+  "b_partition": {
+   "jobs": 200,
+   "exactly_once": 200,
+   "more_than_once": 0,
+   "never": 0,
+   "duplicate_job_ids": [],
+   "fired_by_worker": {
+    "w1": 56,
+    "w2": 144
+   },
+   "jobs_not_marked_done_in_db": 0,
+   "seconds": 68.2,
+   "events": {
+    "fired_at_partition": 100,
+    "partitioned_at_s": 2.61,
+    "fired_during_partition_by_worker": {
+     "w1": 56,
+     "w2": 144
+    },
+    "healed_at_s": 62.8
+   },
+   "worker_stats": {
+    "w1": {
+     "worker": "w1",
+     "node": "node1",
+     "claimed": 56,
+     "fired": 56,
+     "marked_done": 56,
+     "done_update_matched_0_rows": 0,
+     "retries": 0,
+     "errors": {
+      "InternalError_: Rpc timeout, passed: <t>, timeout: <t>, now: <t>, last_read_time_: <t>": 1,
+      "OperationalError: connection failed: connection to server at \"127.0.0.1\", port 16301 failed: FATAL:  the database system is shutting down": 6,
+      "OperationalError: connection failed: connection to server at \"127.0.0.1\", port 16301 failed: server closed the connection unexpectedly": 67
+     },
+     "idle_polls": 0,
+     "timed_out": false
+    },
+    "w2": {
+     "worker": "w2",
+     "node": "node2",
+     "claimed": 144,
+     "fired": 144,
+     "marked_done": 144,
+     "done_update_matched_0_rows": 0,
+     "retries": 0,
+     "errors": {
+      "QueryCanceled: canceling statement due to statement timeout": 1
+     },
+     "idle_polls": 0,
+     "timed_out": false
+    }
+   },
+   "node1_rejoined_fully_replicated_s": 0.2
+  }
+ },
+ "S4": {
+  "insert_20k_with_index_s": 3.8,
+  "rows_node1": 20000,
+  "rows_node2": 20000,
+  "ef_search_default": "40",
+  "queries_node2": [
+   {
+    "ef_search": "default(40)",
+    "p50_ms": 2.04,
+    "p95_ms": 14.35,
+    "recall_at_10": 0.191,
+    "min_recall": 0.0,
+    "plan": "Limit  (cost=0.00..0.21 rows=10 width=24)\n  ->  Index Scan using embeddings_vec_ybhnsw on embeddings  (cost=0.00..20.51 rows=1000 width=24)\n        Order By: (vec <=> '[6.8e-05,0.016402,-0.015051,-0.048895,-0.024962,-0.054443,0.003302,0.073579,-0.027023,-0.034065,0.026893,0.019594,0.005787,-0.051084,-0.001606,0.038173,-0.073799,-0.025124,-0.10438,-0.070797,-0.101114,-0.012907,-0.069584,0.014893,0.008606,-0.010263,-0.138173,-0.029575,-0.002663,0.006221,-0.084006,-0.026229,-0.053722,-0.044406,0.058245,-0.044335,-0.001785,0.048554,-0.03204,-0.006133,0.006065,0.003502,-0.067257,0.00418,0.074601,-0.08494,0.047181,0.006553,-0.035218,0.109825,0.041849,-0.065842,0.004091,0.031661,-0.010364,0.037493,-0.003652,0.036633,0.078977,-0.037095,0.011153,-0.025436,0.006987,-0.065178,-0.031804,-0.010771,0.049343,0.062874,-0.072663,-0.043627,0.035516,-0.109386,-0.025429,-0.005341,0.069012,0.037849,-0.017964,-0.020235,-0.013736,0.083644,-0.023499,-0.016672,0.019358,-0.00663,-0.010831,-0.061164,-0.000633,-0.024353,0.064022,0.035855,-0.001326,0.036695,-0.018659,0.057763,-0.000296,0.032028,-0.070872,0.019033,-0.092685,-0.111742,-0.016716,-0.049407,0.009007,0.12324,-0.045663,-0.034255,0.011277,0.027067,-0.009685,-0.011306,0.038566,0.028544,-0.05675,-0.004347,0.001937,-0.057893,0.014265,-0.047103,0.053368,0.010582,0.004903,-0.032448,-0.006512,-0.109679,-0.062116,0.01992,-0.116861,0.04648,-0.095863,0.041546,-0.046419,0.042768,0.007189,-0.084374,0.06858,0.079152,-0.003613,-0.015038,-0.008777,-0.053537,0.060314,-0.029805,-0.00281,-0.043553,-0.034372,-0.070149,0.069015,-0.00846,0.05303,0.000732,-0.038124,-0.017935,-0.030757,0.000437,-0.020603,-0.016466,-0.075685,-0.044297,0.09081,-0.036852,-0.057871,0.01852,0.077261,-0.079828,-0.011448,-0.0347,-0.096682,0.040348,-0.001287,0.003922,-0.041303,0.024968,-0.029608,-0.007846,-0.060845,-0.066766,0.073322,-0.027841,0.016014,-0.001855,-0.024219,-0.027888,0.034592,-0.016573,-0.008314,0.00122,0.064592,0.037361,0.021005,-0.030941,-0.075872,0.05213,0.053059,-0.007725,0.02975,0.042902,0.045633,0.050585,-0.025014,0.083174,-0.06844,0.04731,0.027117,0.047963,0.10316,0.081498,-0.062872,-0.09271,0.044848,-0.055725,-0.000681,0.046102,-0.090247,-0.115841,0.014236,0.002437,-0.013495,0.002116,-0.047243,-0.083093,-0.00915,-0.053348,-0.090229,0.027763,-0.003371,0.022319,-0.054314,-0.036128,-0.054849,-0.048678,0.010728,-0.042986,0.019548,0.018653,0.111184,-0.076466,0.048747,-0.004913,-0.00077,-0.079599,-0.025265,0.040802,-0.004528,0.00445,-0.015961,0.063387,-0.001179,-0.120806,-0.037996,-0.108089,-0.178508,-0.029104,0.073214,0.002587,-0.064374,-0.051646,0.062072,0.008654,0.002635,-0.002935,0.002108,0.044218,0.030337,0.011842,-0.057255,0.028061,-0.037566,0.060053,-0.069782,-0.007556,-0.000404,-0.072725,0.094538,0.080178,-0.025451,0.042368,0.02079,-0.143488,0.013747,-0.003368,0.004569,-0.059122,-0.014787,-0.009787,0.065228,0.01836,-0.000305,0.083942,-0.030484,-0.02138,-0.099742,0.086146,0.052943,0.050336,0.036723,0.006047,0.011831,-0.013835,-0.011178,0.002981,0.083001,0.030508,-0.00321,-0.031809,-0.034862,0.087991,0.027818,0.003709,-0.019006,-0.060888,-0.003671,0.047965,-0.021551,-0.012476,-0.012135,0.006017,-0.087458,-0.012924,-0.046907,0.048565,-0.042307,0.031681,0.083694,-0.017217,-0.033027,0.01051,-0.000111,-0.054551,0.025305,0.110654,-0.014171,-0.011138,-0.057368,0.017518,-0.068461,-0.060772,0.070255,-0.049711,0.059368,0.083689,0.014237,0.030382,0.107181,-0.010801,-0.032557,-0.074294,0.00229,0.081207,0.052683,-0.051722,-0.046961,-0.02768,0.016046,-0.011272,0.011774,0.016291,-0.016403,-0.002206,0.011342,-0.00461,0.027644,0.102713,0.0325,0.003064,-0.09257,0.021299,-0.106875,-0.077358,0.046921,0.038773,-0.008232,-0.093882,-0.020387,-0.037264,0.034963,0.123952,0.01191,-0.042785,-0.064265,-0.00308,-0.009706,-0.06322,0.006388,-0.063187]'::vector)"
+   },
+   {
+    "ef_search": 100,
+    "p50_ms": 1.95,
+    "p95_ms": 3.03,
+    "recall_at_10": 0.342,
+    "min_recall": 0.0,
+    "plan": "Limit  (cost=0.00..0.20 rows=10 width=24)\n  ->  Index Scan using embeddings_vec_ybhnsw on embeddings  (cost=0.00..408.00 rows=20000 width=24)\n        Order By: (vec <=> '[6.8e-05,0.016402,-0.015051,-0.048895,-0.024962,-0.054443,0.003302,0.073579,-0.027023,-0.034065,0.026893,0.019594,0.005787,-0.051084,-0.001606,0.038173,-0.073799,-0.025124,-0.10438,-0.070797,-0.101114,-0.012907,-0.069584,0.014893,0.008606,-0.010263,-0.138173,-0.029575,-0.002663,0.006221,-0.084006,-0.026229,-0.053722,-0.044406,0.058245,-0.044335,-0.001785,0.048554,-0.03204,-0.006133,0.006065,0.003502,-0.067257,0.00418,0.074601,-0.08494,0.047181,0.006553,-0.035218,0.109825,0.041849,-0.065842,0.004091,0.031661,-0.010364,0.037493,-0.003652,0.036633,0.078977,-0.037095,0.011153,-0.025436,0.006987,-0.065178,-0.031804,-0.010771,0.049343,0.062874,-0.072663,-0.043627,0.035516,-0.109386,-0.025429,-0.005341,0.069012,0.037849,-0.017964,-0.020235,-0.013736,0.083644,-0.023499,-0.016672,0.019358,-0.00663,-0.010831,-0.061164,-0.000633,-0.024353,0.064022,0.035855,-0.001326,0.036695,-0.018659,0.057763,-0.000296,0.032028,-0.070872,0.019033,-0.092685,-0.111742,-0.016716,-0.049407,0.009007,0.12324,-0.045663,-0.034255,0.011277,0.027067,-0.009685,-0.011306,0.038566,0.028544,-0.05675,-0.004347,0.001937,-0.057893,0.014265,-0.047103,0.053368,0.010582,0.004903,-0.032448,-0.006512,-0.109679,-0.062116,0.01992,-0.116861,0.04648,-0.095863,0.041546,-0.046419,0.042768,0.007189,-0.084374,0.06858,0.079152,-0.003613,-0.015038,-0.008777,-0.053537,0.060314,-0.029805,-0.00281,-0.043553,-0.034372,-0.070149,0.069015,-0.00846,0.05303,0.000732,-0.038124,-0.017935,-0.030757,0.000437,-0.020603,-0.016466,-0.075685,-0.044297,0.09081,-0.036852,-0.057871,0.01852,0.077261,-0.079828,-0.011448,-0.0347,-0.096682,0.040348,-0.001287,0.003922,-0.041303,0.024968,-0.029608,-0.007846,-0.060845,-0.066766,0.073322,-0.027841,0.016014,-0.001855,-0.024219,-0.027888,0.034592,-0.016573,-0.008314,0.00122,0.064592,0.037361,0.021005,-0.030941,-0.075872,0.05213,0.053059,-0.007725,0.02975,0.042902,0.045633,0.050585,-0.025014,0.083174,-0.06844,0.04731,0.027117,0.047963,0.10316,0.081498,-0.062872,-0.09271,0.044848,-0.055725,-0.000681,0.046102,-0.090247,-0.115841,0.014236,0.002437,-0.013495,0.002116,-0.047243,-0.083093,-0.00915,-0.053348,-0.090229,0.027763,-0.003371,0.022319,-0.054314,-0.036128,-0.054849,-0.048678,0.010728,-0.042986,0.019548,0.018653,0.111184,-0.076466,0.048747,-0.004913,-0.00077,-0.079599,-0.025265,0.040802,-0.004528,0.00445,-0.015961,0.063387,-0.001179,-0.120806,-0.037996,-0.108089,-0.178508,-0.029104,0.073214,0.002587,-0.064374,-0.051646,0.062072,0.008654,0.002635,-0.002935,0.002108,0.044218,0.030337,0.011842,-0.057255,0.028061,-0.037566,0.060053,-0.069782,-0.007556,-0.000404,-0.072725,0.094538,0.080178,-0.025451,0.042368,0.02079,-0.143488,0.013747,-0.003368,0.004569,-0.059122,-0.014787,-0.009787,0.065228,0.01836,-0.000305,0.083942,-0.030484,-0.02138,-0.099742,0.086146,0.052943,0.050336,0.036723,0.006047,0.011831,-0.013835,-0.011178,0.002981,0.083001,0.030508,-0.00321,-0.031809,-0.034862,0.087991,0.027818,0.003709,-0.019006,-0.060888,-0.003671,0.047965,-0.021551,-0.012476,-0.012135,0.006017,-0.087458,-0.012924,-0.046907,0.048565,-0.042307,0.031681,0.083694,-0.017217,-0.033027,0.01051,-0.000111,-0.054551,0.025305,0.110654,-0.014171,-0.011138,-0.057368,0.017518,-0.068461,-0.060772,0.070255,-0.049711,0.059368,0.083689,0.014237,0.030382,0.107181,-0.010801,-0.032557,-0.074294,0.00229,0.081207,0.052683,-0.051722,-0.046961,-0.02768,0.016046,-0.011272,0.011774,0.016291,-0.016403,-0.002206,0.011342,-0.00461,0.027644,0.102713,0.0325,0.003064,-0.09257,0.021299,-0.106875,-0.077358,0.046921,0.038773,-0.008232,-0.093882,-0.020387,-0.037264,0.034963,0.123952,0.01191,-0.042785,-0.064265,-0.00308,-0.009706,-0.06322,0.006388,-0.063187]'::vector)"
+   }
+  ],
+  "exact_seqscan_node2_p50_ms_10_queries": 102.0,
+  "index_build_on_20k_rows_s": 17.01,
+  "index_build_on_empty_table_in_0002_s": 31.48,
+  "follow_up_recall_probe": {
+   "note": "Fresh cluster, same 20k vectors loaded via COPY on node1, first 30 queries.",
+   "immediately_after_load": {
+    "exact_seqscan_node2": 1.0,
+    "node2_ef40": 0.883,
+    "node2_ef100": 0.86,
+    "node2_ef400": 0.99,
+    "node1_ef40": 0.667
+   },
+   "a_few_minutes_later_stable_3_repeats": {
+    "node2_ef40": 0.143,
+    "node2_ef100": 0.36,
+    "node1_ef40": 0.143,
+    "node1_ef100": 0.36
+   },
+   "index_results_are_distance_sorted": true,
+   "rerank_top_k_by_distance_recall@10": {
+    "10": 0.143,
+    "50": 0.18,
+    "100": 0.36,
+    "200": 0.547
+   }
+  }
+ },
+ "S6": {
+  "docker_stats": {
+   "spike-yugabyte-node1-1": [
+    {
+     "cpu": "4.51%",
+     "mem": "506.5MiB / 2GiB"
+    },
+    {
+     "cpu": "4.42%",
+     "mem": "506.7MiB / 2GiB"
+    },
+    {
+     "cpu": "6.67%",
+     "mem": "507.2MiB / 2GiB"
+    }
+   ],
+   "spike-yugabyte-node2-1": [
+    {
+     "cpu": "4.97%",
+     "mem": "467.5MiB / 2GiB"
+    },
+    {
+     "cpu": "5.30%",
+     "mem": "467MiB / 2GiB"
+    },
+    {
+     "cpu": "5.05%",
+     "mem": "467.1MiB / 2GiB"
+    }
+   ],
+   "spike-yugabyte-node3-1": [
+    {
+     "cpu": "13.27%",
+     "mem": "420.2MiB / 2GiB"
+    },
+    {
+     "cpu": "4.28%",
+     "mem": "420.2MiB / 2GiB"
+    },
+    {
+     "cpu": "8.44%",
+     "mem": "421.7MiB / 2GiB"
+    }
+   ]
+  },
+  "disk": {
+   "node1": "145M\t/home/yugabyte/ybd/data",
+   "node2": "131M\t/home/yugabyte/ybd/data",
+   "node3": "132M\t/home/yugabyte/ybd/data"
+  },
+  "processes": {
+   "node1": [
+    "awk x1 4MiB",
+    "bash x1 3MiB",
+    "postgres x5 273MiB",
+    "ps x1 3MiB",
+    "python3 x1 52MiB",
+    "sort x1 3MiB",
+    "tini x1 2MiB",
+    "yb-master x1 101MiB",
+    "yb-tserver x1 304MiB"
+   ],
+   "node2": [
+    "awk x1 4MiB",
+    "bash x1 3MiB",
+    "postgres x5 276MiB",
+    "ps x1 3MiB",
+    "python3 x1 52MiB",
+    "sort x1 2MiB",
+    "tini x1 2MiB",
+    "yb-master x1 89MiB",
+    "yb-tserver x1 273MiB"
+   ],
+   "node3": [
+    "awk x1 4MiB",
+    "bash x1 3MiB",
+    "postgres x5 275MiB",
+    "ps x1 3MiB",
+    "python3 x1 52MiB",
+    "sort x1 3MiB",
+    "tini x1 2MiB",
+    "yb-master x1 68MiB",
+    "yb-tserver x1 257MiB"
+   ]
+  },
+  "image": "yugabytedb/yugabyte:2026.1.2.0-b137",
+  "image_size_bytes": 854889119,
+  "configured_limits": {
+   "master memory_limit_hard_bytes": 402653184,
+   "tserver memory_limit_hard_bytes": 805306368,
+   "tserver db_block_cache_size_bytes": 67108864,
+   "master db_block_cache_size_bytes": 33554432,
+   "docker mem_limit": "2g"
+  }
+ },
+ "S7": {
+  "method": "ysql_dump (pg_dump fork) logical dump of database yugabyte from node1, restored with ysqlsh into a fresh single-node yugabyted container",
+  "dump_rc": 0,
+  "dump_stderr": "",
+  "dump_seconds": 5.4,
+  "dump_bytes": 74640624,
+  "restore_seconds": 19.1,
+  "restore_rc": 0,
+  "restore_errors": [],
+  "restored_indexes": [
+   [
+    "alembic_version_pkc",
+    "CREATE UNIQUE INDEX alembic_version_pkc ON public.alembic_version USING lsm (version_num HASH)"
+   ],
+   [
+    "embeddings_pkey",
+    "CREATE UNIQUE INDEX embeddings_pkey ON public.embeddings USING lsm (id HASH)"
+   ],
+   [
+    "embeddings_vec_ybhnsw",
+    "CREATE INDEX embeddings_vec_ybhnsw ON public.embeddings USING ybhnsw (vec vector_cosine_ops)"
+   ],
+   [
+    "jobs_pkey",
+    "CREATE UNIQUE INDEX jobs_pkey ON public.jobs USING lsm (id HASH)"
+   ],
+   [
+    "tasks_pkey",
+    "CREATE UNIQUE INDEX tasks_pkey ON public.tasks USING lsm (id HASH)"
+   ]
+  ],
+  "restored_alembic_version": [
+   "0002_priority_and_ann_index"
+  ],
+  "counts_source": {
+   "tasks": 10011,
+   "jobs": 200,
+   "embeddings": 20000,
+   "alembic_version": 1
+  },
+  "counts_restored": {
+   "tasks": 10011,
+   "jobs": 200,
+   "embeddings": 20000,
+   "alembic_version": 1
+  },
+  "counts_match": true,
+  "yb_admin_create_database_snapshot": "Started snapshot creation: bb606a45-ab66-4324-86b5-8515b876c69b",
+  "yb_admin_list_snapshots": "Snapshot UUID                    \tState \t \tCreation Time\nbb606a45-ab66-4324-86b5-8515b876c69b \tCOMPLETE \t2026-09-24 09:46:42.944758\nNo snapshot restorations"
+ },
+ "failures": {},
+ "S2b": {
+  "while_two_down": [
+   {
+    "op": "insert",
+    "ok": false,
+    "s": 29.24,
+    "error": "AdminShutdown: terminating connection due to administrator command"
+   },
+   {
+    "op": "insert",
+    "ok": false,
+    "s": 0.01,
+    "error": "OperationalError: connection failed: connection to server at \"127.0.0.1\", port 16301 failed: FATAL:  the database system is shutting down"
+   },
+   {
+    "op": "insert",
+    "ok": false,
+    "s": 0.01,
+    "error": "OperationalError: connection failed: connection to server at \"127.0.0.1\", port 16301 failed: FATAL:  the database system is shutting down"
+   },
+   {
+    "op": "insert",
+    "ok": false,
+    "s": 0.01,
+    "error": "OperationalError: connection failed: connection to server at \"127.0.0.1\", port 16301 failed: FATAL:  the database system is shutting down"
+   },
+   {
+    "op": "insert",
+    "ok": false,
+    "s": 0.02,
+    "error": "OperationalError: connection failed: connection to server at \"127.0.0.1\", port 16301 failed: server closed the connection unexpectedly"
+   },
+   {
+    "op": "select count(*) from tasks",
+    "ok": false,
+    "s": 0.0,
+    "error": "OperationalError: connection failed: connection to server at \"127.0.0.1\", port 16301 failed: server closed the connection unexpectedly"
+   },
+   {
+    "op": "select 1",
+    "ok": false,
+    "s": 0.0,
+    "error": "OperationalError: connection failed: connection to server at \"127.0.0.1\", port 16301 failed: server closed the connection unexpectedly"
+   },
+   {
+    "op": "follower read count(*)",
+    "ok": false,
+    "s": 0.0,
+    "error": "OperationalError: connection failed: connection to server at \"127.0.0.1\", port 16301 failed: server closed the connection unexpectedly"
+   }
+  ],
+  "seconds_with_two_down": 29.3,
+  "after_node2_start_first_successful_write_s": null,
+  "errors_until_recovered": {
+   "OperationalError: connection failed: connection to server at \"127.0.0.1\", port 16301 failed: server closed the connection unexpectedly": 4,
+   "QueryCanceled: canceling statement due to statement timeout": 38
+  },
+  "node3_back_fully_replicated_s": 0.3,
+  "note": "From a follow-up run on a fresh cluster (setup+S5 then S2b) because in the main run S2b crashed in the harness: 'docker compose start node3' blocked on node2's depends_on health check. Harness now uses 'docker start'."
+ },
+ "dev_run_observations": {
+  "S1_dev_run": "In an earlier development run, repeatable-read trials (SELECT version then UPDATE) got SerializationFailure 40001 on one writer (1 retry) in 3/3 trials and serializable trials got DeadlockDetected 40P01 (1 retry) in 3/3 trials. In the main run the two transactions happened not to overlap and saw no errors.",
+  "S3b_before_master_list_fix": "First S3b run without the tserver master-list work-around: after partitioning node1 (master leader), node3 became master leader; node1 and node2 tservers only knew masters [node1] and [node1,node2], so YSQL on BOTH remaining nodes failed (connection timeouts, GetTableSchemaRpc timeouts) for the full 420 s, including after heal. 106 of 200 jobs fired, 0 duplicates.",
+  "partition_probe": "With the fix: partitioning master-leader node1 -> writes on node2 failed for ~12 s then succeeded; after heal node1's postgres restarted and node1 accepted writes again after ~20 s."
+ }
+}
