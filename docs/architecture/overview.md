@@ -178,17 +178,25 @@ Database access goes through SQLAlchemy 2.x (async). Alembic manages schema
 changes, which are rolled out safely across peer nodes as described in
 [database-migrations.md](database-migrations.md).
 
-Replication between nodes is asynchronous, so two rules apply to all data
+Replication between nodes is asynchronous, so these rules apply to all data
 access:
 
-- **Update only what changed.** Services write the fields the user or agent
-  actually changed, never the whole row read earlier. When two nodes edit the
-  same row at the same time, Spock keeps the later commit, so a whole-row write
-  would overwrite unrelated fields.
-- **Conflicts are visible.** Spock's conflict records and the audit log
-  ([ADR 0005](../adr/0005-per-domain-autonomy-policy.md)) let the owner see and
-  undo an edit that lost. Node clocks are kept in sync because conflicts are
-  resolved by commit time.
+- **Write affinity.** API processes send writes to the preferred node (the
+  home server) while it is reachable, and to their local node only when it is
+  not. Spock resolves conflicts by keeping the later row image, whole rows
+  at a time: the M0 spike lost a title change because the other node had
+  changed only the notes of the same row. Conflicts are therefore kept to
+  real partitions.
+- **Update only what changed**, and model rows that several writers change at
+  once (counters, streaks, aggregates) as append-only rows or Spock
+  `delta_apply` columns.
+- **Keys.** Primary keys are application-generated UUIDs. Natural-key unique
+  constraints are rare, because two partitioned nodes can each insert the same
+  key and stay diverged.
+- **Conflicts are visible.** Spock's conflict records, `spock.exception_log`
+  and the audit log ([ADR 0005](../adr/0005-per-domain-autonomy-policy.md))
+  let the owner see and undo an edit that lost. Node clocks are kept in sync
+  because conflicts are resolved by commit time.
 
 Nodes cannot rely on the locale their database was created with: the pgEdge
 images use `C`, where `lower()`, `ILIKE` and sorting treat only ASCII letters
@@ -216,6 +224,8 @@ jobs run **at least once** and every effect is **idempotent**
   a non-preferred holder gives the lease up once it sees the preferred node
   active again, so the preferred node gets it back after at most one lease
   period. Nodes are named by `TITAN_NODE_NAME` (default: the host name).
+  The preferred node is essential: without it, two nodes racing for the same
+  jobs fired 20 % of them twice on a healthy cluster in the M0 spike.
 - Duplicates can then only happen during a real network partition, and their
   effects collapse: a reminder's notification id is derived from the reminder
   and the time it fired for ([reminders](../spec/domains/reminders.md)).

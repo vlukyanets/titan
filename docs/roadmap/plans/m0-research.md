@@ -26,6 +26,11 @@ and results were removed from the tree afterwards and remain in git history.
 - [x] ADR 0006 updated with the recommendation. It stays Proposed until the
       owner accepts it.
 - [x] Owner decision on ADR 0006: accepted.
+- [x] Follow-up on PostgreSQL 18 with equal-peer nodes: SQLAlchemy checks,
+      YugabyteDB partition test, lost updates with field-level writes,
+      duplicate reminders without a preferred node, index builds stalling
+      replication. Findings added to ADR 0006; code in git history under
+      `docs/roadmap/research/db-replication-pg18/`.
 
 ### 2. LangGraph + Agent SDK spike (ADR 0002)
 
