@@ -34,6 +34,19 @@ The API (port 8000) and ntfy (port 8080) are published only on
 (`tailscale ip -4`). Push notifications need that real address: phones reach ntfy
 through it, and the API sends pushes to it.
 
+Chat needs a Claude credential in `.env`: `ANTHROPIC_API_KEY`, or
+`TITAN_CLAUDE_AUTH_MODE=oauth` with `CLAUDE_CODE_OAUTH_TOKEN` for the owner's own
+subscription ([details](docs/architecture/claude-auth.md)). Without one, chat
+answers `503` and everything else works. With a device token from pairing:
+
+```bash
+T="Authorization: Bearer <device token>"
+thread=$(curl -s -X POST -H "$T" http://127.0.0.1:8000/api/v1/chat/threads | jq -r .id)
+curl -N -X POST -H "$T" -H 'Content-Type: application/json' \
+  -d '{"content": "Hi! What can you do?"}' \
+  http://127.0.0.1:8000/api/v1/chat/threads/$thread/messages
+```
+
 Development without containers:
 
 ```bash

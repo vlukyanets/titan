@@ -31,11 +31,10 @@ Exit: ADR 0006 accepted, the spike code thrown away or folded into M1.
       ([database-migrations.md](../architecture/database-migrations.md)).
 - [x] Accounts, device pairing and device tokens
       ([plan](plans/m1-accounts-devices.md)).
-- [ ] Agent runtime: LangGraph + Agent SDK node wrapper, model tiers, auth modes
-      ([plan](plans/m1-agent-runtime.md); stage 1 done: auth modes, tiers, node
-      wrapper).
+- [x] Agent runtime: LangGraph + Agent SDK node wrapper, model tiers, auth modes
+      ([plan](plans/m1-agent-runtime.md); a live run waits for a credential).
 - [ ] Policy hook, approvals API, audit log with undo.
-- [ ] Chat API with SSE streaming.
+- [x] Chat API with SSE streaming ([chat](../spec/domains/chat.md)).
 - [x] ntfy notifier and the notification store
       ([plan](plans/m1-notifications.md)).
 - [x] OpenAPI export to `docs/api/openapi.json` with a CI drift check.

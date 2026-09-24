@@ -69,6 +69,16 @@ and the owner would be billed per token. In `oauth` mode TITAN therefore:
 The same rules work the other way round: in `api-key` mode
 `CLAUDE_CODE_OAUTH_TOKEN` is removed from the subprocess environment.
 
+## In the API process
+
+Until `titan-worker` exists, `titan-api` runs chat turns itself. At startup it
+cleans its own environment as described above and runs the self-check, with a
+60-second limit. If the credential is missing, the check fails or Claude Code
+does not start, the reason is logged, chat answers `503`, and the rest of the
+API keeps working. Fixing the credential needs a restart. The environment
+cleaning also removes every `LANGSMITH_*` and `LANGCHAIN_*` variable, so
+LangSmith tracing can never send conversations out of the cluster.
+
 ## Tests
 
 Both directions are covered by unit tests that start with a polluted environment

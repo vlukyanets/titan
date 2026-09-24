@@ -41,6 +41,15 @@ services:
       TITAN_ALLOW_WILDCARD_BIND: "true"
       # Phones register endpoints on this ntfy; the API refuses any other push server.
       TITAN_PUSH_ALLOWED_ORIGINS: http://${TITAN_TAILSCALE_IP}:8080
+      # Chat (docs/architecture/claude-auth.md). Only the selected mode's credential
+      # reaches Claude Code; without it chat answers 503 and the rest works.
+      TITAN_CLAUDE_AUTH_MODE: ${TITAN_CLAUDE_AUTH_MODE:-api-key}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+    # Claude Code writes session transcripts into its config directory; keep them
+    # in memory, since TITAN never resumes them (ADR 0009).
+    tmpfs:
+      - /app/.local/state/titan:uid=10001,gid=10001,mode=0700
     ports:
       - "${TITAN_TAILSCALE_IP:?set TITAN_TAILSCALE_IP to this node's Tailscale address, or 127.0.0.1 for local development}:8000:8000"
     depends_on:
