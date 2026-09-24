@@ -20,7 +20,7 @@ Branch `feature/m2-reminders`, stacked on `feature/m2-tasks-projects`.
 Tasks:
 
 - [x] Spec and this plan.
-- [ ] Reminders table, service and firing.
+- [x] Reminders table, service and firing.
 - [ ] Reminders API, OpenAPI regenerated, docs updated.
 - [ ] Scheduler with leases and the `titan-worker` entry point (separate branch).
 - [ ] Default reminders for tasks, agent tools.
