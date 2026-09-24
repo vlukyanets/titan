@@ -22,7 +22,7 @@ from titan.domains.usage.budget import (
     normalize_limit,
 )
 from titan.domains.usage.errors import ForbiddenError, InvalidBudgetError, NotFoundError
-from titan.domains.usage.models import UsageRecord
+from titan.domains.usage.models import OwnerAlerts, UsageRecord
 from titan.domains.usage.service import UsageService
 
 
@@ -54,10 +54,15 @@ async def sessions(db_url: str) -> AsyncIterator[async_sessionmaker[AsyncSession
     await engine.dispose()
 
 
-async def budget_notifications(session: AsyncSession) -> list[str]:
+async def budget_notifications(session: AsyncSession, user_id: uuid.UUID) -> list[str]:
+    """The states a user was notified of about their own budget."""
     rows = await session.scalars(
         select(Notification.data["state"].astext)
-        .where(Notification.kind == NotificationKind.BUDGET)
+        .where(
+            Notification.kind == NotificationKind.BUDGET,
+            Notification.user_id == user_id,
+            ~Notification.data.has_key("user_id"),
+        )
         .order_by(Notification.created_at, Notification.id)
     )
     return list(rows)
@@ -118,26 +123,94 @@ async def test_each_state_notifies_once_per_month_and_limit(
         assert (await budgets.check(boris.user_id)).state is BudgetState.WARNING
         await usage.record(boris.user_id, "chat", "strong", cost_usd=0.5)
         await budgets.check(boris.user_id)
-        assert await budget_notifications(session) == ["warning"]
+        assert await budget_notifications(session, boris.user_id) == ["warning"]
 
         await usage.record(boris.user_id, "chat", "strong", cost_usd=1.0)
         assert (await budgets.check(boris.user_id)).exceeded
         await budgets.check(boris.user_id)
-        assert await budget_notifications(session) == ["warning", "exceeded"]
+        assert await budget_notifications(session, boris.user_id) == ["warning", "exceeded"]
 
         # A higher limit lifts the cap; reaching it again notifies again.
         raised = await budgets.set_limit(anna, boris.user_id, Decimal("12.5"))
         assert raised.status.state is BudgetState.WARNING
-        assert await budget_notifications(session) == ["warning", "exceeded", "warning"]
+        assert await budget_notifications(session, boris.user_id) == [
+            "warning",
+            "exceeded",
+            "warning",
+        ]
         await usage.record(boris.user_id, "chat", "strong", cost_usd=3.0)
         await budgets.check(boris.user_id)
-        assert await budget_notifications(session) == [
+        assert await budget_notifications(session, boris.user_id) == [
             "warning",
             "exceeded",
             "warning",
             "exceeded",
         ]
-        owner_notified = await session.scalar(
-            select(func.count()).where(Notification.user_id == anna.user_id)
+        # With the default owner alerts, the owner hears of each exceeded limit only.
+        assert await owner_heard(session, anna.user_id) == [
+            "exceeded: boris reached their monthly budget",
+            "exceeded: boris reached their monthly budget",
+        ]
+
+
+async def owner_heard(session: AsyncSession, owner_id: uuid.UUID) -> list[str]:
+    rows = await session.execute(
+        select(Notification.title, Notification.data["state"].astext)
+        .where(Notification.user_id == owner_id, Notification.data.has_key("user_id"))
+        .order_by(Notification.created_at, Notification.id)
+    )
+    return [f"{state}: {title}" for title, state in rows.tuples()]
+
+
+@pytest.mark.db
+async def test_owner_alerts_are_set_per_budget(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    anna = await principal(sessions, "anna", Role.OWNER)
+    boris = await principal(sessions, "boris")
+    async with sessions() as session:
+        usage = UsageService(session)
+        budgets = BudgetService(session, notifications=NotificationsService(session))
+
+        async def spend(amount: float) -> BudgetState:
+            await usage.record(boris.user_id, "chat", "strong", cost_usd=amount)
+            return (await budgets.check(boris.user_id)).state
+
+        default = await budgets.set_limit(anna, boris.user_id, Decimal("10"))
+        assert default.status.owner_alerts is OwnerAlerts.EXCEEDED
+        assert await spend(8.5) is BudgetState.WARNING
+        assert await owner_heard(session, anna.user_id) == []
+        assert await spend(2.0) is BudgetState.EXCEEDED
+        await budgets.check(boris.user_id)
+        assert await owner_heard(session, anna.user_id) == [
+            "exceeded: boris reached their monthly budget"
+        ]
+
+        await budgets.set_limit(anna, boris.user_id, Decimal("20"), owner_alerts=OwnerAlerts.ALL)
+        assert await spend(6.0) is BudgetState.WARNING  # 16.50 of 20
+        assert (await owner_heard(session, anna.user_id))[1:] == [
+            "warning: boris used 80 % of their monthly budget"
+        ]
+
+        await budgets.set_limit(anna, boris.user_id, Decimal("20"), owner_alerts=OwnerAlerts.OFF)
+        assert await spend(5.0) is BudgetState.EXCEEDED
+        assert len(await owner_heard(session, anna.user_id)) == 2
+        assert (await budget_notifications(session, boris.user_id))[-1] == "exceeded"
+
+        # Leaving the setting out keeps it.
+        kept = await budgets.set_limit(anna, boris.user_id, Decimal("21"))
+        assert kept.status.owner_alerts is OwnerAlerts.OFF
+        with pytest.raises(InvalidBudgetError):
+            await budgets.set_limit(anna, boris.user_id, None, owner_alerts=OwnerAlerts.ALL)
+
+        # An owner over their own limit hears about it once, not twice.
+        await budgets.set_limit(anna, anna.user_id, Decimal("0"), owner_alerts=OwnerAlerts.ALL)
+        own = await session.scalar(
+            select(func.count()).where(
+                Notification.user_id == anna.user_id,
+                Notification.kind == NotificationKind.BUDGET,
+                ~Notification.data.has_key("user_id"),
+            )
         )
-        assert owner_notified == 0
+        assert own == 1
+        assert len(await owner_heard(session, anna.user_id)) == 2

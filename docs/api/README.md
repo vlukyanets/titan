@@ -55,7 +55,8 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   `GET /api/v1/usage/household` gives everyone's (owner only).
   `GET /api/v1/usage/budget` gives the caller's monthly limit, spending and
   state; the owner lists everyone's with `GET /api/v1/usage/budgets` and sets or
-  removes a limit with `PUT /api/v1/usage/budgets/{user_id}`
+  removes a limit, and chooses which states the owners hear about
+  (`owner_alerts`), with `PUT /api/v1/usage/budgets/{user_id}`
   ([usage](../spec/domains/usage.md)).
 - Tasks and projects: `/api/v1/tasks` and `/api/v1/projects`. `PATCH` changes
   only the fields it sends, and `null` clears an optional one. A task is

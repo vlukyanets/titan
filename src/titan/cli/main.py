@@ -230,19 +230,24 @@ class Cli:
         finally:
             await engine.dispose()
         month = members[0].status.month if members else current_month()
-        lines = [f"{month}\tlimit USD\tspent USD\tstate"]
+        lines = [f"{month}\tlimit USD\tspent USD\tstate\towner alerts"]
         for member in members:
             status = member.status
             limit = "none" if status.limit_usd is None else str(status.limit_usd)
+            alerts = status.owner_alerts.value if status.owner_alerts else "-"
             lines.append(
                 f"{member.username}\t{limit}\t{status.spent_usd:.4f}\t{status.state.value}"
+                f"\t{alerts}"
             )
         return lines
 
-    async def set_budget(self, username: str, limit: Decimal | None) -> str:
+    async def set_budget(
+        self, username: str, limit: Decimal | None, owner_alerts: str | None = None
+    ) -> str:
         from titan.domains.accounts.service import AccountsService
         from titan.domains.notifications.service import NotificationsService
         from titan.domains.usage.budget import BudgetService
+        from titan.domains.usage.models import OwnerAlerts
         from titan.notify import UnifiedPushSender, new_client
         from titan.storage.db import create_engine as create_async_engine
         from titan.storage.db import session_factory
@@ -255,7 +260,10 @@ class Cli:
                 user = await AccountsService(session).get_user_by_username(username)
                 notifications = NotificationsService(session, pusher=UnifiedPushSender(client))
                 member = await BudgetService(session, notifications=notifications).set_limit(
-                    None, user.id, limit
+                    None,
+                    user.id,
+                    limit,
+                    owner_alerts=OwnerAlerts(owner_alerts) if owner_alerts else None,
                 )
         finally:
             await client.aclose()
@@ -263,9 +271,11 @@ class Cli:
         status = member.status
         if status.limit_usd is None:
             return f"{member.username}: no limit"
+        alerts = status.owner_alerts.value if status.owner_alerts else "-"
         return (
             f"{member.username}: {status.limit_usd} USD a month, "
-            f"{status.spent_usd:.2f} spent in {status.month}, {status.state.value}"
+            f"{status.spent_usd:.2f} spent in {status.month}, {status.state.value}, "
+            f"owner alerts {alerts}"
         )
 
     def budget_command(self, args: argparse.Namespace) -> int:
@@ -275,7 +285,7 @@ class Cli:
         try:
             if args.budget_command == "set":
                 limit = None if args.limit.lower() == "none" else _decimal(args.limit)
-                print(asyncio.run(self.set_budget(args.username, limit)))
+                print(asyncio.run(self.set_budget(args.username, limit, args.owner_alerts)))
             else:
                 for line in asyncio.run(self.budgets()):
                     print(line)
@@ -353,6 +363,11 @@ def parser() -> argparse.ArgumentParser:
     bs = bsub.add_parser("set", help="set a user's monthly limit in USD")
     bs.add_argument("username")
     bs.add_argument("limit", help="amount in USD, or none to remove the cap")
+    bs.add_argument(
+        "--owner-alerts",
+        choices=("off", "exceeded", "all"),
+        help="which states the owners hear about; unchanged, or exceeded for a new limit",
+    )
     return root
 
 

@@ -18,6 +18,7 @@ from titan.domains.usage.budget import (
     BudgetStatus,
     MemberBudget,
 )
+from titan.domains.usage.models import OwnerAlerts
 from titan.domains.usage.service import MonthUsage, Totals, UsageService, current_month
 
 router = APIRouter(prefix="/usage", tags=["usage"])
@@ -119,6 +120,12 @@ class BudgetOut(BaseModel):
     state: BudgetState = Field(
         description="ok below 80 % of the limit, warning from 80 %, exceeded from 100 %"
     )
+    owner_alerts: OwnerAlerts | None = Field(
+        description=(
+            "Which states the owners are notified of: off, exceeded, or all (warning and "
+            "exceeded); null without a limit"
+        )
+    )
 
     @classmethod
     def of(cls, status: BudgetStatus) -> BudgetOut:
@@ -127,6 +134,7 @@ class BudgetOut(BaseModel):
             limit_usd=None if status.limit_usd is None else float(status.limit_usd),
             spent_usd=round(status.spent_usd, 6),
             state=status.state,
+            owner_alerts=status.owner_alerts,
         )
 
 
@@ -148,6 +156,10 @@ class BudgetIn(BaseModel):
         ge=0,
         le=float(MAX_LIMIT),
         description="Monthly limit in US dollars, rounded to cents; null removes the cap",
+    )
+    owner_alerts: OwnerAlerts | None = Field(
+        default=None,
+        description="Left out: unchanged, or exceeded for a new limit. Needs a limit",
     )
 
 
@@ -181,4 +193,5 @@ async def set_budget(
     principal: CurrentPrincipal, budgets: Budgets, user_id: uuid.UUID, body: BudgetIn
 ) -> MemberBudgetOut:
     limit = None if body.limit_usd is None else Decimal(str(body.limit_usd))
-    return MemberBudgetOut.of_member(await budgets.set_limit(principal, user_id, limit))
+    member = await budgets.set_limit(principal, user_id, limit, owner_alerts=body.owner_alerts)
+    return MemberBudgetOut.of_member(member)

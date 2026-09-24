@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import enum
 import uuid
 from datetime import datetime
 from decimal import Decimal
@@ -20,7 +21,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from titan.storage.base import Base
+from titan.storage.base import Base, str_enum
 from titan.storage.ids import uuid7
 
 
@@ -44,6 +45,14 @@ class UsageRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class OwnerAlerts(enum.StrEnum):
+    """Which of a user's budget states the owners are notified of."""
+
+    OFF = "off"
+    EXCEEDED = "exceeded"
+    ALL = "all"
+
+
 class Budget(Base):
     """A user's monthly limit. Users without a row have no cap."""
 
@@ -52,4 +61,7 @@ class Budget(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
     limit_usd: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    owner_alerts: Mapped[OwnerAlerts] = mapped_column(
+        str_enum(OwnerAlerts, "owner_alerts"), server_default=OwnerAlerts.EXCEEDED.value
+    )
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
