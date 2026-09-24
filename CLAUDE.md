@@ -61,23 +61,34 @@ Full rules: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). In short:
 
 ## Stack and commands
 
-The stack is fixed by the ADRs. The project skeleton is part of milestone M1, so
-the commands below are the **planned** interface. Update this section when they
-change.
+The stack is fixed by the ADRs. Update this section when the commands change.
 
-- Python managed with **uv**: `uv sync`, `uv run pytest`, `uv run ruff check`,
-  `uv run ruff format`.
-- FastAPI, SQLAlchemy 2.x (async), **Alembic** migrations
-  ([rules](docs/architecture/database-migrations.md)): `uv run alembic upgrade head`.
+- Python **3.12** (only) managed with **uv**. Code lives in `src/titan/`.
+  - `uv sync`: install everything, including dev tools.
+  - `uv run ruff format .` and `uv run ruff check .`: format and lint.
+  - `uv run mypy`: strict type check.
+  - `uv run lint-imports`: layer rules (domains never import `api` or `agent`).
+  - `uv run pytest`: tests. Database tests run only when `TITAN_TEST_DATABASE_URL`
+    points at a PostgreSQL 18 database, as in CI.
+- FastAPI, SQLAlchemy 2.x (async, psycopg 3), **Alembic** migrations
+  ([rules](docs/architecture/database-migrations.md)): `uv run titan migrate`,
+  or `uv run alembic revision --autogenerate -m "..."` for a new revision.
+- Database: **pgEdge Postgres 18+ with Spock** multi-master replication
+  ([ADR 0006](docs/adr/0006-replicated-database-with-vectors.md)); pgvector from
+  the same image once a feature needs vectors. Development and CI use the same
+  pgEdge image without subscriptions.
 - Agent runtime: LangGraph workflows whose nodes call the Claude Agent SDK
   ([ADR 0002](docs/adr/0002-langgraph-with-agent-sdk-nodes.md)).
-- Docker Compose for local runs. Nodes communicate over Tailscale only.
-- After an API change, regenerate `docs/api/openapi.json` and commit it
-  ([ADR 0004](docs/adr/0004-openapi-from-fastapi.md)).
+- Docker Compose for local runs: copy `.env.example` to `.env`, then
+  `docker compose up -d`. Nodes communicate over Tailscale only.
+- After an API change, run `uv run titan openapi` and commit
+  `docs/api/openapi.json` ([ADR 0004](docs/adr/0004-openapi-from-fastapi.md)).
+  A test fails when the committed file is stale.
 
 ## Rules for code
 
-- Domain logic lives in `domains/` and does not import from `api/` or `agent/`.
+- Domain logic lives in `src/titan/domains/` and does not import from `api/` or
+  `agent/`.
 - Every agent tool declares an action class. Policy is enforced only in the
   `PreToolUse` hook ([ADR 0005](docs/adr/0005-per-domain-autonomy-policy.md)).
 - Every schema change is an Alembic revision that follows expand/contract.

@@ -9,19 +9,22 @@ decided, development runs on single-node PostgreSQL with pgvector.
 ## Layout
 
 ```text
-titan/migrations/
-  env.py          async engine, reads the database URL from settings
+src/titan/migrations/
+  env.py          async engine, reads TITAN_DATABASE_URL
   script.py.mako  revision template
-  versions/       one file per revision
+  versions/       one file per revision, named YYYYMMDD_<rev>_<slug>.py
 ```
 
 Commands (via `uv`):
 
 ```bash
+uv run titan migrate                  # upgrade head
 uv run alembic revision --autogenerate -m "added tracker entries table"
-uv run alembic upgrade head
 uv run alembic downgrade -1
 ```
+
+`titan migrate` builds its Alembic configuration in code, so it also works from
+the installed package in the container. `alembic.ini` is only for developers.
 
 ## Rules
 

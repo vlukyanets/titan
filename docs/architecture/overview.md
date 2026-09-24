@@ -64,7 +64,7 @@ with different entry points.
 ## Backend layers
 
 ```text
-titan/
+src/titan/
   api/          FastAPI routers, request/response models, auth
   domains/      tasks, calendar, notes, memory, trackers, reminders
                 (models, services, agent tools, policy declarations)
