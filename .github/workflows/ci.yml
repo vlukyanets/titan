@@ -1,0 +1,56 @@
+name: CI TITAN
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run mypy
+      - run: uv run lint-imports
+
+  test:
+    runs-on: ubuntu-24.04
+    env:
+      PG_IMAGE: ghcr.io/pgedge/pgedge-postgres:18.6-spock5.0.11-standard-3
+      TITAN_TEST_DATABASE_URL: postgresql+psycopg://titan:ci-only@127.0.0.1:5432/titan
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      # Started by hand instead of as a service container: the pgEdge image keeps
+      # PostgreSQL's default listen_addresses (localhost), and services cannot pass
+      # server arguments. The TCP check skips the entrypoint's socket-only init server.
+      - name: Start pgEdge Postgres
+        run: |
+          docker run -d --name db -p 5432:5432 \
+            -e POSTGRES_USER=titan -e POSTGRES_PASSWORD=ci-only -e POSTGRES_DB=titan \
+            -e POSTGRES_INITDB_ARGS="--encoding=UTF8 --locale=C" \
+            "$PG_IMAGE" -c listen_addresses='*'
+          for _ in $(seq 60); do
+            docker exec db pg_isready -h 127.0.0.1 -U titan -d titan -q && exit 0
+            sleep 1
+          done
+          docker logs db
+          exit 1
+      - run: uv sync --locked
+      # Includes the migration round trip, the autogenerate drift check and the
+      # OpenAPI drift check (ADR 0004).
+      - run: uv run pytest -ra
+
