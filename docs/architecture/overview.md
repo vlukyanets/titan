@@ -103,6 +103,15 @@ TITAN combines two frameworks ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-n
   before and after state, which makes undo possible.
 - **Claude credentials** are handled as described in
   [claude-auth.md](claude-auth.md).
+- **Chat turns** (`titan.agent.chat`) keep only ids in their graph state, read
+  the thread from the chat domain, and start a fresh Agent SDK session per turn
+  ([ADR 0009](../adr/0009-chat-history-in-titan-tables.md)). The reply streams
+  through the LangGraph `custom` stream. Until `titan-worker` exists, the API
+  process runs turns itself (`titan.agent.runtime`), each in a task of its own,
+  so a closed connection does not stop a turn. A turn's checkpoints are deleted
+  when it ends.
+- **No tracing**: agent startup removes every `LANGSMITH_*` and `LANGCHAIN_*`
+  variable, so LangSmith can never receive conversations.
 
 ### Chat turn with an approval
 

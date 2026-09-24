@@ -77,7 +77,7 @@ Tasks:
 
 - [x] Spec, ADR 0009 and this plan.
 - [x] Chat tables, service and migration, with the checkpoint tables.
-- [ ] `chat_turn` graph with the Postgres checkpointer, tested with a fake
+- [x] `chat_turn` graph with the Postgres checkpointer, tested with a fake
       `query`.
 - [ ] Chat API with SSE, OpenAPI regenerated, docs updated.
 - [ ] Live: one real chat turn once a credential is available (blocked).

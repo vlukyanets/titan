@@ -6,7 +6,7 @@ import ipaddress
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from titan.notify import origin_of
@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     claude_config_dir: Path = Path.home() / ".local" / "state" / "titan" / "claude"
     claude_model_fast: str = "claude-haiku-4-5"
     claude_model_strong: str = "claude-sonnet-5"
+
+    # Chat (docs/spec/domains/chat.md).
+    chat_history_messages: int = Field(default=40, ge=0, le=200)
+    chat_turn_timeout_seconds: float = Field(default=300.0, gt=0)
 
     @field_validator("bind_host")
     @classmethod
