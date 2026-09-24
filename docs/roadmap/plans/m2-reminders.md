@@ -26,4 +26,5 @@ Tasks:
       `feature/m2-scheduler`): `scheduler_leases` table, preferred node and
       grace period, the reminders sweep, the startup revision check, the
       Compose service.
-- [ ] Default reminders for tasks, agent tools.
+- [x] Default reminders for tasks (branch `feature/m2-default-reminders`).
+- [ ] Default reminders for events, agent tools.

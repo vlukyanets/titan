@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.domains.accounts.models import User
 from titan.domains.calendar.zones import user_zone
+from titan.domains.reminders.defaults import drop_task_reminders, sync_task_reminder
 from titan.domains.tasks import recurrence
 from titan.domains.tasks.errors import (
     AlreadyDoneError,
@@ -356,6 +357,8 @@ class TasksService:
             raise InvalidTaskError("a recurring task needs due_at")
         task = Task(owner_id=actor, **draft.__dict__)
         self.session.add(task)
+        await self.session.flush()
+        await sync_task_reminder(self.session, task)
         await self._done()
         return task
 
@@ -431,6 +434,7 @@ class TasksService:
         for name, value in values.items():
             setattr(task, name, value)
         task.updated_at = _now()
+        await sync_task_reminder(self.session, task)
         await self._done()
         return task
 
@@ -476,6 +480,10 @@ class TasksService:
                 # The rule moves on with the series, so reopening and completing
                 # this occurrence again cannot create a second copy.
                 task.recurrence = None
+        await sync_task_reminder(self.session, task, now=now)
+        if following is not None:
+            await self.session.flush()
+            await sync_task_reminder(self.session, following, now=now)
         await self._done()
         return Completion(task, following)
 
@@ -489,6 +497,7 @@ class TasksService:
                 )
             if project_owner != actor:
                 raise ForbiddenError("only the task's owner or its project's owner can delete it")
+        await drop_task_reminders(self.session, task.id)
         await self.session.delete(task)
         await self._done()
 

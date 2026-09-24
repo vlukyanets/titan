@@ -170,6 +170,7 @@ class CalendarService:
             work_end=time(17),
             work_days=[1, 2, 3, 4, 5],
             buffer_minutes=10,
+            default_reminder_minutes=15,
             updated_at=_now(),
         )
 
@@ -182,6 +183,7 @@ class CalendarService:
         work_end: time,
         work_days: Iterable[int],
         buffer_minutes: int,
+        default_reminder_minutes: int | None = 15,
     ) -> PlanningPrefs:
         zone(time_zone)
         if work_end <= work_start:
@@ -191,6 +193,8 @@ class CalendarService:
             raise InvalidEventError("working days are ISO weekdays, 1 (Monday) to 7")
         if not 0 <= buffer_minutes <= 240:
             raise InvalidEventError("the buffer is 0 to 240 minutes")
+        if default_reminder_minutes is not None and not 0 < default_reminder_minutes <= 1440:
+            raise InvalidEventError("the default reminder is 1 to 1440 minutes ahead, or off")
         stored = await self.session.get(PlanningPrefs, actor, with_for_update=True)
         if stored is None:
             stored = PlanningPrefs(user_id=actor)
@@ -200,6 +204,7 @@ class CalendarService:
         stored.work_end = work_end.replace(tzinfo=None)
         stored.work_days = days
         stored.buffer_minutes = buffer_minutes
+        stored.default_reminder_minutes = default_reminder_minutes
         stored.updated_at = _now()
         await self.session.commit()
         return stored

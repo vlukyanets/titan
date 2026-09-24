@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from titan.domains.accounts.models import Role
 from titan.domains.accounts.service import AccountsService
+from titan.domains.calendar.errors import InvalidEventError
 from titan.domains.calendar.service import CalendarService
 from titan.domains.notifications.models import Notification, NotificationKind
 from titan.domains.reminders.errors import (
@@ -21,7 +22,7 @@ from titan.domains.reminders.errors import (
     NotFoundError,
     ReminderClosedError,
 )
-from titan.domains.reminders.models import LinkType, ReminderStatus
+from titan.domains.reminders.models import LinkType, Reminder, ReminderStatus
 from titan.domains.reminders.service import RemindersService, firing_id
 from titan.domains.tasks.service import TasksService
 
@@ -200,3 +201,82 @@ async def test_a_daily_reminder_keeps_its_local_time(
         fired = await reminders.fire(walk.id, now=first)
         assert fired is not None
         assert fired.fire_at.astimezone(kyiv) == datetime(2026, 10, 25, 8, 0, tzinfo=kyiv)
+
+
+async def default_reminder(session: AsyncSession, task_id: uuid.UUID) -> Reminder | None:
+    found: Reminder | None = await session.scalar(
+        select(Reminder).where(Reminder.link_id == task_id, Reminder.is_default.is_(True))
+    )
+    return found
+
+
+async def test_tasks_with_a_due_time_get_a_default_reminder(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    anna = await user(sessions, "anna")
+    soon = datetime.now(UTC).replace(microsecond=0) + timedelta(hours=2)
+    async with sessions() as session:
+        tasks = TasksService(session)
+        call = await tasks.create_task(anna, "Call the bank", due_at=soon)
+        reminder = await default_reminder(session, call.id)
+        assert reminder is not None
+        assert (reminder.owner_id, reminder.text) == (anna, "Call the bank")
+        assert reminder.fire_at == soon - timedelta(minutes=15)
+
+        await tasks.update_task(
+            anna, call.id, {"due_at": soon + timedelta(hours=1), "title": "Call the bank back"}
+        )
+        moved = await default_reminder(session, call.id)
+        assert moved is not None
+        assert moved.id == reminder.id
+        assert moved.fire_at == soon + timedelta(minutes=45)
+        assert moved.text == "Call the bank back"
+
+        # Too close to its due time, or without one: no reminder.
+        rushed = await tasks.create_task(
+            anna, "Rush", due_at=datetime.now(UTC) + timedelta(minutes=5)
+        )
+        assert await default_reminder(session, rushed.id) is None
+        await tasks.update_task(anna, call.id, {"due_at": None})
+        assert await default_reminder(session, call.id) is None
+
+        # Completing or deleting the task removes it; the next occurrence gets its own.
+        daily = await tasks.create_task(anna, "Stretch", due_at=soon, recurrence="FREQ=DAILY")
+        done = await tasks.complete_task(anna, daily.id)
+        assert await default_reminder(session, daily.id) is None
+        assert done.next is not None
+        following = await default_reminder(session, done.next.id)
+        assert following is not None
+        assert following.fire_at == soon + timedelta(days=1, minutes=-15)
+        await tasks.delete_task(anna, done.next.id)
+        assert await default_reminder(session, done.next.id) is None
+
+
+async def test_the_lead_time_is_a_preference(sessions: async_sessionmaker[AsyncSession]) -> None:
+    anna = await user(sessions, "anna")
+    soon = datetime.now(UTC).replace(microsecond=0) + timedelta(hours=3)
+    async with sessions() as session:
+        calendar = CalendarService(session)
+
+        async def lead(minutes: int | None) -> None:
+            await calendar.set_prefs(
+                anna,
+                time_zone="UTC",
+                work_start=time(9),
+                work_end=time(17),
+                work_days=[1, 2, 3, 4, 5],
+                buffer_minutes=10,
+                default_reminder_minutes=minutes,
+            )
+
+        await lead(60)
+        tasks = TasksService(session)
+        early = await tasks.create_task(anna, "Pack", due_at=soon)
+        reminder = await default_reminder(session, early.id)
+        assert reminder is not None
+        assert reminder.fire_at == soon - timedelta(hours=1)
+        await lead(None)
+        quiet = await tasks.create_task(anna, "Read", due_at=soon)
+        assert await default_reminder(session, quiet.id) is None
+        with pytest.raises(InvalidEventError):
+            await lead(0)

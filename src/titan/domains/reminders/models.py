@@ -6,7 +6,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Uuid, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from titan.storage.base import Base, str_enum
@@ -50,6 +50,9 @@ class Reminder(Base):
     # No foreign key: events and trackers live in domains that do not exist yet.
     link_type: Mapped[LinkType | None] = mapped_column(str_enum(LinkType, "reminder_link_type"))
     link_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    # Created and kept in step by TITAN for a task's due time; changing the task
+    # changes it.
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     fired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # The notification of the last firing, which its Snooze and Done actions refer to.
     notification_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)

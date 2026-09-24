@@ -5073,6 +5073,21 @@
             "minimum": 0.0,
             "title": "Buffer Minutes",
             "description": "Gap the planner keeps between blocks"
+          },
+          "default_reminder_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1440.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Reminder Minutes",
+            "description": "How long before its due time a task reminds its owner; null turns it off",
+            "default": 15
           }
         },
         "additionalProperties": false,
@@ -5394,6 +5409,11 @@
               }
             ]
           },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "description": "A task's default reminder, kept in step with the task"
+          },
           "fired_at": {
             "anyOf": [
               {
@@ -5439,6 +5459,7 @@
           "recurrence",
           "status",
           "link",
+          "is_default",
           "fired_at",
           "notification_id",
           "created_at",
