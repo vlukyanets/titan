@@ -46,7 +46,7 @@ confirm-class action.
 
 ## M2: Thin domains
 
-- [ ] Tasks and projects.
+- [ ] Tasks and projects ([plan](plans/m2-tasks-projects.md)).
 - [ ] Calendar and planner (daily plan, replanning).
 - [ ] Notes, memory and semantic search.
 - [ ] Trackers (habits, health, finance templates).
