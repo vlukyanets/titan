@@ -59,7 +59,9 @@ Exit: every acceptance criterion in `docs/spec/domains/` passes on one node.
 
 - [ ] `titan` CLI covering chat, domains and admin
       ([plan](plans/m3-cli-client.md)).
-- [ ] Web UI in `titan-web` (the repository still has to be created).
+- [ ] Web UI in [titan-web](https://github.com/vlukyanets/titan-web): the
+      node serves its pinned build next to the API, and browsers sign in with
+      cookie sessions ([ADR 0012](../adr/0012-browser-sessions-for-the-web-ui.md)).
 - [ ] Multi-node deployment over Tailscale with the engine from ADR 0006.
 - [ ] Rolling upgrades with expand/contract migrations.
 

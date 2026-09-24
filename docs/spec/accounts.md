@@ -32,6 +32,13 @@ stores the password.
 **Authenticated calls** send `Authorization: Bearer <device token>`. A missing,
 unknown or revoked token, or a disabled user, gets `401`.
 
+**Browser sign-in** (proposed in
+[ADR 0012](../adr/0012-browser-sessions-for-the-web-ui.md)). The Web UI does
+not pair: its sign-in form sends username and password to
+`POST /api/v1/session`, which creates a `web` device and puts its token in an
+`HttpOnly` cookie that page scripts cannot read. Signing out revokes the
+device. A `web` device unused for 30 days expires.
+
 **Revoking.** A user lists and revokes their own devices. The owner can revoke
 any device. A revoked token fails on the next request.
 

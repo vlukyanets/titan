@@ -41,6 +41,7 @@ changes often lives separately in [`roadmap/`](roadmap/README.md).
 | [0009](adr/0009-chat-history-in-titan-tables.md) | Chat history lives in TITAN tables | Accepted |
 | [0010](adr/0010-approved-calls-run-outside-the-session.md) | Approved tool calls run outside the model session | Accepted |
 | [0011](adr/0011-cli-client-over-http.md) | The CLI client talks HTTP and keeps its token in a private file | Accepted |
+| [0012](adr/0012-browser-sessions-for-the-web-ui.md) | Browser sessions for the Web UI | Proposed |
 
 New ADRs start from the [template](adr/0000-template.md).
 
