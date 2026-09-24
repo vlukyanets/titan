@@ -26,6 +26,7 @@ from titan.domains.tasks.errors import (
     NotFoundError,
 )
 from titan.domains.tasks.models import Project, ProjectMember, ProjectStatus, Task, TaskStatus
+from titan.storage.collation import UNICODE
 
 DEFAULT_PAGE = 50
 MAX_PAGE = 100
@@ -385,7 +386,10 @@ class TasksService:
         if query.text:
             pattern = "%" + _escape_like(query.text.strip()) + "%"
             stmt = stmt.where(
-                or_(Task.title.ilike(pattern, escape="\\"), Task.notes.ilike(pattern, escape="\\"))
+                or_(
+                    Task.title.collate(UNICODE).ilike(pattern, escape="\\"),
+                    Task.notes.collate(UNICODE).ilike(pattern, escape="\\"),
+                )
             )
         if before is not None:
             stmt = stmt.where(Task.id < before)
