@@ -54,7 +54,7 @@ Two branches:
 ## Tasks
 
 - [x] This plan.
-- [ ] Security headers middleware; `/docs` and `/redoc` removed.
+- [x] Security headers middleware; `/docs` and `/redoc` removed.
 - [ ] `TITAN_WEB_UI_DIR` and the static routes.
 - [ ] Architecture, API and agent docs updated; milestone updated.
 - [ ] titan-web `v0.1.0` published.
