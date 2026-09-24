@@ -1,6 +1,6 @@
 # 0012. Browser sessions for the Web UI
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-09-24
 
 ## Context
@@ -45,7 +45,8 @@ Option 3.
   and answers the user and the device id. The token is never in the body.
 - The token is set as the cookie `__Host-titan_session` with `HttpOnly`,
   `Secure`, `SameSite=Strict`, `Path=/` and a `Max-Age` of 30 days. The
-  `__Host-` prefix ties it to the exact node address.
+  `__Host-` prefix ties it to the exact address, which is the cluster address
+  shared by all nodes ([ADR 0013](0013-one-cluster-address.md)).
 - `DELETE /api/v1/session` revokes the device and clears the cookie. A `401`
   on a request that sent the cookie clears it too.
 - Authentication accepts a bearer header first, then the cookie. Clients other
@@ -63,8 +64,8 @@ Option 3.
   browser stays signed in. Devices of other platforms do not expire.
 - **HTTPS.** `Secure` cookies and the browser features the UI relies on need a
   secure context, so the UI is reached over HTTPS: Tailscale terminates TLS
-  with the node's `ts.net` certificate (`tailscale serve`) and forwards to the
-  API on the node itself. Nothing listens outside the tailnet. For development,
+  with the cluster address's `ts.net` certificate (`tailscale serve`) and
+  forwards to the API on the node itself. Nothing listens outside the tailnet. For development,
   browsers treat `http://localhost` as secure.
 
 ### Hardening
@@ -112,9 +113,10 @@ Option 3.
 - A UI library that assigns HTML strings must be replaced, or wrapped in a
   named Trusted Types policy that sanitises its input.
 - Browsers show up in the device list and are revoked like any other device.
-- The cookie belongs to one node address, so a user signs in once per node
-  they open in the browser, and each sign-in is its own device.
+- The cookie belongs to the cluster address, so one sign-in works on every
+  node. Opening a node by its own address, for administration, needs its own
+  sign-in.
 - The accounts spec, the API conventions and the OpenAPI schema gain the
   session endpoints and the cookie, and tests cover the cross-site checks, the
   idle expiry and that a bearer token and a cookie resolve the same way.
-- Node setup documents `tailscale serve` for HTTPS.
+- Node setup documents the Tailscale Service and HTTPS ([ADR 0013](0013-one-cluster-address.md)).
