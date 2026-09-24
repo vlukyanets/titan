@@ -18,5 +18,5 @@ Tasks:
 
 - [x] Spec and this plan.
 - [x] Tables, migration, templates, service, stats and streaks.
-- [ ] Trackers API, OpenAPI regenerated, docs updated.
+- [x] Trackers API, OpenAPI regenerated, docs updated.
 - [ ] Agent tools with exposure levels (after a live agent run).

@@ -71,3 +71,9 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   expanded in their own IANA time zone, so a view is one call.
   `GET /calendar/busy` gives merged busy intervals and `/calendar/prefs` the
   caller's time zone and working hours ([calendar](../spec/domains/calendar.md)).
+- Trackers: `/api/v1/trackers`. Values are JSON numbers stored as exact
+  decimals with four places, so sums of money are exact.
+  `GET /trackers/{id}/stats?period=&from=&to=` takes local dates and answers
+  every day, week or month in between in the owner's time zone, with the
+  streak; `GET /trackers/templates` lists the built-in templates. Another
+  user's tracker answers `404` ([trackers](../spec/domains/trackers.md)).
