@@ -71,7 +71,7 @@ The same rules work the other way round: in `api-key` mode
 
 ## In the API process
 
-Until `titan-worker` exists, `titan-api` runs chat turns itself. At startup it
+Until `titan-worker` runs agent workflows, `titan-api` runs chat turns itself. At startup it
 cleans its own environment as described above and runs the self-check, with a
 60-second limit. If the credential is missing, the check fails or Claude Code
 does not start, the reason is logged, chat answers `503`, and the rest of the
