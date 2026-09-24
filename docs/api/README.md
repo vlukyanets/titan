@@ -54,3 +54,9 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   cost for a UTC calendar month, overall and per model;
   `GET /api/v1/usage/household` gives everyone's (owner only)
   ([usage](../spec/domains/usage.md)).
+- Tasks and projects: `/api/v1/tasks` and `/api/v1/projects`. `PATCH` changes
+  only the fields it sends, and `null` clears an optional one. A task is
+  completed only with `POST /api/v1/tasks/{id}/complete`, which answers the
+  task and, for a recurring one, its next occurrence. Items shared with the
+  caller behave like their own; anything else answers `404`
+  ([tasks](../spec/domains/tasks.md)).
