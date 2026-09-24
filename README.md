@@ -24,13 +24,15 @@ Needs Docker and, for development, [uv](https://docs.astral.sh/uv/).
 
 ```bash
 cp .env.example .env          # set a database password
-docker compose up -d          # pgEdge Postgres 18, migrations, API
+docker compose up -d          # pgEdge Postgres 18, migrations, API, ntfy
 curl http://127.0.0.1:8000/api/v1/health/ready
 docker compose run --rm migrate titan users create <name> --owner   # first account
 ```
 
-The API is published only on `TITAN_TAILSCALE_IP`. On a real node, set it to the
-node's Tailscale address (`tailscale ip -4`).
+The API (port 8000) and ntfy (port 8080) are published only on
+`TITAN_TAILSCALE_IP`. On a real node, set it to the node's Tailscale address
+(`tailscale ip -4`). Push notifications need that real address: phones reach ntfy
+through it, and the API sends pushes to it.
 
 Development without containers:
 

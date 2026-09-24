@@ -10,6 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.domains.accounts.service import AccountsService, Principal
+from titan.domains.notifications.service import NotificationsService
 
 # auto_error=False: a missing header is answered by require_principal with a
 # problem-details 401 instead of FastAPI's default body.
@@ -46,3 +47,14 @@ async def require_principal(
 
 
 CurrentPrincipal = Annotated[Principal, Depends(require_principal)]
+
+
+def get_notifications(request: Request, session: Session) -> NotificationsService:
+    return NotificationsService(
+        session,
+        pusher=request.app.state.pusher,
+        push_origins=request.app.state.settings.push_allowed_origins,
+    )
+
+
+Notifications = Annotated[NotificationsService, Depends(get_notifications)]

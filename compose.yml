@@ -1,6 +1,6 @@
 # Single-node TITAN for development and for the first node of a cluster.
-# The API is published only on TITAN_TAILSCALE_IP; there is deliberately no default,
-# so the stack cannot start with a public listener by accident.
+# The API and ntfy are published only on TITAN_TAILSCALE_IP; there is deliberately no
+# default, so the stack cannot start with a public listener by accident.
 name: titan
 services:
   db:
@@ -39,11 +39,34 @@ services:
       <<: *app-env
       TITAN_BIND_HOST: 0.0.0.0
       TITAN_ALLOW_WILDCARD_BIND: "true"
+      # Phones register endpoints on this ntfy; the API refuses any other push server.
+      TITAN_PUSH_ALLOWED_ORIGINS: http://${TITAN_TAILSCALE_IP}:8080
     ports:
       - "${TITAN_TAILSCALE_IP:?set TITAN_TAILSCALE_IP to this node's Tailscale address, or 127.0.0.1 for local development}:8000:8000"
     depends_on:
       migrate: {condition: service_completed_successfully}
     restart: unless-stopped
 
+  ntfy:
+    # UnifiedPush server for the phones' ntfy app (ADR 0008). Messages carry only
+    # notification ids, so its cache holds no user content.
+    image: binwiederhier/ntfy:v2.28.0
+    command: ["serve"]
+    environment:
+      NTFY_BASE_URL: http://${TITAN_TAILSCALE_IP}:8080
+      NTFY_CACHE_FILE: /var/cache/ntfy/cache.db
+      NTFY_WEB_ROOT: disable
+    volumes:
+      - ntfy-cache:/var/cache/ntfy
+    ports:
+      - "${TITAN_TAILSCALE_IP}:8080:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/v1/health | grep -q '\"healthy\":true'"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   db-data: {}
+  ntfy-cache: {}

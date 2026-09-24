@@ -56,7 +56,7 @@ can switch to another one; failover is a client setting in v1.
 | `titan-worker` | Runs agent workflows (chat turns, daily plan, replanning), the scheduler and reminder firing |
 | `embeddings` | Local embedding model behind a small HTTP API. Separate container so it can be sized, moved to the strongest node or swapped for another model |
 | `db` | Replicated database with vector table support. Engine *open*: [ADR 0006](../adr/0006-replicated-database-with-vectors.md) |
-| `ntfy` | Push server for UnifiedPush and approval notifications |
+| `ntfy` | UnifiedPush server for the phones. Push messages carry only notification ids ([ADR 0008](../adr/0008-push-messages-carry-references.md)) |
 
 `titan-api` and `titan-worker` are the same Python package (`uv`-managed) started
 with different entry points.
@@ -66,14 +66,15 @@ with different entry points.
 ```text
 src/titan/
   api/          FastAPI routers, request/response models, auth
-  domains/      tasks, calendar, notes, memory, trackers, reminders
+  domains/      accounts, notifications, tasks, calendar, notes, memory,
+                trackers, reminders
                 (models, services, agent tools, policy declarations)
   agent/        LangGraph workflows, Agent SDK node wrapper, policy hook,
                 Claude auth handling, model tiers, budget tracking
   scheduler/    job table, leases, recurring workflows, reminder firing
   storage/      SQLAlchemy models, repositories, vector search
   migrations/   Alembic environment and revisions
-  notify/       ntfy client
+  notify/       UnifiedPush sender (to ntfy), endpoint checks
   cli/          `titan` command
 ```
 
@@ -157,6 +158,9 @@ changes, which are rolled out safely across peer nodes as described in
   stored only as SHA-256 digests, and revocable per device
   ([accounts and devices](../spec/accounts.md)).
 - Row-level ownership is checked in the domain services, not only in the API.
+- The server sends pushes only to endpoints on configured push servers, without
+  following redirects, and push messages contain no user content
+  ([notifications](../spec/domains/notifications.md)).
 - Secrets (Claude credentials, database passwords) come from environment or
   Docker secrets, never from the repository.
 - Protection of sensitive domains is *open*:

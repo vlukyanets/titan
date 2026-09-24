@@ -5,6 +5,6 @@ this package registers every domain model on the shared metadata, which Alembic
 autogenerate relies on.
 """
 
-from titan.domains import accounts
+from titan.domains import accounts, notifications
 
-__all__ = ["accounts"]
+__all__ = ["accounts", "notifications"]

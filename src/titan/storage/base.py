@@ -1,6 +1,8 @@
 """Declarative base shared by every domain model."""
 
-from sqlalchemy import MetaData
+import enum
+
+from sqlalchemy import Enum, MetaData
 from sqlalchemy.orm import DeclarativeBase
 
 # Deterministic constraint names, so Alembic can drop and rename them on every engine.
@@ -15,3 +17,19 @@ NAMING_CONVENTION = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
+
+
+def str_enum(cls: type[enum.StrEnum], name: str) -> Enum:
+    """A column type for a StrEnum, stored as a string with a CHECK constraint.
+
+    Native Postgres enums need ALTER TYPE to grow, which is awkward to roll out
+    across a Spock mesh (ADR 0006).
+    """
+    return Enum(
+        cls,
+        name=name,
+        native_enum=False,
+        create_constraint=True,
+        length=16,
+        values_callable=lambda members: [m.value for m in members],
+    )

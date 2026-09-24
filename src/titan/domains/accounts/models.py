@@ -6,10 +6,10 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from titan.storage.base import Base
+from titan.storage.base import Base, str_enum
 from titan.storage.ids import uuid7
 
 
@@ -25,19 +25,6 @@ class Platform(enum.StrEnum):
     OTHER = "other"
 
 
-def _enum(cls: type[enum.StrEnum], name: str) -> Enum:
-    # Stored as plain strings with a CHECK constraint: native Postgres enums need
-    # ALTER TYPE to grow, which is awkward to roll out across a Spock mesh.
-    return Enum(
-        cls,
-        name=name,
-        native_enum=False,
-        create_constraint=True,
-        length=16,
-        values_callable=lambda members: [m.value for m in members],
-    )
-
-
 class User(Base):
     __tablename__ = "users"
 
@@ -46,7 +33,7 @@ class User(Base):
     # created rarely and only by the owner, so the risk is accepted here.
     username: Mapped[str] = mapped_column(String(32), unique=True)
     display_name: Mapped[str] = mapped_column(String(64))
-    role: Mapped[Role] = mapped_column(_enum(Role, "user_role"))
+    role: Mapped[Role] = mapped_column(str_enum(Role, "user_role"))
     password_hash: Mapped[str] = mapped_column(String(255))
     failed_logins: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -62,7 +49,7 @@ class Device(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid7)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
     name: Mapped[str] = mapped_column(String(64))
-    platform: Mapped[Platform] = mapped_column(_enum(Platform, "device_platform"))
+    platform: Mapped[Platform] = mapped_column(str_enum(Platform, "device_platform"))
     # SHA-256 hex digest of the token; the token itself is never stored.
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
