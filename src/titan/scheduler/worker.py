@@ -29,6 +29,7 @@ log = logging.getLogger(__name__)
 
 # The most reminders one tick fires; the rest wait for the next tick.
 REMINDER_BATCH = 100
+PUSH_BATCH = 100
 
 Sweep = Callable[[datetime], Awaitable[int]]
 
@@ -46,7 +47,7 @@ class Worker:
     sweeps: dict[str, Sweep] = field(init=False)
 
     def __post_init__(self) -> None:
-        self.sweeps = {"reminders": self.fire_reminders}
+        self.sweeps = {"reminders": self.fire_reminders, "push_retries": self.retry_pushes}
         self.policy = leases.LeasePolicy(
             node=self.settings.node_name,
             preferred_node=self.settings.preferred_node or self.settings.node_name,
@@ -61,12 +62,7 @@ class Worker:
         for reminder_id in due:
             # One session per reminder: a failure stops only that one.
             async with self.sessions() as session:
-                notifications = NotificationsService(
-                    session,
-                    pusher=self.pusher,
-                    push_origins=self.settings.push_allowed_origins,
-                )
-                reminders = RemindersService(session, notifications=notifications)
+                reminders = RemindersService(session, notifications=self._notifications(session))
                 try:
                     if await reminders.fire(reminder_id, now=now) is not None:
                         fired += 1
@@ -74,6 +70,27 @@ class Worker:
                     await session.rollback()
                     log.error("reminder %s did not fire: %s", reminder_id, type(exc).__name__)
         return fired
+
+    def _notifications(self, session: AsyncSession) -> NotificationsService:
+        return NotificationsService(
+            session, pusher=self.pusher, push_origins=self.settings.push_allowed_origins
+        )
+
+    async def retry_pushes(self, now: datetime) -> int:
+        """Push notifications again that no device accepted; answers how many got through."""
+        delivered = 0
+        async with self.sessions() as session:
+            due = await self._notifications(session).retries_due(now, limit=PUSH_BATCH)
+        for notification_id in due:
+            async with self.sessions() as session:
+                try:
+                    delivered += bool(
+                        await self._notifications(session).retry(notification_id, now)
+                    )
+                except Exception as exc:
+                    await session.rollback()
+                    log.error("push retry %s failed: %s", notification_id, type(exc).__name__)
+        return delivered
 
     async def tick(self) -> dict[str, int]:
         """One round: the sweeps this node held the lease for, with what they did."""

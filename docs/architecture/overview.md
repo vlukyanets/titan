@@ -158,8 +158,8 @@ jobs run **at least once** and every effect is **idempotent**
 
 - `titan-worker` (`titan.scheduler`) runs the scheduler loop on every node.
   Every few seconds (`TITAN_SCHEDULER_TICK_SECONDS`, default 5) it tries to hold
-  the lease of each sweep, and the holder does the sweep's work. The first sweep
-  fires due reminders.
+  the lease of each sweep, and the holder does the sweep's work. The sweeps
+  fire due reminders and retry pushes that no device accepted.
 - A lease is a row in `scheduler_leases` with its holder and expiry
   (`TITAN_SCHEDULER_LEASE_SECONDS`, default 30). The holder renews it on every
   tick.
