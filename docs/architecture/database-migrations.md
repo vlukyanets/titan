@@ -62,7 +62,20 @@ share one replicated schema.
   start if the database is older than the code needs. A newer database is
   accepted, because expand/contract keeps it compatible.
 - **Spock specifics.** Automatic DDL replication must be enabled on every
-  node, and `spock_output` must be allowed in `output_plugin_libraries`
-  (PostgreSQL 17.11 and later), otherwise subscriptions fail silently. Create
-  vector indexes in their own revision, because building one on a populated
-  table can take minutes.
+  node (`spock.enable_ddl_replication`, `spock.include_ddl_repset`), and
+  `spock_output` must be allowed in `output_plugin_libraries` (PostgreSQL
+  17.11, 18.6 and later), otherwise subscriptions fail silently. With both on,
+  new tables join the default replication set by themselves, and downgrades
+  replicate like upgrades.
+- **Index builds pause replication.** Each node executes replicated DDL
+  inside its apply stream, so while it builds an index nothing else reaches
+  it: an HNSW index on 100 000 vectors held the laptop back for about 4.5
+  minutes in the M0 spike. `CREATE INDEX CONCURRENTLY` is not replicated at
+  all. Create vector and other large indexes in their own revision, in a
+  quiet window.
+- **Every table has a primary key**, or Spock cannot replicate its updates
+  and deletes. Extensions (`spock`, `vector`) are created on each node when it
+  joins, not in revisions.
+- **Never apply a revision on two nodes.** The copy that arrives through
+  replication fails on the node that already ran it and stops that
+  subscription.
