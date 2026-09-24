@@ -36,3 +36,10 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   `GET /api/v1/notifications/{id}` to show it
   ([notifications](../spec/domains/notifications.md),
   [ADR 0008](../adr/0008-push-messages-carry-references.md)).
+- Chat: `POST /api/v1/chat/threads/{id}/messages` answers with
+  `text/event-stream`: `turn`, then `text` and `tool` events, then `done` or
+  `error`. Every event's data is JSON whose `type` repeats the event name, and
+  the `done` event's message is the stored reply, which replaces the streamed
+  text. Refusals (`404`, `409` while a reply is running, `422`, `503` when the
+  node has no working Claude credential) are ordinary problem responses sent
+  before the stream starts ([chat](../spec/domains/chat.md)).

@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
 from titan.domains.accounts import errors as accounts_errors
+from titan.domains.chat import errors as chat_errors
 from titan.domains.notifications import errors as notifications_errors
 
 PROBLEM_JSON = "application/problem+json"
@@ -38,6 +39,7 @@ def install(app: FastAPI) -> None:
 
     app.add_exception_handler(accounts_errors.AccountsError, _domain)
     app.add_exception_handler(notifications_errors.NotificationsError, _domain)
+    app.add_exception_handler(chat_errors.ChatError, _domain)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -58,6 +60,9 @@ _DOMAIN_STATUS: dict[type[Exception], int] = {
     accounts_errors.InvalidPasswordError: 422,
     notifications_errors.NotFoundError: 404,
     notifications_errors.InvalidPushEndpointError: 422,
+    chat_errors.NotFoundError: 404,
+    chat_errors.TurnInProgressError: 409,
+    chat_errors.InvalidMessageError: 422,
 }
 
 

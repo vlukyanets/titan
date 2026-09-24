@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from datetime import timedelta
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from titan.agent.runtime import ChatRuntime
 from titan.domains.accounts.service import AccountsService, Principal
+from titan.domains.chat.service import ChatService
 from titan.domains.notifications.service import NotificationsService
 
 # auto_error=False: a missing header is answered by require_principal with a
@@ -58,3 +61,19 @@ def get_notifications(request: Request, session: Session) -> NotificationsServic
 
 
 Notifications = Annotated[NotificationsService, Depends(get_notifications)]
+
+
+def get_chat(request: Request, session: Session) -> ChatService:
+    timeout = request.app.state.settings.chat_turn_timeout_seconds
+    return ChatService(session, turn_timeout=timedelta(seconds=timeout))
+
+
+Chat = Annotated[ChatService, Depends(get_chat)]
+
+
+def get_chat_turns(request: Request) -> ChatRuntime:
+    runtime: ChatRuntime = request.app.state.chat_runtime
+    return runtime
+
+
+ChatTurns = Annotated[ChatRuntime, Depends(get_chat_turns)]

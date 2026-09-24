@@ -44,6 +44,7 @@ log = logging.getLogger(__name__)
 # LangSmith tracing would send conversations to a third party. Nothing in TITAN
 # enables it, and these variables are removed so nothing can.
 _TRACING_PREFIXES = ("LANGSMITH_", "LANGCHAIN_")
+SELF_CHECK_TIMEOUT = 60
 
 
 def disable_tracing(environ: MutableMapping[str, str]) -> None:
@@ -144,7 +145,15 @@ class ChatRuntime:
         try:
             mode = auth.install(self.settings, self.environ)
             disable_tracing(self.environ)
-            source = await self_check(self.settings, query_fn=self.query_fn, environ=self.environ)
+            async with asyncio.timeout(SELF_CHECK_TIMEOUT):
+                source = await self_check(
+                    self.settings, query_fn=self.query_fn, environ=self.environ
+                )
+        except TimeoutError:
+            log.error(
+                "chat is unavailable: Claude Code did not start within %ss", SELF_CHECK_TIMEOUT
+            )
+            return False
         except (ClaudeAuthError, ClaudeSDKError, OSError) as exc:
             log.error("chat is unavailable: %s", exc)
             return False
