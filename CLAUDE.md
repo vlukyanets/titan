@@ -108,7 +108,9 @@ The stack is fixed by the ADRs. Update this section when the commands change.
 - Claude credentials follow [claude-auth.md](docs/architecture/claude-auth.md).
   `oauth` mode must never fall back to an API key, so do not weaken the
   environment cleaning or the startup self-check.
-- The API binds only to the Tailscale interface. Do not add public listeners.
+- The API binds only to loopback, behind `tailscale serve` for the cluster
+  address ([ADR 0013](docs/adr/0013-one-cluster-address.md)), or to the
+  Tailscale interface. Do not add public listeners.
 
 ## Related repositories
 

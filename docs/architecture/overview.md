@@ -45,8 +45,10 @@ flowchart LR
     WK2 --> Claude
 ```
 
-Clients connect to one node by its Tailscale name. A client that loses its node
-can switch to another one; failover is a client setting in v1.
+Clients connect to the cluster address `titan.<tailnet>.ts.net`, a Tailscale
+Service that every ready node advertises. Tailscale sends each connection to
+the nearest available node, so losing a node costs a client at most a dropped
+connection ([ADR 0013](../adr/0013-one-cluster-address.md)).
 
 ## Containers
 
