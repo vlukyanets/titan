@@ -11,7 +11,8 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
 - Clients generate their code from the committed file:
   - [titan-android](https://github.com/vlukyanets/titan-android) generates its
     Kotlin client at build time.
-  - titan-web (planned) generates a TypeScript client.
+  - [titan-web](https://github.com/vlukyanets/titan-web) generates its TypeScript types
+    at build time.
 - Streaming endpoints (chat over SSE) are described in the schema as
   `text/event-stream`. Their event types are documented as schema components.
 

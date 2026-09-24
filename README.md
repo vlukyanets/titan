@@ -94,7 +94,7 @@ More detail: [architecture overview](docs/architecture/overview.md).
 |---|---|
 | [titan](https://github.com/vlukyanets/titan) | Backend, agent runtime, CLI, product spec (this repo) |
 | [titan-android](https://github.com/vlukyanets/titan-android) | Android app (Kotlin, Jetpack Compose) |
-| titan-web | Web UI (planned) |
+| [titan-web](https://github.com/vlukyanets/titan-web) | Web UI, served by every node |
 
 ## Documentation
 
