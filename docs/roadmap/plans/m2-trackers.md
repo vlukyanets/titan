@@ -17,6 +17,6 @@ Branch `feature/m2-trackers`, stacked on `feature/m2-push-retries`.
 Tasks:
 
 - [x] Spec and this plan.
-- [ ] Tables, migration, templates, service, stats and streaks.
+- [x] Tables, migration, templates, service, stats and streaks.
 - [ ] Trackers API, OpenAPI regenerated, docs updated.
 - [ ] Agent tools with exposure levels (after a live agent run).
