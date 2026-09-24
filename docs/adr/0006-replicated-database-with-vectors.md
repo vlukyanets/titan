@@ -1,6 +1,6 @@
 # 0006. Replicated database with vector support
 
-- Status: **Proposed** (research tracked in `docs/roadmap/research/`)
+- Status: **Proposed**, recommendation ready (research tracked in `docs/roadmap/research/`)
 - Date: 2026-09-24
 
 ## Context
@@ -37,11 +37,57 @@ provided by an extension.
 | CockroachDB | Yes, Raft | Needs 2 of 3 nodes up | Built-in vector type | Yes, through the `sqlalchemy-cockroachdb` dialect | Heavier; quorum means the laptop cannot be one of only two nodes |
 | YugabyteDB (YSQL) + pgvector | Yes, Raft | Needs a majority | pgvector-compatible | Yes, through the Postgres dialect | Postgres-compatible; heavier memory footprint |
 
+## Evidence from the M0 spike
+
+All four candidates ran the same failure scenarios on a three-node Docker
+cluster (2026-09-24). The measurements that decided the recommendation:
+
+- **Majority requirement.** With two of three nodes stopped, the surviving
+  CockroachDB and YugabyteDB nodes could neither read nor write. pgEdge Spock
+  and cr-sqlite kept working on any remaining node.
+- **Jobs under partition.** YugabyteDB fired 200 of 200 jobs exactly once,
+  CockroachDB fired one twice, pgEdge fired 100 twice, and cr-sqlite needed a
+  home-made majority lease to avoid duplicates.
+- **Concurrent edits.** pgEdge keeps the later commit and silently drops the
+  other. cr-sqlite resolves per column by edit count. The Raft databases
+  serialise the edits.
+- **Vectors.** pgvector HNSW and CockroachDB's built-in index are stable.
+  YugabyteDB's index is early access with poor, unstable recall. sqlite-vec
+  has ANN search only in an alpha release.
+- **Footprint.** Idle memory per node was 50–70 MB (cr-sqlite), 208–305 MiB
+  (pgEdge), and 420–560 MiB (YugabyteDB, CockroachDB).
+- **Health.** cr-sqlite has had no release since January 2024. Spock has been
+  under the PostgreSQL License since 5.0 and is maintained by one company.
+
 ## Decision
 
-Pending. It will be decided after the M0 research spike.
+**Recommended, awaiting the owner's acceptance:** PostgreSQL + pgEdge Spock +
+pgvector, on every node.
+
+Because replication is asynchronous, the application must be designed for it:
+
+1. **Scheduled jobs fire at least once and are delivered idempotently.** Each
+   run has a deterministic id (job id + scheduled time). Notifications carry it
+   and clients drop duplicates. Workflows write results under deterministic
+   keys, so a job that runs on two nodes updates one row instead of creating
+   two. Each job has a preferred node, and other nodes take over only after the
+   lease has expired plus a grace period.
+2. **Concurrent edits are recoverable.** Updates change only the fields that
+   were edited, every agent write is in the audit log
+   ([ADR 0005](0005-per-domain-autonomy-policy.md)), Spock conflicts are
+   surfaced to the owner, and node clocks are kept in sync.
+3. **We own the database image**: PostgreSQL + Spock + pgvector built and
+   pinned by us, with `spock_output` allowed in `output_plugin_libraries`.
 
 ## Consequences
 
-The storage layer is written behind a repository interface so the M1 skeleton
-can start on plain PostgreSQL + pgvector on one node while this ADR is open.
+- Development and single-node deployments use the same image without
+  subscriptions, so M1 does not wait for the cluster work.
+- Every scheduled workflow and notification needs an idempotency key. This
+  becomes a rule in the architecture docs once the ADR is accepted.
+- Still to verify before M3: vector recall on real data with the chosen
+  embedding model, Spock's conflict log, and how much WAL the other nodes keep
+  while the laptop is away for a week.
+- Rejected: CockroachDB and YugabyteDB (they need a majority, which the owner's
+  topology often lacks, and are heavy on a laptop); cr-sqlite (inactive
+  project, alpha-only ANN search, schema changes don't replicate).
