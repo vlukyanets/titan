@@ -63,6 +63,17 @@ scope for v1**. TITAN is the source of truth for its own data.
 - The agent keeps **long-term memory** per user: facts, preferences and routines
   it learns, stored with embeddings for semantic recall.
 
+### Languages
+
+- The assistant replies in the language the user writes in. v1 must work well
+  in **English, Russian and Ukrainian**, and nothing may limit it to that list.
+- Prompts, natural-language parsing (dates, amounts, durations) and search must
+  not assume one language or script. Users mix languages in one conversation.
+- Semantic search and memory recall work **across languages**: a note written
+  in Ukrainian is found by a question asked in English, and the other way round.
+- Stored data is kept in the language it was written in. The agent does not
+  translate user content unless asked.
+
 ## Autonomy policy
 
 Every domain tool declares an **action class**. What the agent may do for each

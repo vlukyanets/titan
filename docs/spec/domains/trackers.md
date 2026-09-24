@@ -28,8 +28,8 @@ The default policy for `finance` and `health` trackers may be stricter once
 
 ## Acceptance criteria (v1)
 
-- Logging from chat in natural language works ("spent 23.40 on groceries",
-  "slept 7 hours").
+- Logging from chat in natural language works in every supported language
+  ("spent 23.40 on groceries", "спала 7 годин", "потратил 500 на такси").
 - Habit streaks and simple period stats (week and month totals and averages) are
   available on every surface.
 - Health and finance entries are private to their owner and cannot be shared in
