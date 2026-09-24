@@ -1,0 +1,69 @@
+# Three cr-sqlite nodes. Each node is a Python process owning a local SQLite
+# file with cr-sqlite + sqlite-vec loaded. Peers pull changesets from each other
+# over the `cluster` network using the *-cluster aliases, which only resolve
+# there. The harness talks to the nodes through the published ports (client net).
+x-node: &node
+  image: spike-crsqlite-node:latest
+  environment: &env
+    PEERS: ""
+    MIGRATE_ON_START: "1"
+  restart: "no"
+
+services:
+  node1:
+    <<: *node
+    hostname: node1
+    environment:
+      <<: *env
+      NODE_NAME: node1
+      PEERS: "node2=http://node2-cluster:8080,node3=http://node3-cluster:8080"
+    ports: ["127.0.0.1:16101:8080"]
+    volumes: ["node1-data:/data"]
+    networks:
+      client: {}
+      cluster: { aliases: [node1-cluster] }
+  node2:
+    <<: *node
+    hostname: node2
+    environment:
+      <<: *env
+      NODE_NAME: node2
+      PEERS: "node1=http://node1-cluster:8080,node3=http://node3-cluster:8080"
+    ports: ["127.0.0.1:16102:8080"]
+    volumes: ["node2-data:/data"]
+    networks:
+      client: {}
+      cluster: { aliases: [node2-cluster] }
+  node3:
+    <<: *node
+    hostname: node3
+    environment:
+      <<: *env
+      NODE_NAME: node3
+      PEERS: "node1=http://node1-cluster:8080,node2=http://node2-cluster:8080"
+    ports: ["127.0.0.1:16103:8080"]
+    volumes: ["node3-data:/data"]
+    networks:
+      client: {}
+      cluster: { aliases: [node3-cluster] }
+
+  # S7 only: a fresh single node started from node1's backup, no peers.
+  restore:
+    image: spike-crsqlite-node:latest
+    profiles: [restore]
+    environment:
+      NODE_NAME: restore
+      PEERS: ""
+      MIGRATE_ON_START: "0"
+    ports: ["127.0.0.1:16109:8080"]
+    volumes: ["${RESTORE_DIR:-/nonexistent}:/data"]
+    networks: [client]
+
+networks:
+  client: {}
+  cluster: {}
+
+volumes:
+  node1-data: {}
+  node2-data: {}
+  node3-data: {}
