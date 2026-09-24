@@ -18,7 +18,7 @@ Branch `feature/m2-notes`, stacked on `fix/m2-task-search-case`.
 Tasks:
 
 - [x] Spec and this plan.
-- [ ] Tables, migration and service for notes and memories.
+- [x] Tables, migration and service for notes and memories.
 - [ ] Notes and memories API, OpenAPI regenerated, docs updated.
 - [ ] Embeddings and semantic search (after the model choice).
 - [ ] Agent tools: `notes.*` and `memory.*` (after a live agent run).
