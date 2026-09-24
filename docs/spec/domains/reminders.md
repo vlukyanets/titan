@@ -22,8 +22,8 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
 - A one-off reminder becomes `fired`. A recurring one stays `scheduled` and
   moves to its next occurrence, using the same rules as
   [recurring tasks](tasks.md#recurrence): `FREQ` is `DAILY` to `YEARLY`, no
-  `COUNT`, missed occurrences are skipped, evaluated in UTC for now. When the
-  rule has ended it becomes `fired`.
+  `COUNT`, missed occurrences are skipped, and the local time is kept in the
+  owner's time zone. When the rule has ended it becomes `fired`.
 - Firing is a status change in the same transaction as the notification, so
   an occurrence that has fired does not fire again on the same node. Across
   nodes a reminder fires at least once
