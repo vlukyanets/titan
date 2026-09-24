@@ -101,6 +101,11 @@ async def test_tasks_are_created_listed_and_filtered(
         await tasks.create_task(boris, "Boris's own task")
 
         assert [t.id for t in await tasks.tasks(anna)] == [milk.id, passport.id]
+        call = await tasks.create_task(anna, "Позвонить бабушке")
+        # Case is ignored in every alphabet, whatever the database's locale.
+        assert [t.id for t in await tasks.tasks(anna, TaskQuery(text="БАБУШК"))] == [call.id]
+        assert [t.id for t in await tasks.tasks(anna, TaskQuery(text="MILK"))] == [milk.id]
+        await tasks.delete_task(anna, call.id)
         assert [t.id for t in await tasks.tasks(anna, TaskQuery(tag="DOCS"))] == [passport.id]
         assert [t.id for t in await tasks.tasks(anna, TaskQuery(text="100%"))] == [milk.id]
         assert await tasks.tasks(anna, TaskQuery(text="_")) == []
