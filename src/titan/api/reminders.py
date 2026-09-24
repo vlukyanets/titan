@@ -53,6 +53,7 @@ class ReminderOut(BaseModel):
     recurrence: str | None = Field(description=_RRULE)
     status: ReminderStatus
     link: Link | None
+    is_default: bool = Field(description="A task's default reminder, kept in step with the task")
     fired_at: datetime | None
     notification_id: uuid.UUID | None = Field(description="The notification of the last firing")
     created_at: datetime
@@ -71,6 +72,7 @@ class ReminderOut(BaseModel):
             recurrence=r.recurrence,
             status=r.status,
             link=link,
+            is_default=r.is_default,
             fired_at=r.fired_at,
             notification_id=r.notification_id,
             created_at=r.created_at,

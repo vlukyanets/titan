@@ -169,6 +169,12 @@ class PrefsIO(BaseModel):
         min_length=1, max_length=7, description="ISO weekdays, 1 is Monday"
     )
     buffer_minutes: int = Field(ge=0, le=240, description="Gap the planner keeps between blocks")
+    default_reminder_minutes: int | None = Field(
+        default=15,
+        ge=1,
+        le=1440,
+        description="How long before its due time a task reminds its owner; null turns it off",
+    )
 
     @classmethod
     def of(cls, prefs: PlanningPrefs) -> PrefsIO:
@@ -178,6 +184,7 @@ class PrefsIO(BaseModel):
             work_end=prefs.work_end,
             work_days=list(prefs.work_days),
             buffer_minutes=prefs.buffer_minutes,
+            default_reminder_minutes=prefs.default_reminder_minutes,
         )
 
 
