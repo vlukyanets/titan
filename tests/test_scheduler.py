@@ -43,6 +43,15 @@ async def sessions(db_url: str) -> AsyncIterator[async_sessionmaker[AsyncSession
 
 
 @pytest.mark.db
+def test_titan_api_refuses_an_empty_database(db_url: str) -> None:
+    from titan.api.server import _check_schema
+
+    asyncio.run(_check_schema(Settings(database_url=db_url)))
+    with pytest.raises(SchemaTooOldError):
+        asyncio.run(_check_schema(Settings(database_url=db_url.rsplit("/", 1)[0] + "/postgres")))
+
+
+@pytest.mark.db
 async def test_the_startup_check_accepts_a_migrated_database(db_url: str) -> None:
     engine = create_async_engine(db_url)
     try:
