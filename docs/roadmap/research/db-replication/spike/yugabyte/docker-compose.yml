@@ -1,0 +1,125 @@
+# YugabyteDB (YSQL) three-node spike cluster. Compose project: spike-yugabyte.
+# Node-to-node traffic uses the *-cluster aliases, which exist only on the
+# internal `cluster` network, so `docker network disconnect spike-yugabyte_cluster
+# <node>` really partitions a node while the harness can still reach it on `client`.
+x-yb-node: &yb-node
+  image: yugabytedb/yugabyte:2026.1.2.0-b137
+  restart: "no"
+  # Data lives in the container's writable layer under /home/yugabyte/ybd (the image
+  # runs as uid 10001 and cannot write to a fresh root-owned named volume); it
+  # survives `docker compose stop/start` and is removed by `down -v`.
+  mem_limit: 2g            # safety cap on a shared host; YB's own limits below are lower
+  healthcheck:
+    test: ["CMD-SHELL", "bin/ysqlsh -h $$(hostname -i | tr ' ' '\\n' | head -1) -p 5433 -U yugabyte -c 'select 1' >/dev/null 2>&1 || bin/ysqlsh -h 127.0.0.1 -p 5433 -U yugabyte -c 'select 1' >/dev/null 2>&1"]
+    interval: 5s
+    timeout: 5s
+    retries: 60
+    start_period: 20s
+
+x-master-flags: &master_flags "--master_flags=memory_limit_hard_bytes=402653184,db_block_cache_size_bytes=33554432,ysql_num_shards_per_tserver=1,yb_num_shards_per_tserver=1"
+x-tserver-flags: &tserver_flags "--tserver_flags=pgsql_proxy_bind_address=0.0.0.0:5433,memory_limit_hard_bytes=805306368,db_block_cache_size_bytes=67108864,ysql_num_shards_per_tserver=1,yb_num_shards_per_tserver=1"
+
+services:
+  node1:
+    <<: *yb-node
+    hostname: node1
+    command:
+      - bin/yugabyted
+      - start
+      - --background=false
+      - --advertise_address=node1-cluster
+      - --base_dir=/home/yugabyte/ybd
+      - --ui=false
+      - --callhome=false
+      - *master_flags
+      - *tserver_flags
+    ports: ["16301:5433"]
+    networks:
+      client: {}
+      cluster: {aliases: [node1-cluster]}
+
+  node2:
+    <<: *yb-node
+    hostname: node2
+    depends_on:
+      node1: {condition: service_healthy}
+    command:
+      - bin/yugabyted
+      - start
+      - --background=false
+      - --advertise_address=node2-cluster
+      - --join=node1-cluster
+      - --base_dir=/home/yugabyte/ybd
+      - --ui=false
+      - --callhome=false
+      - *master_flags
+      - *tserver_flags
+    ports: ["16302:5433"]
+    networks:
+      client: {}
+      cluster: {aliases: [node2-cluster]}
+
+  node3:
+    <<: *yb-node
+    hostname: node3
+    depends_on:
+      node2: {condition: service_healthy}
+    command:
+      - bin/yugabyted
+      - start
+      - --background=false
+      - --advertise_address=node3-cluster
+      - --join=node1-cluster
+      - --base_dir=/home/yugabyte/ybd
+      - --ui=false
+      - --callhome=false
+      - *master_flags
+      - *tserver_flags
+    ports: ["16303:5433"]
+    networks:
+      client: {}
+      cluster: {aliases: [node3-cluster]}
+
+  # Fresh single node used only by S7 (restore target). Not on `cluster`.
+  restore:
+    image: yugabytedb/yugabyte:2026.1.2.0-b137
+    profiles: ["restore"]
+    hostname: restore
+    mem_limit: 2g
+    command:
+      - bin/yugabyted
+      - start
+      - --background=false
+      - --base_dir=/home/yugabyte/ybd
+      - --ui=false
+      - --callhome=false
+      - *master_flags
+      - *tserver_flags
+    ports: ["16304:5433"]
+    networks:
+      client: {}
+
+  # Extra S5 probe only: fresh single node with YugabyteDB's early-access
+  # transactional DDL flag switched on (off by default).
+  ddlprobe:
+    image: yugabytedb/yugabyte:2026.1.2.0-b137
+    profiles: ["ddlprobe"]
+    hostname: ddlprobe
+    mem_limit: 2g
+    command:
+      - bin/yugabyted
+      - start
+      - --background=false
+      - --base_dir=/home/yugabyte/ybd
+      - --ui=false
+      - --callhome=false
+      - *master_flags
+      - "--tserver_flags=pgsql_proxy_bind_address=0.0.0.0:5433,memory_limit_hard_bytes=805306368,db_block_cache_size_bytes=67108864,ysql_num_shards_per_tserver=1,yb_num_shards_per_tserver=1,ysql_yb_ddl_transaction_block_enabled=true"
+    ports: ["16305:5433"]
+    networks:
+      client: {}
+
+networks:
+  client: {}
+  cluster:
+    internal: true
