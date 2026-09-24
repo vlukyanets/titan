@@ -19,6 +19,6 @@ Tasks:
 
 - [x] Spec and this plan.
 - [x] Tables, migration and service for notes and memories.
-- [ ] Notes and memories API, OpenAPI regenerated, docs updated.
+- [x] Notes and memories API, OpenAPI regenerated, docs updated.
 - [ ] Embeddings and semantic search (after the model choice).
 - [ ] Agent tools: `notes.*` and `memory.*` (after a live agent run).
