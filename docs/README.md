@@ -7,6 +7,7 @@ changes often lives separately in [`roadmap/`](roadmap/README.md).
 ## Specification: what TITAN does
 
 - [Product spec](spec/product.md): vision, users, surfaces, autonomy, cost control
+- [CLI](spec/cli.md): node administration and the client commands
 - Domains:
   [tasks](spec/domains/tasks.md) ·
   [calendar](spec/domains/calendar.md) ·
@@ -39,6 +40,7 @@ changes often lives separately in [`roadmap/`](roadmap/README.md).
 | [0008](adr/0008-push-messages-carry-references.md) | Push messages carry only references | Accepted |
 | [0009](adr/0009-chat-history-in-titan-tables.md) | Chat history lives in TITAN tables | Accepted |
 | [0010](adr/0010-approved-calls-run-outside-the-session.md) | Approved tool calls run outside the model session | Accepted |
+| [0011](adr/0011-cli-client-over-http.md) | The CLI client talks HTTP and keeps its token in a private file | Proposed |
 
 New ADRs start from the [template](adr/0000-template.md).
 
