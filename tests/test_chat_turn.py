@@ -263,6 +263,12 @@ async def test_a_turn_streams_and_stores_the_reply(harness: Harness) -> None:
     assert options.include_partial_messages is True
     assert options.tools == []
     assert await harness.scalar("SELECT count(*) FROM checkpoints") == 0
+    usage = await harness.scalar(
+        "SELECT row(source, model, input_tokens, output_tokens, cost_usd)::text "
+        "FROM usage_records WHERE reference = :ref",
+        ref=turn.assistant_message.id,
+    )
+    assert usage == "(chat,strong-model,120,30,0.0123)"
 
 
 async def test_checkpoints_hold_ids_but_no_content(harness: Harness) -> None:
@@ -311,6 +317,8 @@ async def test_a_failed_session_fails_the_turn_without_content(harness: Harness)
     assert ended.message.error == "the session failed: success, HTTP 529"
     assert ended.message.content == ""
     assert await harness.scalar("SELECT count(*) FROM checkpoints") == 0
+    # The failed session still used tokens, and they count.
+    assert await harness.scalar("SELECT sum(input_tokens) FROM usage_records") == 120
 
 
 async def test_a_slow_turn_times_out(db_url: str, tmp_path: Path) -> None:

@@ -17,5 +17,5 @@ Tasks:
 
 - [x] Spec and this plan.
 - [x] Usage table, service and migration.
-- [ ] Recording from chat turns, successful and failed.
+- [x] Recording from chat turns, successful and failed.
 - [ ] API and CLI, OpenAPI regenerated, docs updated.
