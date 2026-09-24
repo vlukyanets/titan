@@ -7,6 +7,7 @@ import logging
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +37,7 @@ from titan.domains.accounts.models import Role
 from titan.domains.accounts.service import AccountsService, Principal
 from titan.domains.chat.models import ChatMessage, MessageRole, MessageStatus
 from titan.domains.chat.service import ChatService, TurnUsage
+from titan.domains.usage.budget import BudgetService
 from titan.settings import Settings
 
 URL = "postgresql+psycopg://user:pw@db/titan"
@@ -181,6 +183,7 @@ class Harness:
             database_url=db_url,
             claude_config_dir=tmp_path / "claude",
             claude_model_strong="strong-model",
+            claude_model_fast="fast-model",
             **settings,
         )
         self.engine = create_async_engine(db_url)
@@ -319,6 +322,38 @@ async def test_a_failed_session_fails_the_turn_without_content(harness: Harness)
     assert await harness.scalar("SELECT count(*) FROM checkpoints") == 0
     # The failed session still used tokens, and they count.
     assert await harness.scalar("SELECT sum(input_tokens) FROM usage_records") == 120
+
+
+async def test_over_budget_chat_falls_back_to_the_fast_tier(harness: Harness) -> None:
+    anna = await harness.principal()
+    async with harness.sessions() as session:
+        await BudgetService(session).set_limit(None, anna.user_id, Decimal("0.02"))
+    fake = FakeQuery(init(), result(result="Done."))  # every session costs 0.0123
+    runtime = harness.runtime(fake)
+
+    async def turn() -> None:
+        started = await harness.turn(anna, "Plan my day")
+        (ended,) = await collect(runtime.start(anna.user_id, started.assistant_message.id))
+        assert ended.message.status is MessageStatus.COMPLETE
+
+    try:
+        await turn()
+        await turn()  # 0.0246 of 0.02: exceeded from now on
+        await turn()
+        async with harness.sessions() as session:
+            await BudgetService(session).set_limit(None, anna.user_id, Decimal("1"))
+        await turn()
+    finally:
+        await runtime.aclose()
+
+    models = [options.model for _, options in fake.calls]
+    assert models == ["strong-model", "strong-model", "fast-model", "strong-model"]
+    states = await harness.scalar(
+        "SELECT string_agg(data->>'state', ',' ORDER BY created_at) FROM notifications "
+        "WHERE kind = 'budget' AND user_id = :user",
+        user=anna.user_id,
+    )
+    assert states == "exceeded"
 
 
 async def test_a_slow_turn_times_out(db_url: str, tmp_path: Path) -> None:

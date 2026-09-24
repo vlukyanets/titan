@@ -67,7 +67,8 @@ loss, and a reminder fires exactly once.
 
 ## M4: Hardening
 
-- [ ] Monthly budget caps with warnings and fallback to the fast model tier.
+- [ ] Monthly budget caps with warnings and fallback to the fast model tier
+      ([plan](plans/m4-budget-caps.md)).
 - [ ] Prompt caching tuned per workflow.
 - [ ] Backups and a tested restore.
 - [ ] ADR 0007 implemented.

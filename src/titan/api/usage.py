@@ -1,15 +1,24 @@
-"""Token usage and cost per user and month."""
+"""Token usage and cost per user and month, and monthly budgets."""
 
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from titan.api.deps import CurrentPrincipal, Session
+from titan.api.deps import CurrentPrincipal, Notifications, Session
 from titan.api.problems import PROBLEM_JSON
+from titan.domains.usage.budget import (
+    MAX_LIMIT,
+    BudgetService,
+    BudgetState,
+    BudgetStatus,
+    MemberBudget,
+)
+from titan.domains.usage.models import OwnerAlerts
 from titan.domains.usage.service import MonthUsage, Totals, UsageService, current_month
 
 router = APIRouter(prefix="/usage", tags=["usage"])
@@ -102,3 +111,87 @@ async def household_usage(
         )
         for m in members
     ]
+
+
+class BudgetOut(BaseModel):
+    month: str = Field(description="The current calendar month in UTC")
+    limit_usd: float | None = Field(description="The monthly limit; null means no cap")
+    spent_usd: float = Field(description="The month's cost so far, as in the usage totals")
+    state: BudgetState = Field(
+        description="ok below 80 % of the limit, warning from 80 %, exceeded from 100 %"
+    )
+    owner_alerts: OwnerAlerts | None = Field(
+        description=(
+            "Which states the owners are notified of: off, exceeded, or all (warning and "
+            "exceeded); null without a limit"
+        )
+    )
+
+    @classmethod
+    def of(cls, status: BudgetStatus) -> BudgetOut:
+        return cls(
+            month=status.month,
+            limit_usd=None if status.limit_usd is None else float(status.limit_usd),
+            spent_usd=round(status.spent_usd, 6),
+            state=status.state,
+            owner_alerts=status.owner_alerts,
+        )
+
+
+class MemberBudgetOut(BudgetOut):
+    user_id: uuid.UUID
+    username: str
+
+    @classmethod
+    def of_member(cls, member: MemberBudget) -> MemberBudgetOut:
+        return cls(
+            user_id=member.user_id,
+            username=member.username,
+            **BudgetOut.of(member.status).model_dump(),
+        )
+
+
+class BudgetIn(BaseModel):
+    limit_usd: float | None = Field(
+        ge=0,
+        le=float(MAX_LIMIT),
+        description="Monthly limit in US dollars, rounded to cents; null removes the cap",
+    )
+    owner_alerts: OwnerAlerts | None = Field(
+        default=None,
+        description="Left out: unchanged, or exceeded for a new limit. Needs a limit",
+    )
+
+
+def get_budgets(session: Session, notifications: Notifications) -> BudgetService:
+    return BudgetService(session, notifications=notifications)
+
+
+Budgets = Annotated[BudgetService, Depends(get_budgets)]
+
+
+@router.get("/budget", summary="The caller's budget this month", responses={401: _PROBLEM})
+async def my_budget(principal: CurrentPrincipal, budgets: Budgets) -> BudgetOut:
+    return BudgetOut.of(await budgets.status(principal.user_id))
+
+
+@router.get(
+    "/budgets",
+    summary="Every user's budget this month (owner only)",
+    responses={401: _PROBLEM, 403: _PROBLEM},
+)
+async def household_budgets(principal: CurrentPrincipal, budgets: Budgets) -> list[MemberBudgetOut]:
+    return [MemberBudgetOut.of_member(m) for m in await budgets.household(principal)]
+
+
+@router.put(
+    "/budgets/{user_id}",
+    summary="Set or remove a user's monthly limit (owner only)",
+    responses={401: _PROBLEM, 403: _PROBLEM, 404: _PROBLEM, 422: _PROBLEM},
+)
+async def set_budget(
+    principal: CurrentPrincipal, budgets: Budgets, user_id: uuid.UUID, body: BudgetIn
+) -> MemberBudgetOut:
+    limit = None if body.limit_usd is None else Decimal(str(body.limit_usd))
+    member = await budgets.set_limit(principal, user_id, limit, owner_alerts=body.owner_alerts)
+    return MemberBudgetOut.of_member(member)

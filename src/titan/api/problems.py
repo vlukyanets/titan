@@ -85,6 +85,8 @@ _DOMAIN_STATUS: dict[type[Exception], int] = {
     autonomy_errors.UndoConflictError: 409,
     usage_errors.ForbiddenError: 403,
     usage_errors.InvalidMonthError: 422,
+    usage_errors.NotFoundError: 404,
+    usage_errors.InvalidBudgetError: 422,
     tasks_errors.NotFoundError: 404,
     tasks_errors.ForbiddenError: 403,
     tasks_errors.InvalidTaskError: 422,

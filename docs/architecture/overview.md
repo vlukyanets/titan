@@ -114,9 +114,12 @@ TITAN combines two frameworks ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-n
   process runs turns itself (`titan.agent.runtime`), each in a task of its own,
   so a closed connection does not stop a turn. A turn's checkpoints are deleted
   when it ends.
-- **Usage**: every session's token usage and cost is recorded from its result
-  message, failed sessions included (`titan.agent.usage`), as the basis for
-  usage reports and the monthly budget.
+- **Usage and budgets**: every session's token usage and cost is recorded from
+  its result message, failed sessions included (`titan.agent.usage`), which
+  then checks the user's monthly budget and sends the warning or exceeded
+  notification. A chat turn reads the budget state before it starts and runs on
+  the `fast` tier while the budget is exceeded
+  ([usage](../spec/domains/usage.md#monthly-budget)).
 - **No tracing**: agent startup removes every `LANGSMITH_*` and `LANGCHAIN_*`
   variable, so LangSmith can never receive conversations.
 

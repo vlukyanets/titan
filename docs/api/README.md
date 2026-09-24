@@ -52,7 +52,11 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   (`/api/v1/policy`) are described in [autonomy](../spec/domains/autonomy.md).
 - Usage: `GET /api/v1/usage?month=YYYY-MM` gives the caller's token usage and
   cost for a UTC calendar month, overall and per model;
-  `GET /api/v1/usage/household` gives everyone's (owner only)
+  `GET /api/v1/usage/household` gives everyone's (owner only).
+  `GET /api/v1/usage/budget` gives the caller's monthly limit, spending and
+  state; the owner lists everyone's with `GET /api/v1/usage/budgets` and sets or
+  removes a limit, and chooses which states the owners hear about
+  (`owner_alerts`), with `PUT /api/v1/usage/budgets/{user_id}`
   ([usage](../spec/domains/usage.md)).
 - Tasks and projects: `/api/v1/tasks` and `/api/v1/projects`. `PATCH` changes
   only the fields it sends, and `null` clears an optional one. A task is

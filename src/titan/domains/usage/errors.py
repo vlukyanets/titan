@@ -11,3 +11,11 @@ class InvalidMonthError(UsageError):
 
 class ForbiddenError(UsageError):
     pass
+
+
+class NotFoundError(UsageError):
+    pass
+
+
+class InvalidBudgetError(UsageError):
+    pass

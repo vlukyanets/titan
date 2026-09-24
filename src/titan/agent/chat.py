@@ -38,6 +38,7 @@ from titan.agent.usage import record_usage
 from titan.domains.autonomy.models import Approval
 from titan.domains.chat.models import ChatMessage, MessageRole
 from titan.domains.chat.service import ChatService, TurnUsage
+from titan.domains.usage.budget import BudgetService
 from titan.notify import Pusher
 from titan.settings import Settings
 
@@ -154,20 +155,23 @@ async def reply(state: ChatTurnState, runtime: Runtime[ChatContext]) -> dict[str
     context = runtime.context
     settings = context.settings
     message_id = uuid.UUID(state["assistant_message_id"])
+    user_id = uuid.UUID(state["user_id"])
     async with context.sessions() as session:
         turn = await ChatService(session).turn_context(
-            uuid.UUID(state["user_id"]), message_id, history_limit=settings.chat_history_messages
+            user_id, message_id, history_limit=settings.chat_history_messages
         )
+        budget = await BudgetService(session).status(user_id)
     scope = ToolScope(
         context.sessions,
-        uuid.UUID(state["user_id"]),
+        user_id,
         turn.thread_id,
         context.pusher,
         settings.push_allowed_origins,
     )
     options = agent_options(
         settings,
-        tier=Tier.STRONG,
+        # Over the monthly budget, chat goes on with the cheap model.
+        tier=Tier.FAST if budget.exceeded else Tier.STRONG,
         system_prompt=SYSTEM_PROMPT,
         mcp_servers=mcp_servers(scope),
         # Domain tools stay out of allowed_tools: only the policy hook lets a
@@ -194,10 +198,11 @@ async def reply(state: ChatTurnState, runtime: Runtime[ChatContext]) -> dict[str
     await record_usage(
         context.sessions,
         result,
-        user_id=uuid.UUID(state["user_id"]),
+        user_id=user_id,
         source="chat",
         model=options.model or "",
         reference=message_id,
+        pusher=context.pusher,
     )
     run = agent_run(result, options)
     async with context.sessions() as session:
