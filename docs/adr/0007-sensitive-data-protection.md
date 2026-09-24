@@ -17,8 +17,9 @@ be compromised at rest.
 
 ## Options under evaluation
 
-1. **Access control only**: per-user ownership checks, full-disk encryption on
-   every node, and encryption in transit through Tailscale. Simple, and search
+1. **Access control and an encrypted Docker volume**: per-user ownership
+   checks, all of TITAN's data inside an encrypted volume on every node, and
+   encryption in transit through Tailscale. Simple, and search
    and vectors keep working. A stolen unencrypted disk or a compromised VPS
    exposes everything.
 2. **Field-level encryption** of sensitive fields with per-user keys held by the
@@ -37,15 +38,15 @@ serve any user:
 
 | | Stolen powered-off laptop or disk image | Compromised running node (VPS host, malware) | Data sent to Claude | Cost |
 |---|---|---|---|---|
-| 1 Access control + full-disk encryption + encrypted backups | Yes | No | No | Low: a node setup requirement |
+| 1 Access control + encrypted Docker volume + encrypted backups | Yes | No | No | Low: a node setup requirement |
 | 2 Field-level encryption, keys on every node | Yes (already covered by 1) | No: the running API holds the keys | No | High: no SQL sums or filters on encrypted values, no embeddings, key rotation and loss |
 | 2b Field-level encryption, keys unlocked per user session | Yes | Partly: only for users not logged in | No | Very high: scheduled workflows (daily plan, stats, reminders about finance) cannot read the data unattended |
 | 3 Agent exposure controls | No | No | Yes | Medium: tool variants that return aggregates |
 
 Equal trust removes what field-level encryption is usually for. Keys cannot be
 kept off some nodes, so a compromised running node reads the data whether it
-is encrypted or not, and a stolen disk is already covered by full-disk
-encryption. What remains of option 2 is its cost: tracker statistics would have
+is encrypted or not, and a stolen disk is already covered by the encrypted
+volume. What remains of option 2 is its cost: tracker statistics would have
 to be computed in the application, and sensitive notes could not be searched
 semantically.
 
@@ -54,9 +55,16 @@ semantically.
 Options 1 and 3 together; option 2 is rejected for v1. The owner decides; the
 status stays Proposed until then.
 
-1. **Baseline on every node**, checked in the node setup guide:
-   - full-disk encryption (LUKS, FileVault or BitLocker), including the
-     database volume;
+1. **Baseline on every node**, set up and checked as the
+   [node setup guide](../architecture/node-setup.md) describes:
+   - all of TITAN's data lives inside an encrypted volume that holds Docker's
+     whole data root: the database, the ntfy cache, container logs and image
+     layers. On Linux that is a LUKS2 volume unlocked by TPM2 on a server
+     (optionally together with a Tang server on the home network) and by
+     TPM2 with a PIN on a laptop; on macOS the Docker Desktop disk inside
+     FileVault; on Windows the WSL2 disk on a BitLocker drive. The rest of
+     the system disk need not be encrypted, but swap must be, because
+     database pages can be written to it;
    - traffic only over Tailscale;
    - backups encrypted before they leave the node;
    - no user content in logs (already a rule of the code).
@@ -79,7 +87,11 @@ If the recommendation is accepted:
 
 - Tracker entries, notes and memories are stored as plain columns, so SQL
   aggregates and embeddings work.
-- The node setup guide lists the baseline, and every node is set up to it.
+- Every node is set up to the [node setup guide](../architecture/node-setup.md).
+- A server with TPM2-only unlock that is stolen whole boots and unlocks by
+  itself; its data is then protected only by the running system. Tang or a
+  PIN closes that gap. On a VPS the TPM belongs to the hoster, so the
+  encrypted volume protects only against leaked snapshots.
 - Agent tools of sensitive domains take the exposure level into account.
 - Field-level encryption needs a new ADR, together with a reason to trust some
   nodes less than others.
