@@ -45,6 +45,8 @@ A turn is one user message and the assistant's reply to it.
   Russian and Ukrainian are expected, but any language works.
 - Chat uses the `strong` model tier. The budget fallback to the `fast` tier
   arrives with the monthly budget.
+- An approved action's result is added to the thread as an assistant message
+  without a model, so a thread can gain messages outside a turn.
 - Message contents are never written to logs, workflow checkpoints or error
   messages.
 
@@ -58,6 +60,7 @@ Every event's data is a JSON object whose `type` repeats the event name:
 | `turn` | `user_message`, `assistant_message` (the stored messages) | First, once both messages are stored |
 | `text` | `delta` | Each piece of the reply as it is written |
 | `tool` | `id`, `name`, `status` (`started`, `finished`, `failed`) | A domain tool call starts or ends |
+| `approval` | `approval` (the stored request) | The agent asked for the user's approval ([autonomy](autonomy.md)) |
 | `done` | `message` (the complete assistant message) | Last, on success |
 | `error` | `message` (the failed assistant message) | Last, on failure |
 
@@ -65,8 +68,7 @@ The stored reply is the model's final answer. Text the model writes before a
 tool call streams too but may not be part of it, so a client shows the `done`
 message's content in place of the streamed text. The stream sends a comment
 line every 15 seconds while the model is silent, so proxies keep the connection
-open. Approval events join the stream with the
-policy hook.
+open.
 
 ## API
 

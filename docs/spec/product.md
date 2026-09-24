@@ -51,6 +51,7 @@ own spec:
 | Reminders | [domains/reminders.md](domains/reminders.md) | Time-based reminders delivered as push notifications |
 | Notifications | [domains/notifications.md](domains/notifications.md) | Notification history and push delivery through UnifiedPush and ntfy |
 | Chat | [domains/chat.md](domains/chat.md) | Threads with the assistant and replies streamed over SSE |
+| Autonomy | [domains/autonomy.md](domains/autonomy.md) | Policy, approval requests and the audit log with undo |
 
 External integrations (Google Calendar, CalDAV, email and so on) are **out of
 scope for v1**. TITAN is the source of truth for its own data.
@@ -87,7 +88,8 @@ class is set by a per-domain policy:
 - Every action the agent takes is written to an append-only **audit log** with
   before and after state. `auto-undo` actions can be reverted from the log.
 
-Design: [ADR 0005](../adr/0005-per-domain-autonomy-policy.md).
+Design: [ADR 0005](../adr/0005-per-domain-autonomy-policy.md). Rules, approvals and
+the audit log in detail: [autonomy](domains/autonomy.md).
 
 ## Cost control
 
