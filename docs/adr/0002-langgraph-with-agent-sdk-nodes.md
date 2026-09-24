@@ -1,6 +1,7 @@
 # 0002. LangGraph workflows with Claude Agent SDK nodes
 
-- Status: Accepted
+- Status: Accepted; the approval interrupt and the `PostToolUse` audit hook are
+  amended by [ADR 0010](0010-approved-calls-run-outside-the-session.md)
 - Date: 2026-09-24
 
 ## Context

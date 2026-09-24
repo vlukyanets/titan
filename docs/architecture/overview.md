@@ -96,11 +96,13 @@ TITAN combines two frameworks ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-n
   (`create_sdk_mcp_server`), one per domain. Built-in Claude Code tools such as
   shell and file access are disabled.
 - **Policy gate**: a `PreToolUse` hook looks up the tool's action class and the
-  user's policy. It allows the call, denies it, or turns it into an approval
-  request. On approval requests the graph pauses with a LangGraph interrupt and
-  resumes when the user answers.
-- **Audit log**: a `PostToolUse` hook records every executed tool call with its
-  before and after state, which makes undo possible.
+  user's policy. It allows the call, denies it, or denies it and stores an
+  approval request with the exact input. On approval TITAN runs the stored call
+  itself, without the model, and posts the result to the thread
+  ([ADR 0010](../adr/0010-approved-calls-run-outside-the-session.md)).
+- **Audit log**: TITAN's in-process wrapper around every domain tool records
+  each executed call that is not `read`, with its before and after state, which
+  makes undo possible.
 - **Claude credentials** are handled as described in
   [claude-auth.md](claude-auth.md).
 - **Chat turns** (`titan.agent.chat`) keep only ids in their graph state, read
@@ -122,19 +124,19 @@ sequenceDiagram
     participant G as LangGraph chat_turn
     participant SDK as Agent SDK node
     participant H as PreToolUse hook
-    U->>API: POST /chat/{thread}/messages
+    U->>API: POST /chat/threads/{id}/messages
     API->>G: start run
-    G->>SDK: query(prompt, tools, model tier)
-    SDK->>H: tasks.update on a shared task
-    H-->>G: action class external, policy confirm
-    G-->>API: interrupt (approval request)
-    API-->>U: SSE event + ntfy push
-    U->>API: POST /approvals/{id} approve
-    API->>G: resume
-    G->>SDK: continue, tool allowed
-    SDK-->>G: final answer
-    G-->>API: stream tokens
-    API-->>U: SSE tokens
+    G->>SDK: query(prompt, domain tools, model tier)
+    SDK->>H: notify_member(Boris, "Buy milk")
+    H->>API: store approval request, push it
+    H-->>SDK: deny: the user has been asked
+    API-->>U: SSE approval event + ntfy push
+    SDK-->>G: final answer ("I asked you to confirm")
+    G-->>API: stream tokens, turn ends
+    API-->>U: SSE text, done
+    U->>API: POST /approvals/{id}/approve
+    API->>API: run the stored call, write the audit log
+    API-->>U: result, also posted to the thread
 ```
 
 ## Storage and migrations
