@@ -34,10 +34,16 @@ Work flows from the documents to the code, never the other way round.
 Never put plans or task lists outside `docs/roadmap/`. Never put lasting
 knowledge only in `docs/roadmap/`.
 
-## Commits and pull requests
+## Branches, commits and pull requests
 
 Full rules: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). In short:
 
+- Branch: `<kind>/<milestone>-<topic>`, for example `feature/m1-device-pairing`.
+  Kind is `feature`, `fix`, `spec`, `research`, `refactor` or `chore`.
+  Milestone comes from the roadmap (`m0`–`m4`). Lowercase kebab-case, at most 50
+  characters. Never keep a tool-generated name: if the session starts on one
+  (such as `claude/…`), rename it before the first push. Cross-repo changes use
+  the same branch name, with the backend milestone, in both repositories.
 - Title: past-tense verb first (`Added …`, `Fixed …`), ≤ 72 characters, no
   trailing period, no `feat:`-style prefixes, no issue numbers.
 - Body: exactly one plain-language paragraph explaining what and why.

@@ -1,9 +1,48 @@
 # Contributing
 
-These rules apply to humans and AI agents alike, in every TITAN repository
+These rules for branches, commits and pull requests apply to humans and AI
+agents alike, in every TITAN repository
 ([titan](https://github.com/vlukyanets/titan),
-[titan-android](https://github.com/vlukyanets/titan-android)). Commits and pull
-requests are read by people, so write them for people.
+[titan-android](https://github.com/vlukyanets/titan-android)). Branches,
+commits and pull requests are read by people, so write them for people.
+
+## Branches
+
+Branch names say what stage of the project the work belongs to and what it
+changes, so the list of branches reads like a status board.
+
+```text
+<kind>/<milestone>-<topic>
+```
+
+- **kind** is one of:
+
+  | Kind | Use for |
+  |---|---|
+  | `feature` | New behaviour |
+  | `fix` | Bug fixes |
+  | `spec` | Specs, ADRs, architecture docs, roadmap |
+  | `research` | Spikes and experiments that may never be merged |
+  | `refactor` | Restructuring without behaviour change |
+  | `chore` | Build, CI, dependencies, tooling |
+
+- **milestone** is the roadmap milestone the work belongs to: `m0`–`m4` in
+  titan, `a1`–`a4` in titan-android. Leave it out only for work outside any
+  milestone (`fix/crash-on-empty-plan`).
+- **topic** is two to five words in kebab-case that name the feature or change.
+- Lowercase letters, digits and hyphens only, one `/`, at most 50 characters.
+- No personal names, dates, ticket numbers or tool-generated names such as
+  `claude/bold-ritchie-f571jn`.
+- A change that spans both repositories uses the **same branch name** in each,
+  with the backend milestone (`feature/m1-device-pairing` in both).
+- Branch from `master`. Delete the branch once it has been merged.
+
+| Good | Bad | Why it is bad |
+|---|---|---|
+| `spec/m0-foundation-docs` | `docs` | No kind or topic |
+| `feature/m1-device-pairing` | `feature/DevicePairing` | Uppercase, no milestone |
+| `research/m0-db-replication` | `alice/test` | Personal name, says nothing |
+| `fix/a2-chat-stream-reconnect` | `fix/issue-42` | Ticket number instead of a topic |
 
 ## Commit messages
 
