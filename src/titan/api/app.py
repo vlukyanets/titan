@@ -8,9 +8,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from titan import __version__
-from titan.api import health, problems
+from titan.api import accounts, health, problems
 from titan.settings import Settings
-from titan.storage.db import create_engine
+from titan.storage.db import create_engine, session_factory
 
 API_PREFIX = "/api/v1"
 
@@ -32,6 +32,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.engine = engine
+    app.state.sessions = session_factory(engine)
     problems.install(app)
     app.include_router(health.router, prefix=API_PREFIX)
+    app.include_router(accounts.router, prefix=API_PREFIX)
     return app

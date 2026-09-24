@@ -29,7 +29,8 @@ Exit: ADR 0006 accepted, the spike code thrown away or folded into M1.
       Compose file for one node. `titan-api` and the Compose file are done.
 - [x] SQLAlchemy + Alembic setup with CI migration tests
       ([database-migrations.md](../architecture/database-migrations.md)).
-- [ ] Accounts, device pairing and device tokens.
+- [x] Accounts, device pairing and device tokens
+      ([plan](plans/m1-accounts-devices.md)).
 - [ ] Agent runtime: LangGraph + Agent SDK node wrapper, model tiers, auth modes.
 - [ ] Policy hook, approvals API, audit log with undo.
 - [ ] Chat API with SSE streaming.

@@ -153,8 +153,9 @@ changes, which are rolled out safely across peer nodes as described in
 ## Security baseline
 
 - The API listens only on the Tailscale interface.
-- Passwords are hashed with Argon2id. Device tokens are random, stored hashed,
-  and revocable per device.
+- Passwords are hashed with Argon2id. Device tokens are 256-bit random values,
+  stored only as SHA-256 digests, and revocable per device
+  ([accounts and devices](../spec/accounts.md)).
 - Row-level ownership is checked in the domain services, not only in the API.
 - Secrets (Claude credentials, database passwords) come from environment or
   Docker secrets, never from the repository.
