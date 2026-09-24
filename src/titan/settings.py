@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ipaddress
+import socket
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -42,6 +43,16 @@ class Settings(BaseSettings):
     chat_turn_timeout_seconds: float = Field(default=300.0, gt=0)
     # Autonomy (docs/spec/domains/autonomy.md): unanswered approvals expire.
     approval_ttl_hours: float = Field(default=24.0, gt=0)
+
+    # Scheduler (docs/architecture/overview.md#scheduler-and-reminders).
+    node_name: str = Field(default_factory=socket.gethostname, min_length=1, max_length=64)
+    # The node that runs sweeps while it is up; empty means this node.
+    preferred_node: str | None = Field(default=None, max_length=64)
+    scheduler_tick_seconds: float = Field(default=5.0, gt=0, le=60)
+    scheduler_lease_seconds: float = Field(default=30.0, gt=0)
+    scheduler_grace_seconds: float = Field(default=30.0, ge=0)
+    # Touched after every successful tick, for the container's health check.
+    worker_heartbeat_file: Path | None = None
 
     @field_validator("bind_host")
     @classmethod

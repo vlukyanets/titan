@@ -22,7 +22,7 @@ Tasks:
 - [x] Spec and this plan.
 - [x] Reminders table, service and firing.
 - [x] Reminders API, OpenAPI regenerated, docs updated.
-- [ ] Scheduler with leases and the `titan-worker` entry point (branch
+- [x] Scheduler with leases and the `titan-worker` entry point (branch
       `feature/m2-scheduler`): `scheduler_leases` table, preferred node and
       grace period, the reminders sweep, the startup revision check, the
       Compose service.
