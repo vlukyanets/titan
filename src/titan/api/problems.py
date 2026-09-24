@@ -9,6 +9,7 @@ from starlette.exceptions import HTTPException
 
 from titan.domains.accounts import errors as accounts_errors
 from titan.domains.autonomy import errors as autonomy_errors
+from titan.domains.calendar import errors as calendar_errors
 from titan.domains.chat import errors as chat_errors
 from titan.domains.notifications import errors as notifications_errors
 from titan.domains.reminders import errors as reminders_errors
@@ -48,6 +49,7 @@ def install(app: FastAPI) -> None:
     app.add_exception_handler(usage_errors.UsageError, _domain)
     app.add_exception_handler(tasks_errors.TasksError, _domain)
     app.add_exception_handler(reminders_errors.RemindersError, _domain)
+    app.add_exception_handler(calendar_errors.CalendarError, _domain)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -87,6 +89,9 @@ _DOMAIN_STATUS: dict[type[Exception], int] = {
     reminders_errors.NotFoundError: 404,
     reminders_errors.InvalidReminderError: 422,
     reminders_errors.ReminderClosedError: 409,
+    calendar_errors.NotFoundError: 404,
+    calendar_errors.ForbiddenError: 403,
+    calendar_errors.InvalidEventError: 422,
 }
 
 

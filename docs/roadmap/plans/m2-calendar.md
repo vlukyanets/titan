@@ -18,6 +18,6 @@ Tasks:
 
 - [x] Spec (time zones answer open question 8) and this plan.
 - [x] Tables, migration, service, occurrence expansion and busy intervals.
-- [ ] Calendar API, OpenAPI regenerated, docs updated.
+- [x] Calendar API, OpenAPI regenerated, docs updated.
 - [ ] Agent tools and the planner (after a live agent run).
 - [ ] Tasks and reminders repeat in the owner's time zone.
