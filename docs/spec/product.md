@@ -22,6 +22,7 @@ network, and its agent is built on the Claude Agent SDK.
 - Accounts are local to TITAN (username + password; passkeys later).
 - Each client device is paired once and receives its own revocable **device
   token**. API calls authenticate with the device token.
+- Details: [accounts and devices](accounts.md).
 - All data belongs to exactly one user and is **private by default**. Sharing
   is explicit, per item or per collection (for example a shared "Home" project).
 
