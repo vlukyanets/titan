@@ -1,7 +1,9 @@
 # 0006. Replicated database with vector support
 
-- Status: **Proposed**, recommendation ready (research tracked in `docs/roadmap/research/`)
+- Status: Accepted
 - Date: 2026-09-24
+- Spike code and full results: `docs/roadmap/research/db-replication/` in the
+  git history (removed from the tree when this ADR was accepted)
 
 ## Context
 
@@ -61,8 +63,7 @@ cluster (2026-09-24). The measurements that decided the recommendation:
 
 ## Decision
 
-**Recommended, awaiting the owner's acceptance:** PostgreSQL + pgEdge Spock +
-pgvector, on every node.
+PostgreSQL + pgEdge Spock + pgvector, on every node.
 
 Because replication is asynchronous, the application must be designed for it:
 
@@ -83,8 +84,8 @@ Because replication is asynchronous, the application must be designed for it:
 
 - Development and single-node deployments use the same image without
   subscriptions, so M1 does not wait for the cluster work.
-- Every scheduled workflow and notification needs an idempotency key. This
-  becomes a rule in the architecture docs once the ADR is accepted.
+- Every scheduled workflow and notification needs an idempotency key
+  ([architecture overview](../architecture/overview.md#scheduler-and-reminders)).
 - Still to verify before M3: vector recall on real data with the chosen
   embedding model, Spock's conflict log, and how much WAL the other nodes keep
   while the laptop is away for a week.

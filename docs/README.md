@@ -30,7 +30,7 @@ changes often lives separately in [`roadmap/`](roadmap/README.md).
 | [0003](adr/0003-claude-auth-modes.md) | Claude authentication modes | Accepted |
 | [0004](adr/0004-openapi-from-fastapi.md) | OpenAPI schema generated from FastAPI | Accepted |
 | [0005](adr/0005-per-domain-autonomy-policy.md) | Per-domain autonomy policy | Accepted |
-| [0006](adr/0006-replicated-database-with-vectors.md) | Replicated database with vector support | Proposed |
+| [0006](adr/0006-replicated-database-with-vectors.md) | Replicated database with vector support | Accepted |
 | [0007](adr/0007-sensitive-data-protection.md) | Protection of sensitive domains | Proposed |
 
 New ADRs start from the [template](adr/0000-template.md).

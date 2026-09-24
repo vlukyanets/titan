@@ -29,7 +29,8 @@ These options can be combined.
 
 ## Decision
 
-Pending. It will be decided together with or after ADR 0006.
+Pending. ADR 0006 chose PostgreSQL + pgEdge Spock, which replicates per table
+and per subscription, so option 3 is technically possible.
 
 ## Consequences
 

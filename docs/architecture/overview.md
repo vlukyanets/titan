@@ -55,7 +55,7 @@ can switch to another one; failover is a client setting in v1.
 | `titan-api` | FastAPI app: REST + SSE/WebSocket API, auth (accounts, device tokens), domain services, OpenAPI schema |
 | `titan-worker` | Runs agent workflows (chat turns, daily plan, replanning), the scheduler and reminder firing |
 | `embeddings` | Local embedding model behind a small HTTP API. Separate container so it can be sized, moved to the strongest node or swapped for another model |
-| `db` | Replicated database with vector table support. Engine *open*: [ADR 0006](../adr/0006-replicated-database-with-vectors.md) |
+| `db` | PostgreSQL with pgEdge Spock (asynchronous multi-master replication) and pgvector, built and pinned by us ([ADR 0006](../adr/0006-replicated-database-with-vectors.md)) |
 | `ntfy` | Push server for UnifiedPush and approval notifications |
 
 `titan-api` and `titan-worker` are the same Python package (`uv`-managed) started
@@ -133,13 +133,35 @@ Database access goes through SQLAlchemy 2.x (async). Alembic manages schema
 changes, which are rolled out safely across peer nodes as described in
 [database-migrations.md](database-migrations.md).
 
+Replication between nodes is asynchronous, so two rules apply to all data
+access:
+
+- **Update only what changed.** Services write the fields the user or agent
+  actually changed, never the whole row read earlier. When two nodes edit the
+  same row at the same time, Spock keeps the later commit, so a whole-row write
+  would overwrite unrelated fields.
+- **Conflicts are visible.** Spock's conflict records and the audit log
+  ([ADR 0005](../adr/0005-per-domain-autonomy-policy.md)) let the owner see and
+  undo an edit that lost. Node clocks are kept in sync because conflicts are
+  resolved by commit time.
+
 ## Scheduler and reminders
 
-- Jobs (workflow runs, reminders) are rows in a replicated job table.
-- A worker claims a job by taking a time-limited **lease** on it. Exactly-once
-  firing across peers depends on how the chosen database handles concurrent
-  writes. This is an acceptance criterion for
-  [ADR 0006](../adr/0006-replicated-database-with-vectors.md).
+Asynchronous replication cannot guarantee that only one node runs a job, so
+jobs run **at least once** and every effect is **idempotent**
+([ADR 0006](../adr/0006-replicated-database-with-vectors.md)):
+
+- Jobs (workflow runs, reminders) are rows in a replicated job table. Each job
+  has a **preferred node**.
+- A worker claims a job with a time-limited lease. A node other than the
+  preferred one claims a job only after its lease has expired plus a grace
+  period, so duplicates happen only during a real network partition.
+- Every run has a **run id** derived from the job id and its scheduled time.
+- Notifications carry the run id. The notification store and the clients drop
+  a notification whose run id they have already seen.
+- Workflows write their results under **deterministic keys** (for example a
+  UUIDv5 of user and date for the daily plan), so a second run of the same job
+  updates the same rows instead of creating new ones.
 
 ## Cost control
 

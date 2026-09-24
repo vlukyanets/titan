@@ -12,11 +12,12 @@ spikes run in containers rather than vendor claims.
 
 ### 1. Replicated database with vectors (ADR 0006)
 
-Branch `research/m0-db-replication`. Notes and spike code:
-[research/db-replication/](../research/db-replication/README.md).
+Branch `research/m0-db-replication`. Decided in
+[ADR 0006](../../adr/0006-replicated-database-with-vectors.md). The spike code
+and results were removed from the tree afterwards and remain in git history.
 
 - [x] Shared spike specification: same schema, scenarios and result format for
-      every candidate ([spike/SPEC.md](../research/db-replication/spike/SPEC.md)).
+      every candidate.
 - [x] Spike: PostgreSQL + pgEdge Spock + pgvector.
 - [x] Spike: SQLite + cr-sqlite + sqlite-vec.
 - [x] Spike: CockroachDB (stopped early: backup and licence not checked).
@@ -24,7 +25,7 @@ Branch `research/m0-db-replication`. Notes and spike code:
 - [x] Comparison table and recommendation in the research notes.
 - [x] ADR 0006 updated with the recommendation. It stays Proposed until the
       owner accepts it.
-- [ ] Owner decision on ADR 0006.
+- [x] Owner decision on ADR 0006: accepted.
 
 ### 2. LangGraph + Agent SDK spike (ADR 0002)
 
