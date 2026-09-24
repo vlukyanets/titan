@@ -1,0 +1,52 @@
+scope: titan
+name: __NODE__
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: __NODE__:8008
+etcd3:
+  hosts: n1:2379,n2:2379,n3:2379
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    # A cut-off primary cannot acknowledge commits, so no acknowledged write is lost on
+    # failover. Non-strict: with no sync standby left the primary keeps accepting writes.
+    synchronous_mode: true
+    # Keep a slot for an absent member this long, then rely on the WAL archive.
+    # Lowered from the default 30 min so a short pause stands in for a week away.
+    member_slots_ttl: 60s
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        wal_level: replica
+        hot_standby: "on"
+        wal_log_hints: "on"
+        max_wal_senders: 10
+        max_replication_slots: 10
+        archive_mode: "on"
+        archive_command: "test ! -f /archive/%f && cp %p /archive/%f"
+        archive_timeout: 60
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  pg_hba:
+    - host replication replicator 0.0.0.0/0 scram-sha-256
+    - host all all 0.0.0.0/0 scram-sha-256
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: __NODE__:5432
+  data_dir: /var/lib/postgresql/data
+  bin_dir: /opt/pg/bin
+  pgpass: /tmp/pgpass
+  authentication:
+    superuser: {username: postgres, password: spike-password}
+    replication: {username: replicator, password: spike-password}
+    rewind: {username: postgres, password: spike-password}
+  recovery_conf:
+    restore_command: "cp /archive/%f %p"
+tags:
+  nofailover: __NOFAILOVER__
+  nosync: __NOSYNC__

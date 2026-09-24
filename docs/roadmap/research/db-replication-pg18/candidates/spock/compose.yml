@@ -1,0 +1,16 @@
+# Three Postgres 18 nodes in a full Spock mesh (each node subscribes to the other two).
+name: spock
+x-node: &node
+  image: titan-spike/pg:18
+  entrypoint: ["bash", "/entrypoint.sh"]
+  environment:
+    PGPASSWORD: spike-password
+  volumes:
+    - ./entrypoint.sh:/entrypoint.sh:ro
+  networks: [mesh]
+services:
+  n1: {<<: *node, container_name: spock-n1, hostname: n1, ports: ["15431:5432"]}
+  n2: {<<: *node, container_name: spock-n2, hostname: n2, ports: ["15432:5432"]}
+  n3: {<<: *node, container_name: spock-n3, hostname: n3, ports: ["15433:5432"]}
+networks:
+  mesh: {}

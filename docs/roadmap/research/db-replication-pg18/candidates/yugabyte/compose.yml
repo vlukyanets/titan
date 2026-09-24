@@ -1,0 +1,38 @@
+# Three yugabyted nodes (RF 3). follower_unavailable_considered_failed_sec is lowered so a
+# few minutes of pause exercise the same path as a laptop that is away for a week.
+name: yugabyte
+x-node: &node
+  image: yugabytedb/yugabyte:2026.1.2.0-b137
+  networks: [mesh]
+services:
+  n1:
+    <<: *node
+    container_name: yugabyte-n1
+    hostname: n1
+    command: >-
+      bin/yugabyted start --background=false --advertise_address=n1
+      --base_dir=/home/yugabyte/var
+      --tserver_flags=follower_unavailable_considered_failed_sec=90
+    ports: ["15441:5433"]
+  n2:
+    <<: *node
+    container_name: yugabyte-n2
+    hostname: n2
+    command: >-
+      bin/yugabyted start --background=false --advertise_address=n2 --join=n1
+      --base_dir=/home/yugabyte/var
+      --tserver_flags=follower_unavailable_considered_failed_sec=90
+    ports: ["15442:5433"]
+    depends_on: [n1]
+  n3:
+    <<: *node
+    container_name: yugabyte-n3
+    hostname: n3
+    command: >-
+      bin/yugabyted start --background=false --advertise_address=n3 --join=n1
+      --base_dir=/home/yugabyte/var
+      --tserver_flags=follower_unavailable_considered_failed_sec=90
+    ports: ["15443:5433"]
+    depends_on: [n2]
+networks:
+  mesh: {}
