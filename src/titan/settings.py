@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     # Chat (docs/spec/domains/chat.md).
     chat_history_messages: int = Field(default=40, ge=0, le=200)
     chat_turn_timeout_seconds: float = Field(default=300.0, gt=0)
+    # Autonomy (docs/spec/domains/autonomy.md): unanswered approvals expire.
+    approval_ttl_hours: float = Field(default=24.0, gt=0)
 
     @field_validator("bind_host")
     @classmethod

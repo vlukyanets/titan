@@ -26,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from titan.agent import auth
 from titan.agent.auth import ClaudeAuthError
 from titan.agent.chat import (
+    ApprovalRequested,
     ChatContext,
     ChatTurnState,
     TextDelta,
@@ -37,6 +38,7 @@ from titan.agent.chat import (
 from titan.agent.node import AgentRunError, QueryFn, self_check
 from titan.domains.chat.models import ChatMessage
 from titan.domains.chat.service import ChatService
+from titan.notify import Pusher
 from titan.settings import Settings
 
 log = logging.getLogger(__name__)
@@ -118,10 +120,12 @@ class ChatRuntime:
         query_fn: QueryFn = query,
         environ: MutableMapping[str, str] | None = None,
         checkpointer: BaseCheckpointSaver[str] | None = None,
+        pusher: Pusher | None = None,
     ) -> None:
         self.settings = settings
         self.sessions = sessions
         self.query_fn = query_fn
+        self.pusher = pusher
         # The agent process's environment, cleaned by `ready()`. Tests pass a dict.
         self.environ = os.environ if environ is None else environ
         self._checkpointer = checkpointer
@@ -210,7 +214,11 @@ class ChatRuntime:
                 checkpointer = await self._checkpointer_ready()
                 graph = build_graph(checkpointer)
                 context = ChatContext(
-                    self.settings, self.sessions, query_fn=self.query_fn, environ=self.environ
+                    self.settings,
+                    self.sessions,
+                    query_fn=self.query_fn,
+                    environ=self.environ,
+                    pusher=self.pusher,
                 )
                 state: ChatTurnState = {
                     "user_id": str(user_id),
@@ -225,7 +233,7 @@ class ChatRuntime:
                     # resume after an approval will need.
                     durability="sync",
                 ):
-                    if isinstance(event, TextDelta | ToolActivity):
+                    if isinstance(event, TextDelta | ToolActivity | ApprovalRequested):
                         stream.put(event)
         except (Exception, asyncio.CancelledError) as exc:
             # Only the exception type is logged: messages of database errors can

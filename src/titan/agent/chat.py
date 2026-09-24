@@ -12,7 +12,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Literal, TypedDict
 
 from claude_agent_sdk import (
@@ -32,8 +32,12 @@ from langgraph.runtime import Runtime
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from titan.agent.node import QueryFn, Tier, agent_options, agent_run, stream_agent
+from titan.agent.policy import policy_hooks
+from titan.agent.tools import ToolScope, mcp_servers
+from titan.domains.autonomy.models import Approval
 from titan.domains.chat.models import ChatMessage, MessageRole
 from titan.domains.chat.service import ChatService, TurnUsage
+from titan.notify import Pusher
 from titan.settings import Settings
 
 # Kept free of per-turn values, so Claude's prompt cache can reuse it.
@@ -47,8 +51,10 @@ notes, and think things through.
 - Earlier messages of this conversation are given in <conversation>. When you \
 refer back to something, name it, because the next turn sees only the text of \
 your replies.
-- You have no tools yet. If the user asks you to change their data, say that \
-this is not possible yet instead of pretending it was done.
+- Use your tools to look things up and to act. Never claim an action was done \
+unless a tool said so.
+- Some actions need the user's approval. When a tool answers that the user has \
+been asked, tell them briefly what you asked for and do not call it again.
 """
 MAX_TURNS = 10
 
@@ -65,7 +71,12 @@ class ToolActivity:
     status: Literal["started", "finished", "failed"]
 
 
-TurnEvent = TextDelta | ToolActivity
+@dataclass(frozen=True)
+class ApprovalRequested:
+    approval: Approval
+
+
+TurnEvent = TextDelta | ToolActivity | ApprovalRequested
 
 
 class ChatTurnState(TypedDict):
@@ -81,6 +92,7 @@ class ChatContext:
     sessions: async_sessionmaker[AsyncSession]
     query_fn: QueryFn = query
     environ: Mapping[str, str] | None = None
+    pusher: Pusher | None = None
 
 
 def render_prompt(history: Sequence[ChatMessage], message: str, now: datetime) -> str:
@@ -145,10 +157,25 @@ async def reply(state: ChatTurnState, runtime: Runtime[ChatContext]) -> dict[str
         turn = await ChatService(session).turn_context(
             uuid.UUID(state["user_id"]), message_id, history_limit=settings.chat_history_messages
         )
+    scope = ToolScope(
+        context.sessions,
+        uuid.UUID(state["user_id"]),
+        turn.thread_id,
+        context.pusher,
+        settings.push_allowed_origins,
+    )
     options = agent_options(
         settings,
         tier=Tier.STRONG,
         system_prompt=SYSTEM_PROMPT,
+        mcp_servers=mcp_servers(scope),
+        # Domain tools stay out of allowed_tools: only the policy hook lets a
+        # call through, and without it Claude Code's own permission check refuses.
+        hooks=policy_hooks(
+            scope,
+            approval_ttl=timedelta(hours=settings.approval_ttl_hours),
+            on_approval=lambda approval: runtime.stream_writer(ApprovalRequested(approval)),
+        ),
         max_turns=MAX_TURNS,
         partial_messages=True,
     )

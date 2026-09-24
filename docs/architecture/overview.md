@@ -93,8 +93,10 @@ TITAN combines two frameworks ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-n
   A node calls `query()` with `ClaudeAgentOptions` that set the model tier for
   that node, the domain tools the node may use, and the policy hook.
 - **Domain tools** are exposed as in-process SDK MCP servers
-  (`create_sdk_mcp_server`), one per domain. Built-in Claude Code tools such as
-  shell and file access are disabled.
+  (`create_sdk_mcp_server`), one per domain. Each domain declares its tools as
+  `ToolSpec`s in its own `tools.py` (action class, JSON schema, summary, undo);
+  `titan.agent.tools` collects them and is the one path that runs them.
+  Built-in Claude Code tools such as shell and file access are disabled.
 - **Policy gate**: a `PreToolUse` hook looks up the tool's action class and the
   user's policy. It allows the call, denies it, or denies it and stores an
   approval request with the exact input. On approval TITAN runs the stored call

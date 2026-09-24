@@ -43,7 +43,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.state.sessions = sessions
     app.state.pusher = UnifiedPushSender(push_client)
-    app.state.chat_runtime = ChatRuntime(settings, sessions)
+    app.state.chat_runtime = ChatRuntime(settings, sessions, pusher=app.state.pusher)
     problems.install(app)
     app.include_router(health.router, prefix=API_PREFIX)
     app.include_router(accounts.router, prefix=API_PREFIX)
