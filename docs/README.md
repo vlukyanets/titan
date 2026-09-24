@@ -37,7 +37,7 @@ changes often lives separately in [`roadmap/`](roadmap/README.md).
 | [0004](adr/0004-openapi-from-fastapi.md) | OpenAPI schema generated from FastAPI | Accepted |
 | [0005](adr/0005-per-domain-autonomy-policy.md) | Per-domain autonomy policy | Accepted |
 | [0006](adr/0006-replicated-database-with-vectors.md) | Replicated database with vector support | Proposed |
-| [0007](adr/0007-sensitive-data-protection.md) | Protection of sensitive domains | Proposed |
+| [0007](adr/0007-sensitive-data-protection.md) | Protection of sensitive domains | Accepted |
 | [0008](adr/0008-push-messages-carry-references.md) | Push messages carry only references | Accepted |
 | [0009](adr/0009-chat-history-in-titan-tables.md) | Chat history lives in TITAN tables | Accepted |
 | [0010](adr/0010-approved-calls-run-outside-the-session.md) | Approved tool calls run outside the model session | Accepted |
