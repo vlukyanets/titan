@@ -38,10 +38,12 @@ settings, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `apiKeyHelper`, then
 `CLAUDE_CODE_OAUTH_TOKEN`. An API key left in the environment would win quietly
 and the owner would be billed per token. In `oauth` mode TITAN therefore:
 
-1. **Builds a clean environment** for the SDK subprocess. It removes
-   `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`,
-   `CLAUDE_CODE_USE_BEDROCK`, `CLAUDE_CODE_USE_VERTEX`,
-   `CLAUDE_CODE_USE_FOUNDRY` and any other provider variables. Removing them
+1. **Builds a clean environment** for the SDK subprocess. It removes every
+   `ANTHROPIC_*` and `CLAUDE*` variable (among them `ANTHROPIC_API_KEY`,
+   `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`, `CLAUDE_CODE_USE_BEDROCK`,
+   `CLAUDE_CODE_USE_VERTEX` and `CLAUDE_CODE_USE_FOUNDRY`) and
+   `AWS_BEARER_TOKEN_BEDROCK`, then puts back only the selected mode's
+   credential and TITAN's `CLAUDE_CONFIG_DIR`. Removing them
    from the process environment before the SDK starts is required because the
    SDK merges `ClaudeAgentOptions.env` over the parent environment
    (`{**os.environ, …, **options.env}` in `subprocess_cli.py`, checked against
@@ -52,10 +54,17 @@ and the owner would be billed per token. In `oauth` mode TITAN therefore:
    can add an `apiKeyHelper` or other credential.
 3. **Refuses to start** if `CLAUDE_CODE_OAUTH_TOKEN` is missing, if any of the
    removed variables is still visible to the subprocess, or if a startup
-   self-check fails. The self-check runs one minimal session and reads the
-   `apiKeySource` field of its `system/init` message. Any value that names an
-   API key source fails the check. The exact value expected for OAuth is
-   pinned during the M1 spike.
+   self-check fails. The self-check starts one session and reads the
+   `apiKeySource` field of its `system/init` message, which arrives before the
+   first API request, so the check costs no tokens. The value must be exactly
+   `ANTHROPIC_API_KEY` in `api-key` mode and `none` in `oauth` mode. Claude Code
+   2.1.281 (bundled with `claude-agent-sdk` 0.2.159) resolves the source to
+   `ANTHROPIC_API_KEY`, `apiKeyHelper`, `/login managed key` or `none`; an
+   OAuth token is not an API key source. With both `ANTHROPIC_API_KEY` and
+   `CLAUDE_CODE_OAUTH_TOKEN` set it reports `ANTHROPIC_API_KEY`, which is the
+   silent fallback this check exists to catch. The same check runs on the
+   `system/init` message of every agent session, and `titan claude check` runs
+   it by hand.
 
 The same rules work the other way round: in `api-key` mode
 `CLAUDE_CODE_OAUTH_TOKEN` is removed from the subprocess environment.
@@ -64,4 +73,7 @@ The same rules work the other way round: in `api-key` mode
 
 Both directions are covered by unit tests that start with a polluted environment
 (for example both `ANTHROPIC_API_KEY` and `CLAUDE_CODE_OAUTH_TOKEN` set) and
-assert on the exact environment passed to the subprocess.
+assert on the exact environment passed to the subprocess. Another test runs
+`titan claude check` against the bundled Claude Code with fake credentials in
+both modes. It stops at `system/init`, so it needs no real credential, and it
+fails if an SDK upgrade changes the reported values.

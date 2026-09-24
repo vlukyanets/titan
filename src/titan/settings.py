@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import ipaddress
-from typing import Annotated
+from pathlib import Path
+from typing import Annotated, Literal
 
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -28,6 +29,13 @@ class Settings(BaseSettings):
     # such as http://100.64.0.1:8080 (ADR 0008). Empty refuses push registration.
     push_allowed_origins: Annotated[tuple[str, ...], NoDecode] = ()
     push_timeout_seconds: float = 5.0
+
+    # Claude credentials (ADR 0003, docs/architecture/claude-auth.md).
+    claude_auth_mode: Literal["api-key", "oauth"] = "api-key"
+    # Dedicated Claude Code configuration, so no user or project settings apply.
+    claude_config_dir: Path = Path.home() / ".local" / "state" / "titan" / "claude"
+    claude_model_fast: str = "claude-haiku-4-5"
+    claude_model_strong: str = "claude-sonnet-5"
 
     @field_validator("bind_host")
     @classmethod
