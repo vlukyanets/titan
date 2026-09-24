@@ -117,9 +117,9 @@ async def test_the_lease_holder_fires_due_reminders(
         return Worker(settings, sessions, clock=lambda: now)
 
     home, laptop = worker("home"), worker("laptop")
-    assert await home.tick() == {"reminders": 1}
+    assert await home.tick() == {"reminders": 1, "push_retries": 0}
     assert await laptop.tick() == {}
-    assert await home.tick() == {"reminders": 0}
+    assert await home.tick() == {"reminders": 0, "push_retries": 0}
 
     async with sessions() as session:
         reminder = await session.get(Reminder, reminder_id)

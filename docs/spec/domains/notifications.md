@@ -41,8 +41,9 @@ domain.
   give their notification a deterministic id, so the copies become one row once
   the nodes replicate, and a client shows a notification id it has already shown
   only once.
-- A failed push is not retried yet. The notification stays in the history.
-  Retries move to the worker when it exists.
+- A push that no device accepted is retried by `titan-worker` after 1, 2, 4,
+  8, 16 and 32 minutes, until a device accepts it or the user reads the
+  notification. After the last retry it stays in the history only.
 
 ## API
 

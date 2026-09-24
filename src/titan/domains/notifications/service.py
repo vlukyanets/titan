@@ -11,7 +11,7 @@ import asyncio
 import json
 import uuid
 from collections.abc import Iterable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import CursorResult, delete, select, update
@@ -29,6 +29,9 @@ DEFAULT_PAGE = 50
 MAX_PAGE = 100
 TITLE_LENGTH = 120
 BODY_LENGTH = 1000
+# Gaps before each push retry; after the last one the notification stays in the
+# history only.
+RETRY_DELAYS = tuple(timedelta(minutes=m) for m in (1, 2, 4, 8, 16, 32))
 
 
 def _now() -> datetime:
@@ -82,7 +85,9 @@ class NotificationsService:
         )
         self.session.add(notification)
         await self.session.commit()
-        await self.deliver(notification)
+        if not await self.deliver(notification) and self.pusher is not None:
+            notification.next_push_at = _now() + RETRY_DELAYS[0]
+            await self.session.commit()
         return notification
 
     async def send_test(self, actor: Principal) -> Notification:
@@ -126,6 +131,46 @@ class NotificationsService:
             await self.session.commit()
         return delivered
 
+    # ------------------------------------------------------------- retries
+
+    async def retries_due(self, now: datetime, *, limit: int = 100) -> list[uuid.UUID]:
+        rows = await self.session.scalars(
+            select(Notification.id)
+            .where(Notification.next_push_at <= now)
+            .order_by(Notification.next_push_at)
+            .limit(limit)
+        )
+        return list(rows.all())
+
+    async def retry(self, notification_id: uuid.UUID, now: datetime) -> int | None:
+        """Push an undelivered notification again. `None` if it is not due (any more).
+
+        The next retry is scheduled before pushing, so a crash cannot loop on one
+        notification. A copy pushed by two nodes is dropped by the client by id.
+        """
+        notification = await self.session.scalar(
+            select(Notification)
+            .where(Notification.id == notification_id, Notification.next_push_at <= now)
+            .with_for_update(skip_locked=True)
+        )
+        if notification is None:
+            return None
+        if notification.delivered_at is not None or notification.read_at is not None:
+            notification.next_push_at = None
+            await self.session.commit()
+            return None
+        notification.push_retries += 1
+        attempt = notification.push_retries
+        notification.next_push_at = (
+            now + RETRY_DELAYS[attempt] if attempt < len(RETRY_DELAYS) else None
+        )
+        await self.session.commit()
+        delivered = await self.deliver(notification)
+        if delivered and notification.next_push_at is not None:
+            notification.next_push_at = None
+            await self.session.commit()
+        return delivered
+
     # ------------------------------------------------------------- history
 
     async def history(
@@ -155,6 +200,7 @@ class NotificationsService:
         notification = await self.get(actor, notification_id)
         if notification.read_at is None:
             notification.read_at = _now()
+            notification.next_push_at = None
             await self.session.commit()
         return notification
 

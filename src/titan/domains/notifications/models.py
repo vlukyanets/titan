@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, func
+from sqlalchemy import DateTime, ForeignKey, Index, SmallInteger, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,7 +26,11 @@ class NotificationKind(enum.StrEnum):
 class Notification(Base):
     __tablename__ = "notifications"
     # Listing is per user, newest first; UUIDv7 ids sort by creation time.
-    __table_args__ = (Index("ix_notifications_user_id_id", "user_id", "id"),)
+    __table_args__ = (
+        Index("ix_notifications_user_id_id", "user_id", "id"),
+        # The worker's scan for pushes to retry.
+        Index("ix_notifications_next_push_at", "next_push_at"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid7)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
@@ -37,6 +41,9 @@ class Notification(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Push retries by the worker: how many were made, and when the next is due.
+    push_retries: Mapped[int] = mapped_column(SmallInteger, default=0, server_default="0")
+    next_push_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class PushSubscription(Base):
