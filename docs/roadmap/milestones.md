@@ -39,7 +39,7 @@ Exit: ADR 0006 accepted, the spike code thrown away or folded into M1.
 - [x] ntfy notifier and the notification store
       ([plan](plans/m1-notifications.md)).
 - [x] OpenAPI export to `docs/api/openapi.json` with a CI drift check.
-- [ ] Token usage tracking per user.
+- [x] Token usage tracking per user ([plan](plans/m1-token-usage.md)).
 
 Exit: an Android or CLI client can pair, chat with streaming, and approve a
 confirm-class action.
