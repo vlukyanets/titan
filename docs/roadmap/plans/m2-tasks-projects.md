@@ -18,5 +18,5 @@ Tasks:
 
 - [x] Spec and this plan.
 - [x] Tables, migration, service and recurrence.
-- [ ] Projects and tasks API, OpenAPI regenerated, docs updated.
+- [x] Projects and tasks API, OpenAPI regenerated, docs updated.
 - [ ] Agent tools with audit and undo (separate branch).

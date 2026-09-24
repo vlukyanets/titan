@@ -1972,6 +1972,781 @@
           }
         }
       }
+    },
+    "/api/v1/projects": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Projects the caller owns or that are shared with them",
+        "operationId": "list_projects_api_v1_projects_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ProjectStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectOut"
+                  },
+                  "title": "Response List Projects Api V1 Projects Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create a project",
+        "operationId": "create_project_api_v1_projects_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "One project",
+        "operationId": "get_project_api_v1_projects__project_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Change a project (owner only)",
+        "operationId": "update_project_api_v1_projects__project_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Delete a project (owner only); its tasks move to their owners' inboxes",
+        "operationId": "delete_project_api_v1_projects__project_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Tasks the caller can see, newest first",
+        "description": "Page with `before`: pass the id of the last task you have.",
+        "operationId": "list_tasks_api_v1_tasks_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskStatus"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Any of these; repeatable",
+              "title": "Status"
+            },
+            "description": "Any of these; repeatable"
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "inbox",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only the caller's tasks without a project",
+              "default": false,
+              "title": "Inbox"
+            },
+            "description": "Only the caller's tasks without a project"
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "name": "due_before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Due Before"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Text in title or notes",
+              "title": "Q"
+            },
+            "description": "Text in title or notes"
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only older than this task",
+              "title": "Before"
+            },
+            "description": "Only older than this task"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskOut"
+                  },
+                  "title": "Response List Tasks Api V1 Tasks Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Create a task",
+        "operationId": "create_task_api_v1_tasks_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{task_id}": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "One task",
+        "operationId": "get_task_api_v1_tasks__task_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Change a task",
+        "operationId": "update_task_api_v1_tasks__task_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Delete a task (its owner or its project's owner)",
+        "operationId": "delete_task_api_v1_tasks__task_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tasks/{task_id}/complete": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Complete a task; a recurring one gets its next occurrence",
+        "operationId": "complete_task_api_v1_tasks__task_id__complete_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2245,6 +3020,30 @@
           "undone_at"
         ],
         "title": "AuditEntryOut"
+      },
+      "CompletionOut": {
+        "properties": {
+          "task": {
+            "$ref": "#/components/schemas/TaskOut"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The next occurrence of a recurring task"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task",
+          "next"
+        ],
+        "title": "CompletionOut"
       },
       "CreateUserRequest": {
         "properties": {
@@ -2839,6 +3638,161 @@
         ],
         "title": "PolicyRuleOut"
       },
+      "ProjectCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Description",
+            "default": ""
+          },
+          "shared_with": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Shared With"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "ProjectCreate"
+      },
+      "ProjectOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Owner Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          },
+          "shared_with": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Shared With",
+            "description": "Users besides the owner who see it"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "owner_id",
+          "title",
+          "description",
+          "status",
+          "shared_with",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProjectOut"
+      },
+      "ProjectPatch": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "shared_with": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array",
+                "maxItems": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shared With",
+            "description": "Replaces the whole list"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ProjectPatch",
+        "description": "Only the fields sent change."
+      },
+      "ProjectStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "archived"
+        ],
+        "title": "ProjectStatus"
+      },
       "PushRegistration": {
         "properties": {
           "endpoint": {
@@ -2903,6 +3857,354 @@
           "member"
         ],
         "title": "Role"
+      },
+      "TaskCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Notes",
+            "default": ""
+          },
+          "priority": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Priority",
+            "default": 4
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "estimate_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10080.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate Minutes"
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence",
+            "description": "RFC 5545 RRULE without DTSTART; FREQ is DAILY, WEEKLY, MONTHLY or YEARLY, no COUNT",
+            "examples": [
+              "FREQ=WEEKLY;BYDAY=MO"
+            ]
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Tags"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "TaskCreate"
+      },
+      "TaskOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Owner Id"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id",
+            "description": "Empty for a task in its owner's inbox"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "priority": {
+            "type": "integer",
+            "title": "Priority",
+            "description": "1 is the most urgent, 4 the least"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "estimate_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate Minutes"
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence",
+            "description": "RFC 5545 RRULE without DTSTART; FREQ is DAILY, WEEKLY, MONTHLY or YEARLY, no COUNT"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "owner_id",
+          "project_id",
+          "title",
+          "notes",
+          "status",
+          "priority",
+          "due_at",
+          "estimate_minutes",
+          "recurrence",
+          "tags",
+          "created_at",
+          "updated_at",
+          "completed_at"
+        ],
+        "title": "TaskOut"
+      },
+      "TaskPatch": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "todo, doing or cancelled; complete with POST …/complete"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 4.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due At"
+          },
+          "estimate_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10080.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate Minutes"
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recurrence",
+            "description": "RFC 5545 RRULE without DTSTART; FREQ is DAILY, WEEKLY, MONTHLY or YEARLY, no COUNT"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id",
+            "description": "`null` moves it to the inbox"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "TaskPatch",
+        "description": "Only the fields sent change; `null` clears an optional field."
+      },
+      "TaskStatus": {
+        "type": "string",
+        "enum": [
+          "todo",
+          "doing",
+          "done",
+          "cancelled"
+        ],
+        "title": "TaskStatus"
       },
       "TextEvent": {
         "properties": {
