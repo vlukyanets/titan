@@ -1,4 +1,9 @@
-"""The `titan` command: administration from any node."""
+"""The `titan` command: administration from any node.
+
+`main()` takes its settings and standard input as arguments, so callers other
+than the shell (tests, scripts) pass their own instead of changing the process
+environment. Without them it reads TITAN_* variables and the real stdin.
+"""
 
 from __future__ import annotations
 
@@ -7,7 +12,10 @@ import asyncio
 import getpass
 import json
 import sys
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
+from typing import TextIO
 
 from alembic import command
 from alembic.config import Config
@@ -31,25 +39,6 @@ def alembic_config(url: str | None = None) -> Config:
     return cfg
 
 
-def migrate(target: str) -> None:
-    """Upgrade the schema of the database behind TITAN_DATABASE_URL.
-
-    The advisory lock only serialises runs against the same node. Under Spock the DDL
-    replicates to the other nodes, so migrations are started on one node at a time
-    (ADR 0006, docs/architecture/database-migrations.md).
-    """
-    url = Settings().database_url.get_secret_value()
-    sync_url = url.replace("+asyncpg", "+psycopg")
-    engine = create_engine(sync_url)
-    with engine.connect() as conn:
-        conn.execute(text("select pg_advisory_lock(:id)"), {"id": MIGRATION_LOCK_ID})
-        try:
-            command.upgrade(alembic_config(url), target)
-        finally:
-            conn.execute(text("select pg_advisory_unlock(:id)"), {"id": MIGRATION_LOCK_ID})
-    engine.dispose()
-
-
 def openapi_schema() -> dict[str, object]:
     from titan.api.app import create_app
 
@@ -62,158 +51,198 @@ def write_openapi(path: Path) -> None:
     path.write_text(json.dumps(openapi_schema(), indent=2, ensure_ascii=False) + "\n")
 
 
-def _read_new_password(from_stdin: bool) -> str:
-    if from_stdin:
-        return sys.stdin.readline().rstrip("\n")
-    first = getpass.getpass("Password: ")
-    if getpass.getpass("Repeat password: ") != first:
-        raise SystemExit("passwords do not match")
-    return first
+@dataclass(frozen=True)
+class Cli:
+    """What the commands depend on besides their arguments."""
 
+    # Read on first use, so commands that need no database run without TITAN_* set.
+    load_settings: Callable[[], Settings]
+    stdin: TextIO
 
-async def _create_user(username: str, password: str, owner: bool, display_name: str | None) -> str:
-    from titan.domains.accounts.models import Role
-    from titan.domains.accounts.service import AccountsService
-    from titan.storage.db import create_engine as create_async_engine
-    from titan.storage.db import session_factory
+    def settings(self) -> Settings:
+        return self.load_settings()
 
-    engine = create_async_engine(Settings())
-    try:
-        async with session_factory(engine)() as session:
-            user = await AccountsService(session).create_user(
-                username,
-                password,
-                role=Role.OWNER if owner else Role.MEMBER,
-                display_name=display_name,
+    # ------------------------------------------------------------- migrate
+
+    def migrate(self, target: str) -> None:
+        """Upgrade the schema of the configured database.
+
+        The advisory lock only serialises runs against the same node. Under Spock the
+        DDL replicates to the other nodes, so migrations are started on one node at a
+        time (ADR 0006, docs/architecture/database-migrations.md).
+        """
+        url = self.settings().database_url.get_secret_value()
+        sync_url = url.replace("+asyncpg", "+psycopg")
+        engine = create_engine(sync_url)
+        with engine.connect() as conn:
+            conn.execute(text("select pg_advisory_lock(:id)"), {"id": MIGRATION_LOCK_ID})
+            try:
+                command.upgrade(alembic_config(url), target)
+            finally:
+                conn.execute(text("select pg_advisory_unlock(:id)"), {"id": MIGRATION_LOCK_ID})
+        engine.dispose()
+
+    # --------------------------------------------------------------- users
+
+    def read_new_password(self, from_stdin: bool) -> str:
+        if from_stdin:
+            return self.stdin.readline().rstrip("\n")
+        first = getpass.getpass("Password: ")
+        if getpass.getpass("Repeat password: ") != first:
+            raise SystemExit("passwords do not match")
+        return first
+
+    async def create_user(
+        self, username: str, password: str, owner: bool, display_name: str | None
+    ) -> str:
+        from titan.domains.accounts.models import Role
+        from titan.domains.accounts.service import AccountsService
+        from titan.storage.db import create_engine as create_async_engine
+        from titan.storage.db import session_factory
+
+        engine = create_async_engine(self.settings())
+        try:
+            async with session_factory(engine)() as session:
+                user = await AccountsService(session).create_user(
+                    username,
+                    password,
+                    role=Role.OWNER if owner else Role.MEMBER,
+                    display_name=display_name,
+                )
+                return f"created {user.role.value} {user.username} ({user.id})"
+        finally:
+            await engine.dispose()
+
+    async def list_users(self) -> list[str]:
+        from titan.domains.accounts.service import AccountsService
+        from titan.storage.db import create_engine as create_async_engine
+        from titan.storage.db import session_factory
+
+        engine = create_async_engine(self.settings())
+        try:
+            async with session_factory(engine)() as session:
+                users = await AccountsService(session).list_users(actor=None)
+                return [f"{u.username}\t{u.role.value}\t{u.display_name}" for u in users]
+        finally:
+            await engine.dispose()
+
+    def users_command(self, args: argparse.Namespace) -> int:
+        from titan.domains.accounts.errors import AccountsError
+
+        try:
+            if args.users_command == "create":
+                password = self.read_new_password(args.password_stdin)
+                print(
+                    asyncio.run(
+                        self.create_user(args.username, password, args.owner, args.display_name)
+                    )
+                )
+            else:
+                for line in asyncio.run(self.list_users()):
+                    print(line)
+        except AccountsError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
+    # ------------------------------------------------------- notifications
+
+    async def send_notification(self, username: str, title: str, body: str) -> str:
+        from titan.domains.accounts.service import AccountsService
+        from titan.domains.notifications.models import NotificationKind
+        from titan.domains.notifications.service import NotificationsService
+        from titan.notify import UnifiedPushSender, new_client
+        from titan.storage.db import create_engine as create_async_engine
+        from titan.storage.db import session_factory
+
+        settings = self.settings()
+        engine = create_async_engine(settings)
+        client = new_client(settings.push_timeout_seconds)
+        try:
+            async with session_factory(engine)() as session:
+                user = await AccountsService(session).get_user_by_username(username)
+                notification = await NotificationsService(
+                    session, pusher=UnifiedPushSender(client)
+                ).notify(user.id, NotificationKind.SYSTEM, title, body)
+                state = "pushed" if notification.delivered_at else "stored, no push got through"
+                return f"sent {notification.id} to {user.username}: {state}"
+        finally:
+            await client.aclose()
+            await engine.dispose()
+
+    def notifications_command(self, args: argparse.Namespace) -> int:
+        from titan.domains.accounts.errors import AccountsError
+
+        try:
+            print(asyncio.run(self.send_notification(args.username, args.title, args.body)))
+        except AccountsError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
+    # --------------------------------------------------------------- usage
+
+    async def usage(self, month: str) -> list[str]:
+        from titan.domains.usage.service import UsageService
+        from titan.storage.db import create_engine as create_async_engine
+        from titan.storage.db import session_factory
+
+        engine = create_async_engine(self.settings())
+        try:
+            async with session_factory(engine)() as session:
+                members = await UsageService(session).household(None, month)
+        finally:
+            await engine.dispose()
+        lines = [f"{month}\tsessions\tinput\toutput\tcache read\tcache write\tcost USD"]
+        for member in members:
+            t = member.usage.total
+            lines.append(
+                f"{member.username}\t{t.sessions}\t{t.input_tokens}\t{t.output_tokens}\t"
+                f"{t.cache_read_tokens}\t{t.cache_creation_tokens}\t{t.cost_usd:.4f}"
             )
-            return f"created {user.role.value} {user.username} ({user.id})"
-    finally:
-        await engine.dispose()
+        return lines
 
+    def usage_command(self, args: argparse.Namespace) -> int:
+        from titan.domains.usage.errors import UsageError
+        from titan.domains.usage.service import current_month
 
-async def _list_users() -> list[str]:
-    from titan.domains.accounts.service import AccountsService
-    from titan.storage.db import create_engine as create_async_engine
-    from titan.storage.db import session_factory
-
-    engine = create_async_engine(Settings())
-    try:
-        async with session_factory(engine)() as session:
-            users = await AccountsService(session).list_users(actor=None)
-            return [f"{u.username}\t{u.role.value}\t{u.display_name}" for u in users]
-    finally:
-        await engine.dispose()
-
-
-async def _send_notification(username: str, title: str, body: str) -> str:
-    from titan.domains.accounts.service import AccountsService
-    from titan.domains.notifications.models import NotificationKind
-    from titan.domains.notifications.service import NotificationsService
-    from titan.notify import UnifiedPushSender, new_client
-    from titan.storage.db import create_engine as create_async_engine
-    from titan.storage.db import session_factory
-
-    settings = Settings()
-    engine = create_async_engine(settings)
-    client = new_client(settings.push_timeout_seconds)
-    try:
-        async with session_factory(engine)() as session:
-            user = await AccountsService(session).get_user_by_username(username)
-            notification = await NotificationsService(
-                session, pusher=UnifiedPushSender(client)
-            ).notify(user.id, NotificationKind.SYSTEM, title, body)
-            state = "pushed" if notification.delivered_at else "stored, no push got through"
-            return f"sent {notification.id} to {user.username}: {state}"
-    finally:
-        await client.aclose()
-        await engine.dispose()
-
-
-def notifications_command(args: argparse.Namespace) -> int:
-    from titan.domains.accounts.errors import AccountsError
-
-    try:
-        print(asyncio.run(_send_notification(args.username, args.title, args.body)))
-    except AccountsError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 1
-    return 0
-
-
-async def _usage(month: str) -> list[str]:
-    from titan.domains.usage.service import UsageService
-    from titan.storage.db import create_engine as create_async_engine
-    from titan.storage.db import session_factory
-
-    engine = create_async_engine(Settings())
-    try:
-        async with session_factory(engine)() as session:
-            members = await UsageService(session).household(None, month)
-    finally:
-        await engine.dispose()
-    lines = [f"{month}\tsessions\tinput\toutput\tcache read\tcache write\tcost USD"]
-    for member in members:
-        t = member.usage.total
-        lines.append(
-            f"{member.username}\t{t.sessions}\t{t.input_tokens}\t{t.output_tokens}\t"
-            f"{t.cache_read_tokens}\t{t.cache_creation_tokens}\t{t.cost_usd:.4f}"
-        )
-    return lines
-
-
-def usage_command(args: argparse.Namespace) -> int:
-    from titan.domains.usage.errors import UsageError
-    from titan.domains.usage.service import current_month
-
-    try:
-        for line in asyncio.run(_usage(args.month or current_month())):
-            print(line)
-    except UsageError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 1
-    return 0
-
-
-def claude_check() -> int:
-    """Verify that Claude Code uses exactly the credential of the configured mode."""
-    from claude_agent_sdk import ClaudeSDKError
-
-    from titan.agent import auth
-    from titan.agent.node import self_check
-
-    settings = Settings()
-    try:
-        mode = auth.install(settings)
-        source = asyncio.run(self_check(settings))
-    except auth.ClaudeAuthError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 1
-    except ClaudeSDKError as exc:
-        print(f"error: Claude Code could not start: {type(exc).__name__}", file=sys.stderr)
-        return 1
-    print(f"ok: {mode.value} mode, credential source {source}")
-    return 0
-
-
-def users_command(args: argparse.Namespace) -> int:
-    from titan.domains.accounts.errors import AccountsError
-
-    try:
-        if args.users_command == "create":
-            password = _read_new_password(args.password_stdin)
-            print(asyncio.run(_create_user(args.username, password, args.owner, args.display_name)))
-        else:
-            for line in asyncio.run(_list_users()):
+        try:
+            for line in asyncio.run(self.usage(args.month or current_month())):
                 print(line)
-    except AccountsError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 1
-    return 0
+        except UsageError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
+    # -------------------------------------------------------------- claude
+
+    def claude_check(self) -> int:
+        """Verify that Claude Code uses exactly the credential of the configured mode.
+
+        Cleans this process's environment, as the agent runtime does at startup.
+        """
+        from claude_agent_sdk import ClaudeSDKError
+
+        from titan.agent import auth
+        from titan.agent.node import self_check
+
+        settings = self.settings()
+        try:
+            mode = auth.install(settings)
+            source = asyncio.run(self_check(settings))
+        except auth.ClaudeAuthError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        except ClaudeSDKError as exc:
+            print(f"error: Claude Code could not start: {type(exc).__name__}", file=sys.stderr)
+            return 1
+        print(f"ok: {mode.value} mode, credential source {source}")
+        return 0
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="titan", description="TITAN administration")
-    sub = parser.add_subparsers(dest="command", required=True)
+def parser() -> argparse.ArgumentParser:
+    root = argparse.ArgumentParser(prog="titan", description="TITAN administration")
+    sub = root.add_subparsers(dest="command", required=True)
     m = sub.add_parser("migrate", help="apply database migrations under a cluster-wide lock")
     m.add_argument("target", nargs="?", default="head")
     o = sub.add_parser("openapi", help="export the OpenAPI schema")
@@ -239,18 +268,30 @@ def main(argv: list[str] | None = None) -> int:
     ns.add_argument("--body", default="")
     us = sub.add_parser("usage", help="token usage and cost of every user for a month")
     us.add_argument("--month", help="YYYY-MM in UTC, the current month by default")
-    args = parser.parse_args(argv)
+    return root
 
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    settings: Settings | None = None,
+    stdin: TextIO | None = None,
+) -> int:
+    args = parser().parse_args(argv)
+    cli = Cli(
+        load_settings=(lambda: settings) if settings is not None else Settings,
+        stdin=stdin if stdin is not None else sys.stdin,
+    )
     if args.command == "migrate":
-        migrate(args.target)
+        cli.migrate(args.target)
     elif args.command == "users":
-        return users_command(args)
+        return cli.users_command(args)
     elif args.command == "notifications":
-        return notifications_command(args)
+        return cli.notifications_command(args)
     elif args.command == "usage":
-        return usage_command(args)
+        return cli.usage_command(args)
     elif args.command == "claude":
-        return claude_check()
+        return cli.claude_check()
     elif args.command == "openapi":
         write_openapi(args.output)
         print(f"wrote {args.output}", file=sys.stderr)

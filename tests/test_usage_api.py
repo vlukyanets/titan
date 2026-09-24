@@ -70,16 +70,15 @@ async def test_a_chat_turn_shows_up_in_usage(api: ChatApi) -> None:
     assert bad.headers["content-type"] == "application/problem+json"
 
 
-def test_the_node_command_lists_everyone(
-    db_url: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    monkeypatch.setenv("TITAN_DATABASE_URL", db_url)
-    monkeypatch.setattr("sys.stdin", io.StringIO("owner-password-123\n"))
-    assert main(["users", "create", "anna", "--owner", "--password-stdin"]) == 0
+def test_the_node_command_lists_everyone(db_url: str, capsys: pytest.CaptureFixture[str]) -> None:
+    settings = Settings(database_url=db_url)
+    password = io.StringIO("owner-password-123\n")
+    create = ["users", "create", "anna", "--owner", "--password-stdin"]
+    assert main(create, settings=settings, stdin=password) == 0
     capsys.readouterr()
-    assert main(["usage"]) == 0
+    assert main(["usage"], settings=settings) == 0
     lines = capsys.readouterr().out.splitlines()
     assert lines[0].startswith(f"{current_month()}\tsessions")
     assert lines[1] == "anna\t0\t0\t0\t0\t0\t0.0000"
-    assert main(["usage", "--month", "2026-13"]) == 1
+    assert main(["usage", "--month", "2026-13"], settings=settings) == 1
     assert "month must look like" in capsys.readouterr().err
