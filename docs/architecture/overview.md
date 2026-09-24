@@ -158,5 +158,7 @@ changes, which are rolled out safely across peer nodes as described in
 - Row-level ownership is checked in the domain services, not only in the API.
 - Secrets (Claude credentials, database passwords) come from environment or
   Docker secrets, never from the repository.
-- Protection of sensitive domains is *open*:
-  [ADR 0007](../adr/0007-sensitive-data-protection.md).
+- All of TITAN's data lives in an encrypted Docker volume on every node, and
+  what the agent sends to Claude about health and finance is limited per
+  domain ([ADR 0007](../adr/0007-sensitive-data-protection.md),
+  [node setup](node-setup.md)).
