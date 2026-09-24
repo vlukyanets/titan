@@ -12,6 +12,7 @@ from titan.agent.runtime import ChatRuntime
 from titan.api import (
     accounts,
     autonomy,
+    calendar,
     chat,
     health,
     notifications,
@@ -64,4 +65,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(tasks.projects_router, prefix=API_PREFIX)
     app.include_router(tasks.tasks_router, prefix=API_PREFIX)
     app.include_router(reminders.router, prefix=API_PREFIX)
+    app.include_router(calendar.router, prefix=API_PREFIX)
     return app
