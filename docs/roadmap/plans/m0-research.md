@@ -60,5 +60,6 @@ allowed network domains.
 
 Branch `spec/m0-sensitive-data`. Depends on task 1.
 
-- [ ] Evaluate the options against the chosen database.
-- [ ] Recommendation in ADR 0007.
+- [x] Evaluate the options against the chosen database.
+- [x] Recommendation in ADR 0007.
+- [ ] Owner decision on ADR 0007.
