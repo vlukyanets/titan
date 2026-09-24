@@ -19,6 +19,7 @@ from titan.api import (
     problems,
     reminders,
     tasks,
+    trackers,
     usage,
 )
 from titan.notify import UnifiedPushSender, new_client
@@ -66,4 +67,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(tasks.tasks_router, prefix=API_PREFIX)
     app.include_router(reminders.router, prefix=API_PREFIX)
     app.include_router(calendar.router, prefix=API_PREFIX)
+    app.include_router(trackers.router, prefix=API_PREFIX)
     return app
