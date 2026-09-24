@@ -54,3 +54,14 @@ jobs:
       # OpenAPI drift check (ADR 0004).
       - run: uv run pytest -ra
 
+  image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t titan:ci .
+      - name: Container starts and refuses to run without configuration
+        run: |
+          if docker run --rm titan:ci; then
+            echo "expected titan-api to fail without TITAN_DATABASE_URL" >&2
+            exit 1
+          fi

@@ -1,0 +1,49 @@
+# Single-node TITAN for development and for the first node of a cluster.
+# The API is published only on TITAN_TAILSCALE_IP; there is deliberately no default,
+# so the stack cannot start with a public listener by accident.
+name: titan
+services:
+  db:
+    # The same pgEdge image as the cluster (ADR 0006), without Spock subscriptions.
+    image: ghcr.io/pgedge/pgedge-postgres:18.6-spock5.0.11-standard-3
+    environment:
+      POSTGRES_USER: titan
+      POSTGRES_DB: titan
+      POSTGRES_PASSWORD: ${TITAN_DB_PASSWORD:?set TITAN_DB_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C
+    # The pgEdge image listens only on localhost unless told otherwise.
+    command: ["-c", "listen_addresses=*"]
+    volumes:
+      - db-data:/var/lib/pgsql
+    healthcheck:
+      # Over TCP, so the entrypoint's socket-only init server does not count as ready.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "titan", "-d", "titan"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    image: titan:dev
+    build: .
+    command: ["titan", "migrate"]
+    environment: &app-env
+      TITAN_DATABASE_URL: postgresql+psycopg://titan:${TITAN_DB_PASSWORD}@db:5432/titan
+    depends_on:
+      db: {condition: service_healthy}
+    restart: "no"
+
+  api:
+    image: titan:dev
+    environment:
+      <<: *app-env
+      TITAN_BIND_HOST: 0.0.0.0
+      TITAN_ALLOW_WILDCARD_BIND: "true"
+    ports:
+      - "${TITAN_TAILSCALE_IP:?set TITAN_TAILSCALE_IP to this node's Tailscale address, or 127.0.0.1 for local development}:8000:8000"
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    restart: unless-stopped
+
+volumes:
+  db-data: {}
