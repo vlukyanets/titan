@@ -19,6 +19,7 @@ changes often lives separately in [`roadmap/`](roadmap/README.md).
 - [Overview](architecture/overview.md)
 - [Claude authentication](architecture/claude-auth.md)
 - [Database migrations](architecture/database-migrations.md)
+- [Node setup: the encrypted Docker volume](architecture/node-setup.md)
 - [API contract](api/README.md)
 
 ## Decisions: why it is built this way
