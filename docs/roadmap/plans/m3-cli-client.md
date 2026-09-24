@@ -10,9 +10,9 @@ Branch `feature/m3-cli-client`, stacked on `feature/m4-budget-caps`.
 Tasks:
 
 - [x] Spec, ADR 0011 and this plan.
-- [ ] Saved login (`client.json`, `0600`), API client with problem errors and
+- [x] Saved login (`client.json`, `0600`), API client with problem errors and
       an SSE reader.
-- [ ] `login`, `logout`, `whoami`.
-- [ ] `chat` with streaming, `--continue` and `--thread`.
-- [ ] `approvals list|approve|reject`.
+- [x] `login`, `logout`, `whoami`.
+- [x] `chat` with streaming, `--continue` and `--thread`.
+- [x] `approvals list|approve|reject`.
 - [ ] Domain commands, one domain at a time (later branches).
