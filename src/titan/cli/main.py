@@ -105,6 +105,41 @@ async def _list_users() -> list[str]:
         await engine.dispose()
 
 
+async def _send_notification(username: str, title: str, body: str) -> str:
+    from titan.domains.accounts.service import AccountsService
+    from titan.domains.notifications.models import NotificationKind
+    from titan.domains.notifications.service import NotificationsService
+    from titan.notify import UnifiedPushSender, new_client
+    from titan.storage.db import create_engine as create_async_engine
+    from titan.storage.db import session_factory
+
+    settings = Settings()
+    engine = create_async_engine(settings)
+    client = new_client(settings.push_timeout_seconds)
+    try:
+        async with session_factory(engine)() as session:
+            user = await AccountsService(session).get_user_by_username(username)
+            notification = await NotificationsService(
+                session, pusher=UnifiedPushSender(client)
+            ).notify(user.id, NotificationKind.SYSTEM, title, body)
+            state = "pushed" if notification.delivered_at else "stored, no push got through"
+            return f"sent {notification.id} to {user.username}: {state}"
+    finally:
+        await client.aclose()
+        await engine.dispose()
+
+
+def notifications_command(args: argparse.Namespace) -> int:
+    from titan.domains.accounts.errors import AccountsError
+
+    try:
+        print(asyncio.run(_send_notification(args.username, args.title, args.body)))
+    except AccountsError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def users_command(args: argparse.Namespace) -> int:
     from titan.domains.accounts.errors import AccountsError
 
@@ -138,12 +173,20 @@ def main(argv: list[str] | None = None) -> int:
         "--password-stdin", action="store_true", help="read the password from standard input"
     )
     usub.add_parser("list", help="list accounts")
+    n = sub.add_parser("notifications", help="send notifications")
+    nsub = n.add_subparsers(dest="notifications_command", required=True)
+    ns = nsub.add_parser("send", help="send a system notification to a user's devices")
+    ns.add_argument("username")
+    ns.add_argument("title")
+    ns.add_argument("--body", default="")
     args = parser.parse_args(argv)
 
     if args.command == "migrate":
         migrate(args.target)
     elif args.command == "users":
         return users_command(args)
+    elif args.command == "notifications":
+        return notifications_command(args)
     elif args.command == "openapi":
         write_openapi(args.output)
         print(f"wrote {args.output}", file=sys.stderr)

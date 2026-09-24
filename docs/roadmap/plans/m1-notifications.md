@@ -30,11 +30,11 @@ and the notification store" item of [M1](../milestones.md). Branch
 
 - [x] Spec: `docs/spec/domains/notifications.md`; reminders spec points to it.
 - [x] ADR 0008: push messages carry only references.
-- [ ] Models and the Alembic revision.
-- [ ] UnifiedPush sender and endpoint checks, with tests.
-- [ ] `NotificationsService`, API router, problem mapping.
-- [ ] CLI `notifications send`.
-- [ ] Tests: registration, origin checks, delivery, gone endpoints, revoked
+- [x] Models and the Alembic revision.
+- [x] UnifiedPush sender and endpoint checks, with tests.
+- [x] `NotificationsService`, API router, problem mapping.
+- [x] CLI `notifications send`.
+- [x] Tests: registration, origin checks, delivery, gone endpoints, revoked
       devices, history, read state, ownership, CLI.
-- [ ] ntfy in Compose, checked end to end against a real ntfy.
-- [ ] OpenAPI regenerated; API docs, overview and milestones updated.
+- [x] ntfy in Compose, checked end to end against a real ntfy.
+- [x] OpenAPI regenerated; API docs, overview and milestones updated.

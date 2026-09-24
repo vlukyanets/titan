@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
 from titan.domains.accounts import errors as accounts_errors
+from titan.domains.notifications import errors as notifications_errors
 
 PROBLEM_JSON = "application/problem+json"
 
@@ -28,14 +29,15 @@ def install(app: FastAPI) -> None:
             response.headers.update(exc.headers)
         return response
 
-    @app.exception_handler(accounts_errors.AccountsError)
-    async def _accounts(_: Request, exc: accounts_errors.AccountsError) -> JSONResponse:
-        status = _ACCOUNTS_STATUS.get(type(exc), 400)
-        headers = {"WWW-Authenticate": "Bearer"} if status == 401 else None
+    async def _domain(_: Request, exc: Exception) -> JSONResponse:
+        status = _DOMAIN_STATUS.get(type(exc), 400)
         response = problem(status, _title(status), str(exc))
-        if headers:
-            response.headers.update(headers)
+        if status == 401:
+            response.headers["WWW-Authenticate"] = "Bearer"
         return response
+
+    app.add_exception_handler(accounts_errors.AccountsError, _domain)
+    app.add_exception_handler(notifications_errors.NotificationsError, _domain)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -47,13 +49,15 @@ def install(app: FastAPI) -> None:
         return problem(422, "Unprocessable Content", errors=errors)
 
 
-_ACCOUNTS_STATUS: dict[type[Exception], int] = {
+_DOMAIN_STATUS: dict[type[Exception], int] = {
     accounts_errors.InvalidCredentialsError: 401,
     accounts_errors.ForbiddenError: 403,
     accounts_errors.NotFoundError: 404,
     accounts_errors.UsernameTakenError: 409,
     accounts_errors.InvalidUsernameError: 422,
     accounts_errors.InvalidPasswordError: 422,
+    notifications_errors.NotFoundError: 404,
+    notifications_errors.InvalidPushEndpointError: 422,
 }
 
 

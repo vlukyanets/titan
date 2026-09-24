@@ -9,6 +9,7 @@ dependencies = [
     "alembic>=1.20",
     "argon2-cffi>=25.1",
     "fastapi>=0.141",
+    "httpx>=0.28",
     "pgvector>=0.5",
     "psycopg[binary]>=3.3",
     "pydantic-settings>=2.15",
@@ -22,7 +23,6 @@ titan-api = "titan.api.server:main"
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28",
     "import-linter>=2.15",
     "mypy>=2.3",
     "pytest>=9.1",

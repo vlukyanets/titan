@@ -8,7 +8,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from titan import __version__
-from titan.api import accounts, health, problems
+from titan.api import accounts, health, notifications, problems
+from titan.notify import UnifiedPushSender, new_client
 from titan.settings import Settings
 from titan.storage.db import create_engine, session_factory
 
@@ -18,10 +19,12 @@ API_PREFIX = "/api/v1"
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
     engine = create_engine(settings)
+    push_client = new_client(settings.push_timeout_seconds)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
+        await push_client.aclose()
         await engine.dispose()
 
     app = FastAPI(
@@ -33,7 +36,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.engine = engine
     app.state.sessions = session_factory(engine)
+    app.state.pusher = UnifiedPushSender(push_client)
     problems.install(app)
     app.include_router(health.router, prefix=API_PREFIX)
     app.include_router(accounts.router, prefix=API_PREFIX)
+    app.include_router(notifications.router, prefix=API_PREFIX)
     return app

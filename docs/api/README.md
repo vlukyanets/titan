@@ -30,3 +30,9 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   reachable, current Alembic revision) and `POST /api/v1/devices/pair` are the
   only unauthenticated endpoints.
   Container health checks use them.
+- Push: a device registers its UnifiedPush endpoint with
+  `PUT /api/v1/devices/current/push`. A push message is only
+  `{"notification_id": "...", "kind": "..."}`; the client fetches
+  `GET /api/v1/notifications/{id}` to show it
+  ([notifications](../spec/domains/notifications.md),
+  [ADR 0008](../adr/0008-push-messages-carry-references.md)).

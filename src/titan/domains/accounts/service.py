@@ -196,6 +196,12 @@ class AccountsService:
             raise NotFoundError("user not found")
         return user
 
+    async def get_user_by_username(self, username: str) -> User:
+        user = await self._user_by_username(credentials.normalize_username(username))
+        if user is None:
+            raise NotFoundError("user not found")
+        return user
+
     # ---------------------------------------------------------------- helpers
 
     async def _user_by_username(self, username: str | None) -> User | None:

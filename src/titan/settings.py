@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import ipaddress
+from typing import Annotated
 
 from pydantic import SecretStr, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+from titan.notify import origin_of
 
 
 class Settings(BaseSettings):
@@ -21,11 +24,24 @@ class Settings(BaseSettings):
     # wildcard address would be a public listener, which the security rules forbid.
     allow_wildcard_bind: bool = False
     log_level: str = "INFO"
+    # Push servers that device endpoints may point at, as comma-separated origins
+    # such as http://100.64.0.1:8080 (ADR 0008). Empty refuses push registration.
+    push_allowed_origins: Annotated[tuple[str, ...], NoDecode] = ()
+    push_timeout_seconds: float = 5.0
 
     @field_validator("bind_host")
     @classmethod
     def _valid_host(cls, value: str) -> str:
         ipaddress.ip_address(value)
+        return value
+
+    @field_validator("push_allowed_origins", mode="before")
+    @classmethod
+    def _origins(cls, value: object) -> object:
+        if isinstance(value, str):
+            value = [item for item in value.split(",") if item.strip()]
+        if isinstance(value, list | tuple):
+            return tuple(origin_of(str(item)) for item in value)
         return value
 
     def check_bind(self) -> None:
