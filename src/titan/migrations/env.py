@@ -13,6 +13,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 import titan.domains  # registers every domain model on Base.metadata
+import titan.scheduler.models  # scheduler leases
 import titan.storage.checkpoints  # noqa: F401  # LangGraph checkpoint tables
 from titan.settings import Settings
 from titan.storage.base import Base

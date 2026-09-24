@@ -1,4 +1,4 @@
-# titan-api image. The worker will use the same image with another entry point.
+# The TITAN image: titan-api by default, titan-worker with `command: ["titan-worker"]`.
 FROM python:3.12-slim AS build
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
 RUN pip install --no-cache-dir "uv>=0.12"

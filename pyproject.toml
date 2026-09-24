@@ -25,6 +25,7 @@ dependencies = [
 [project.scripts]
 titan = "titan.cli.main:main"
 titan-api = "titan.api.server:main"
+titan-worker = "titan.scheduler.worker:main"
 
 [dependency-groups]
 dev = [
