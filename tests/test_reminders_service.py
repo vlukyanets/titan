@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import uuid
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import func, select
@@ -13,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from titan.domains.accounts.models import Role
 from titan.domains.accounts.service import AccountsService
+from titan.domains.calendar.service import CalendarService
 from titan.domains.notifications.models import Notification, NotificationKind
 from titan.domains.reminders.errors import (
     InvalidReminderError,
@@ -176,3 +178,25 @@ async def test_snooze_dismiss_and_validation(
         assert (linked.link_type, linked.link_id) == (LinkType.TASK, task.id)
         await reminders.delete(anna, linked.id)
         assert [r.id for r in await reminders.reminders(anna)] == [tea.id]
+
+
+async def test_a_daily_reminder_keeps_its_local_time(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    anna = await user(sessions, "anna")
+    kyiv = ZoneInfo("Europe/Kyiv")
+    first = datetime(2026, 10, 24, 8, 0, tzinfo=kyiv)
+    async with sessions() as session:
+        await CalendarService(session).set_prefs(
+            anna,
+            time_zone="Europe/Kyiv",
+            work_start=time(9),
+            work_end=time(17),
+            work_days=[1, 2, 3, 4, 5],
+            buffer_minutes=10,
+        )
+        reminders = RemindersService(session)
+        walk = await reminders.create(anna, "Walk the dog", first, recurrence="FREQ=DAILY")
+        fired = await reminders.fire(walk.id, now=first)
+        assert fired is not None
+        assert fired.fire_at.astimezone(kyiv) == datetime(2026, 10, 25, 8, 0, tzinfo=kyiv)

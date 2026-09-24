@@ -15,6 +15,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from titan.domains.calendar.zones import user_zone
 from titan.domains.notifications.models import NotificationKind
 from titan.domains.notifications.service import NotificationsService
 from titan.domains.reminders.errors import (
@@ -239,7 +240,8 @@ class RemindersService:
         firing = firing_id(reminder.id, reminder.fire_at)
         following = None
         if reminder.recurrence:
-            following = recurrence.next_occurrence(reminder.recurrence, reminder.occurs_at, now)
+            tz = await user_zone(self.session, reminder.owner_id)
+            following = recurrence.next_occurrence(reminder.recurrence, reminder.occurs_at, now, tz)
         if following is not None:
             reminder.fire_at = reminder.occurs_at = following
             reminder.status = ReminderStatus.SCHEDULED
