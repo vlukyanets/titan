@@ -14,6 +14,23 @@ from titan.settings import Settings
 # Nothing listens here; tests that do not touch the database use it as a placeholder.
 UNREACHABLE_DB = "postgresql+psycopg://nobody:nothing@127.0.0.1:1/none"
 
+# Emptied before every database test. Add new tables here.
+TABLES = (
+    "usage_records",
+    "policy_rules",
+    "approvals",
+    "audit_entries",
+    "chat_messages",
+    "chat_threads",
+    "checkpoint_writes",
+    "checkpoint_blobs",
+    "checkpoints",
+    "notifications",
+    "push_subscriptions",
+    "devices",
+    "users",
+)
+
 
 def test_database_url() -> str:
     url = os.environ.get("TITAN_TEST_DATABASE_URL")
@@ -41,13 +58,7 @@ def db_url(migrated_db_url: str) -> str:
 
     engine = sa.create_engine(migrated_db_url)
     with engine.begin() as conn:
-        conn.execute(
-            sa.text(
-                "TRUNCATE policy_rules, approvals, audit_entries, chat_messages, chat_threads, "
-                "checkpoint_writes, checkpoint_blobs, "
-                "checkpoints, notifications, push_subscriptions, devices, users"
-            )
-        )
+        conn.execute(sa.text(f"TRUNCATE {', '.join(TABLES)}"))
     engine.dispose()
     return migrated_db_url
 

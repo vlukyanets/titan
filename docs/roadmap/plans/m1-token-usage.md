@@ -16,6 +16,6 @@ Branch `feature/m1-token-usage`, stacked on `feature/m1-policy-approvals`.
 Tasks:
 
 - [x] Spec and this plan.
-- [ ] Usage table, service and migration.
+- [x] Usage table, service and migration.
 - [ ] Recording from chat turns, successful and failed.
 - [ ] API and CLI, OpenAPI regenerated, docs updated.
