@@ -1973,6 +1973,152 @@
         }
       }
     },
+    "/api/v1/usage/budget": {
+      "get": {
+        "tags": [
+          "usage"
+        ],
+        "summary": "The caller's budget this month",
+        "operationId": "my_budget_api_v1_usage_budget_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/usage/budgets": {
+      "get": {
+        "tags": [
+          "usage"
+        ],
+        "summary": "Every user's budget this month (owner only)",
+        "operationId": "household_budgets_api_v1_usage_budgets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberBudgetOut"
+                  },
+                  "type": "array",
+                  "title": "Response Household Budgets Api V1 Usage Budgets Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/usage/budgets/{user_id}": {
+      "put": {
+        "tags": [
+          "usage"
+        ],
+        "summary": "Set or remove a user's monthly limit (owner only)",
+        "operationId": "set_budget_api_v1_usage_budgets__user_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberBudgetOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "tags": [
@@ -5430,6 +5576,76 @@
         ],
         "title": "BucketOut"
       },
+      "BudgetIn": {
+        "properties": {
+          "limit_usd": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Usd",
+            "description": "Monthly limit in US dollars, rounded to cents; null removes the cap"
+          }
+        },
+        "type": "object",
+        "required": [
+          "limit_usd"
+        ],
+        "title": "BudgetIn"
+      },
+      "BudgetOut": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "The current calendar month in UTC"
+          },
+          "limit_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Usd",
+            "description": "The monthly limit; null means no cap"
+          },
+          "spent_usd": {
+            "type": "number",
+            "title": "Spent Usd",
+            "description": "The month's cost so far, as in the usage totals"
+          },
+          "state": {
+            "$ref": "#/components/schemas/BudgetState",
+            "description": "ok below 80 % of the limit, warning from 80 %, exceeded from 100 %"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "limit_usd",
+          "spent_usd",
+          "state"
+        ],
+        "title": "BudgetOut"
+      },
+      "BudgetState": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "warning",
+          "exceeded"
+        ],
+        "title": "BudgetState"
+      },
       "CategoryOut": {
         "properties": {
           "category": {
@@ -6239,6 +6455,55 @@
           "version"
         ],
         "title": "Liveness"
+      },
+      "MemberBudgetOut": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "The current calendar month in UTC"
+          },
+          "limit_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Usd",
+            "description": "The monthly limit; null means no cap"
+          },
+          "spent_usd": {
+            "type": "number",
+            "title": "Spent Usd",
+            "description": "The month's cost so far, as in the usage totals"
+          },
+          "state": {
+            "$ref": "#/components/schemas/BudgetState",
+            "description": "ok below 80 % of the limit, warning from 80 %, exceeded from 100 %"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "limit_usd",
+          "spent_usd",
+          "state",
+          "user_id",
+          "username"
+        ],
+        "title": "MemberBudgetOut"
       },
       "MemberUsageOut": {
         "properties": {

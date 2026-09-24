@@ -19,4 +19,4 @@ Tasks:
 - [x] Spec and this plan.
 - [x] Budget table, service, notifications and migration.
 - [x] Chat falls back to the `fast` tier; usage recording checks the budget.
-- [ ] API and CLI, OpenAPI regenerated, docs updated.
+- [x] API and CLI, OpenAPI regenerated, docs updated.
