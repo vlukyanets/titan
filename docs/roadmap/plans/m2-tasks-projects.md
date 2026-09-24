@@ -17,6 +17,6 @@ reviewed without waiting for a live agent run.
 Tasks:
 
 - [x] Spec and this plan.
-- [ ] Tables, migration, service and recurrence.
+- [x] Tables, migration, service and recurrence.
 - [ ] Projects and tasks API, OpenAPI regenerated, docs updated.
 - [ ] Agent tools with audit and undo (separate branch).
