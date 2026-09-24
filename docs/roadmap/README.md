@@ -12,7 +12,7 @@ and the [ADRs](../adr/).
 |---|---|
 | [milestones.md](milestones.md) | Milestones in order, with their scope and exit criteria |
 | [open-questions.md](open-questions.md) | Undecided questions and where they will be answered |
-| [research/](research/) | Notes for Proposed ADRs and spikes |
+| `research/` | Notes and spike code for Proposed ADRs, created when needed and deleted once the ADR is accepted |
 | `plans/` | One implementation plan per milestone or feature, created when work starts |
 
 ## Workflow

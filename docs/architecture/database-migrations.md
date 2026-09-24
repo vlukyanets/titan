@@ -1,10 +1,9 @@
 # Database migrations
 
 TITAN uses **Alembic** on top of SQLAlchemy 2.x for every schema change. This
-holds for any engine chosen in
-[ADR 0006](../adr/0006-replicated-database-with-vectors.md), and whether an
-engine can be driven by Alembic is one of the ADR's criteria. Until the ADR is
-decided, development runs on single-node PostgreSQL with pgvector.
+applies to the PostgreSQL + pgEdge Spock + pgvector cluster chosen in
+[ADR 0006](../adr/0006-replicated-database-with-vectors.md). Development and
+single-node deployments use the same database image without replication.
 
 ## Layout
 
@@ -46,10 +45,11 @@ uv run alembic downgrade -1
 Nodes are upgraded one at a time, so for a while nodes on different versions
 share one replicated schema.
 
-- **Only one node applies migrations.** `titan migrate` takes a cluster-wide
-  lock (an advisory lock or a lease row, depending on the engine) before it
-  runs `alembic upgrade`. The other nodes wait for the new revision to reach
-  them through replication.
+- **Only one node applies migrations.** Spock replicates DDL, including the
+  `alembic_version` table, so `titan migrate` runs `alembic upgrade` on one
+  node and the others receive the change through replication. A node that is
+  offline gets it when it comes back. Because Postgres advisory locks are
+  local to a node, the owner starts migrations from one node at a time.
 - **Expand, then contract.** A breaking change is split across releases:
   1. *Expand*: add new columns or tables, nullable or with defaults. Old code
      keeps working.
@@ -61,6 +61,21 @@ share one replicated schema.
   Alembic revision with the revisions the code was built for. They refuse to
   start if the database is older than the code needs. A newer database is
   accepted, because expand/contract keeps it compatible.
-- **Engine-specific DDL replication** (for example, how Spock replicates DDL or
-  how cr-sqlite handles `ALTER` on replicated tables) is documented here once
-  ADR 0006 is decided.
+- **Spock specifics.** Automatic DDL replication must be enabled on every
+  node (`spock.enable_ddl_replication`, `spock.include_ddl_repset`), and
+  `spock_output` must be allowed in `output_plugin_libraries` (PostgreSQL
+  17.11, 18.6 and later), otherwise subscriptions fail silently. With both on,
+  new tables join the default replication set by themselves, and downgrades
+  replicate like upgrades.
+- **Index builds pause replication.** Each node executes replicated DDL
+  inside its apply stream, so while it builds an index nothing else reaches
+  it: an HNSW index on 100 000 vectors held the laptop back for about 4.5
+  minutes in the M0 spike. `CREATE INDEX CONCURRENTLY` is not replicated at
+  all. Create vector and other large indexes in their own revision, in a
+  quiet window.
+- **Every table has a primary key**, or Spock cannot replicate its updates
+  and deletes. Extensions (`spock`, `vector`) are created on each node when it
+  joins, not in revisions.
+- **Never apply a revision on two nodes.** The copy that arrives through
+  replication fails on the node that already ran it and stops that
+  subscription.

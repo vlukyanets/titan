@@ -55,7 +55,7 @@ can switch to another one; failover is a client setting in v1.
 | `titan-api` | FastAPI app: REST + SSE/WebSocket API, auth (accounts, device tokens), domain services, OpenAPI schema |
 | `titan-worker` | Runs agent workflows (chat turns, daily plan, replanning), the scheduler and reminder firing |
 | `embeddings` | Local embedding model behind a small HTTP API. Separate container so it can be sized, moved to the strongest node or swapped for another model |
-| `db` | Replicated database with vector table support. Engine *open*: [ADR 0006](../adr/0006-replicated-database-with-vectors.md) |
+| `db` | PostgreSQL with pgEdge Spock (asynchronous multi-master replication) and pgvector, built and pinned by us ([ADR 0006](../adr/0006-replicated-database-with-vectors.md)) |
 | `ntfy` | Push server for UnifiedPush and approval notifications |
 
 `titan-api` and `titan-worker` are the same Python package (`uv`-managed) started
@@ -133,13 +133,45 @@ Database access goes through SQLAlchemy 2.x (async). Alembic manages schema
 changes, which are rolled out safely across peer nodes as described in
 [database-migrations.md](database-migrations.md).
 
+Replication between nodes is asynchronous, so these rules apply to all data
+access:
+
+- **Write affinity.** API processes send writes to the preferred node (the
+  home server) while it is reachable, and to their local node only when it is
+  not. Spock resolves conflicts by keeping the later row image, whole rows
+  at a time: the M0 spike lost a title change because the other node had
+  changed only the notes of the same row. Conflicts are therefore kept to
+  real partitions.
+- **Update only what changed**, and model rows that several writers change at
+  once (counters, streaks, aggregates) as append-only rows or Spock
+  `delta_apply` columns.
+- **Keys.** Primary keys are application-generated UUIDs. Natural-key unique
+  constraints are rare, because two partitioned nodes can each insert the same
+  key and stay diverged.
+- **Conflicts are visible.** Spock's conflict records, `spock.exception_log`
+  and the audit log ([ADR 0005](../adr/0005-per-domain-autonomy-policy.md))
+  let the owner see and undo an edit that lost. Node clocks are kept in sync
+  because conflicts are resolved by commit time.
+
 ## Scheduler and reminders
 
-- Jobs (workflow runs, reminders) are rows in a replicated job table.
-- A worker claims a job by taking a time-limited **lease** on it. Exactly-once
-  firing across peers depends on how the chosen database handles concurrent
-  writes. This is an acceptance criterion for
-  [ADR 0006](../adr/0006-replicated-database-with-vectors.md).
+Asynchronous replication cannot guarantee that only one node runs a job, so
+jobs run **at least once** and every effect is **idempotent**
+([ADR 0006](../adr/0006-replicated-database-with-vectors.md)):
+
+- Jobs (workflow runs, reminders) are rows in a replicated job table. Each job
+  has a **preferred node**.
+- A worker claims a job with a time-limited lease. A node other than the
+  preferred one claims a job only after its lease has expired plus a grace
+  period, so duplicates happen only during a real network partition. The
+  preferred node is essential: without it, two nodes racing for the same jobs
+  fired 20 % of them twice on a healthy cluster in the M0 spike.
+- Every run has a **run id** derived from the job id and its scheduled time.
+- Notifications carry the run id. The notification store and the clients drop
+  a notification whose run id they have already seen.
+- Workflows write their results under **deterministic keys** (for example a
+  UUIDv5 of user and date for the daily plan), so a second run of the same job
+  updates the same rows instead of creating new ones.
 
 ## Cost control
 

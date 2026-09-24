@@ -7,9 +7,9 @@ are aligned with these.
 
 Goal: settle the decisions that block the platform.
 
-- [ ] Database replication research and spike, then decide
-      [ADR 0006](../adr/0006-replicated-database-with-vectors.md)
-      ([research notes](research/db-replication.md)).
+- [x] Database replication research and spike, then decide
+      [ADR 0006](../adr/0006-replicated-database-with-vectors.md): PostgreSQL +
+      pgEdge Spock + pgvector.
 - [ ] LangGraph + Agent SDK spike: `daily_plan` end to end with one domain tool,
       a policy interrupt, resume on another process, and token accounting
       ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-nodes.md)).
@@ -54,7 +54,9 @@ Exit: every acceptance criterion in `docs/spec/domains/` passes on one node.
 
 - [ ] `titan` CLI covering chat, domains and admin.
 - [ ] Web UI in `titan-web` (the repository still has to be created).
-- [ ] Multi-node deployment over Tailscale with the engine from ADR 0006.
+- [ ] Multi-node deployment over Tailscale with pgEdge Spock (ADR 0006).
+- [ ] Verify a week-long laptop absence (WAL retention) and Spock conflict
+      logging.
 - [ ] Rolling upgrades with expand/contract migrations.
 
 Exit: three nodes run, the laptop goes offline and comes back without data
