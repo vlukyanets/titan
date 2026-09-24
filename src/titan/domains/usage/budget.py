@@ -11,18 +11,19 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from titan.domains.accounts.models import User
+from titan.domains.accounts.models import Role, User
 from titan.domains.accounts.service import Principal
 from titan.domains.notifications.models import Notification, NotificationKind
 from titan.domains.notifications.service import NotificationsService
 from titan.domains.usage.errors import ForbiddenError, InvalidBudgetError, NotFoundError
-from titan.domains.usage.models import Budget, UsageRecord
+from titan.domains.usage.models import Budget, OwnerAlerts, UsageRecord
 from titan.domains.usage.service import current_month, month_range
 
 MAX_LIMIT = Decimal("100000")
@@ -42,6 +43,8 @@ class BudgetStatus:
     month: str
     limit_usd: Decimal | None
     spent_usd: float
+    # None without a limit, like the limit itself.
+    owner_alerts: OwnerAlerts | None = None
 
     @property
     def state(self) -> BudgetState:
@@ -57,6 +60,15 @@ class BudgetStatus:
     @property
     def exceeded(self) -> bool:
         return self.state is BudgetState.EXCEEDED
+
+    @property
+    def alerts_owners(self) -> bool:
+        """Whether owners are notified of the current state."""
+        if self.state is BudgetState.OK:
+            return False
+        if self.owner_alerts is OwnerAlerts.ALL:
+            return True
+        return self.owner_alerts is OwnerAlerts.EXCEEDED and self.exceeded
 
 
 @dataclass(frozen=True)
@@ -74,12 +86,17 @@ def normalize_limit(limit: Decimal | None) -> Decimal | None:
     return limit.quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def notification_id(user_id: uuid.UUID, status: BudgetStatus) -> uuid.UUID:
-    """The same on every node, so one state of one month and limit notifies once."""
-    return uuid.uuid5(
-        NOTIFICATION_NAMESPACE,
-        f"{user_id}:{status.month}:{status.state.value}:{status.limit_usd}",
-    )
+def notification_id(
+    user_id: uuid.UUID, status: BudgetStatus, owner_id: uuid.UUID | None = None
+) -> uuid.UUID:
+    """The same on every node, so one state of one month and limit notifies once.
+
+    `owner_id` is set for the copy an owner gets about `user_id`.
+    """
+    key = f"{user_id}:{status.month}:{status.state.value}:{status.limit_usd}"
+    if owner_id is not None:
+        key += f":owner:{owner_id}"
+    return uuid.uuid5(NOTIFICATION_NAMESPACE, key)
 
 
 def _message(status: BudgetStatus) -> tuple[str, str]:
@@ -94,6 +111,17 @@ def _message(status: BudgetStatus) -> tuple[str, str]:
         "80 % of the monthly budget used",
         f"{used} At 100 % chat switches to the fast model and scheduled workflows pause.",
     )
+
+
+def _owner_message(username: str, status: BudgetStatus) -> tuple[str, str]:
+    used = f"{status.spent_usd:.2f} of {status.limit_usd} USD used in {status.month}."
+    if status.exceeded:
+        return (
+            f"{username} reached their monthly budget",
+            f"{used} Their chat uses the fast model and their scheduled workflows are "
+            "paused until you raise the limit or the month ends.",
+        )
+    return f"{username} used 80 % of their monthly budget", used
 
 
 class BudgetService:
@@ -113,8 +141,10 @@ class BudgetService:
                 UsageRecord.created_at < end,
             )
         )
-        limit = await self.session.scalar(select(Budget.limit_usd).where(Budget.user_id == user_id))
-        return BudgetStatus(month, limit, float(spent or 0.0))
+        budget = await self.session.get(Budget, user_id, populate_existing=True)
+        if budget is None:
+            return BudgetStatus(month, None, float(spent or 0.0))
+        return BudgetStatus(month, budget.limit_usd, float(spent or 0.0), budget.owner_alerts)
 
     async def household(
         self, actor: Principal | None, *, now: datetime | None = None
@@ -130,14 +160,14 @@ class BudgetService:
             .subquery()
         )
         rows = await self.session.execute(
-            select(User.id, User.username, Budget.limit_usd, spent.c.spent)
+            select(User.id, User.username, Budget.limit_usd, Budget.owner_alerts, spent.c.spent)
             .outerjoin(Budget, Budget.user_id == User.id)
             .outerjoin(spent, spent.c.user_id == User.id)
             .order_by(User.username)
         )
         return [
-            MemberBudget(user_id, username, BudgetStatus(month, limit, float(total or 0.0)))
-            for user_id, username, limit, total in rows.tuples()
+            MemberBudget(user_id, username, BudgetStatus(month, limit, float(total or 0.0), alerts))
+            for user_id, username, limit, alerts, total in rows.tuples()
         ]
 
     async def set_limit(
@@ -146,50 +176,88 @@ class BudgetService:
         user_id: uuid.UUID,
         limit: Decimal | None,
         *,
+        owner_alerts: OwnerAlerts | None = None,
         now: datetime | None = None,
     ) -> MemberBudget:
-        """Set a user's monthly limit, or remove it with None. Owner only."""
+        """Set a user's monthly limit, or remove it with None. Owner only.
+
+        `owner_alerts` None keeps the current setting, or the default for a new limit.
+        """
         _require_owner(actor)
         limit = normalize_limit(limit)
+        if limit is None and owner_alerts is not None:
+            raise InvalidBudgetError("owner alerts need a limit")
         user = await self.session.get(User, user_id)
         if user is None:
             raise NotFoundError("user not found")
         if limit is None:
             await self.session.execute(delete(Budget).where(Budget.user_id == user_id))
         else:
-            stmt = insert(Budget).values(user_id=user_id, limit_usd=limit)
+            stmt = insert(Budget).values(
+                user_id=user_id, limit_usd=limit, owner_alerts=owner_alerts or OwnerAlerts.EXCEEDED
+            )
+            changes: dict[str, Any] = {
+                "limit_usd": stmt.excluded.limit_usd,
+                "updated_at": func.now(),
+            }
+            if owner_alerts is not None:
+                changes["owner_alerts"] = stmt.excluded.owner_alerts
             await self.session.execute(
-                stmt.on_conflict_do_update(
-                    index_elements=[Budget.user_id],
-                    set_={"limit_usd": stmt.excluded.limit_usd, "updated_at": func.now()},
-                )
+                stmt.on_conflict_do_update(index_elements=[Budget.user_id], set_=changes)
             )
         await self.session.commit()
         # A lower limit can put the user over it at once; they hear about it now.
         return MemberBudget(user.id, user.username, await self.check(user_id, now=now))
 
     async def check(self, user_id: uuid.UUID, *, now: datetime | None = None) -> BudgetStatus:
-        """The user's state, notifying them the first time it is warning or exceeded."""
+        """The user's state, notifying them the first time it is warning or exceeded.
+
+        Owners other than the user are notified too when the budget's owner alerts
+        cover the state.
+        """
         status = await self.status(user_id, now=now)
         if status.state is BudgetState.OK or self.notifications is None:
             return status
-        nid = notification_id(user_id, status)
-        if await self.session.get(Notification, nid) is not None:
-            return status
+        data: dict[str, Any] = {"month": status.month, "state": status.state.value}
         title, body = _message(status)
+        await self._notify_once(user_id, notification_id(user_id, status), title, body, data)
+        if status.alerts_owners:
+            user = await self.session.get(User, user_id)
+            owners = await self.session.scalars(
+                select(User.id).where(
+                    User.role == Role.OWNER, User.disabled_at.is_(None), User.id != user_id
+                )
+            )
+            if user is not None:
+                title, body = _owner_message(user.username, status)
+                for owner_id in owners.all():
+                    await self._notify_once(
+                        owner_id,
+                        notification_id(user_id, status, owner_id),
+                        title,
+                        body,
+                        data | {"user_id": str(user_id)},
+                    )
+        return status
+
+    async def _notify_once(
+        self,
+        recipient: uuid.UUID,
+        nid: uuid.UUID,
+        title: str,
+        body: str,
+        data: dict[str, Any],
+    ) -> None:
+        assert self.notifications is not None
+        if await self.session.get(Notification, nid) is not None:
+            return
         try:
             await self.notifications.notify(
-                user_id,
-                NotificationKind.BUDGET,
-                title,
-                body,
-                {"month": status.month, "state": status.state.value},
-                notification_id=nid,
+                recipient, NotificationKind.BUDGET, title, body, data, notification_id=nid
             )
         except IntegrityError:
             # Another session of the same user sent it first.
             await self.session.rollback()
-        return status
 
 
 def _require_owner(actor: Principal | None) -> None:

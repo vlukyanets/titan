@@ -100,12 +100,14 @@ async def test_the_owner_caps_a_member_and_the_member_sees_it(api: ChatApi) -> N
         "limit_usd": None,
         "spent_usd": pytest.approx(0.0123),
         "state": "ok",
+        "owner_alerts": None,
     }
     url = f"/api/v1/usage/budgets/{boris_id}"
     capped = await api.client.put(url, headers=auth(anna), json={"limit_usd": 0.005})
     assert capped.status_code == 200
     assert (capped.json()["username"], capped.json()["limit_usd"]) == ("boris", 0.01)
     assert capped.json()["state"] == "exceeded"
+    assert capped.json()["owner_alerts"] == "exceeded"
     mine = (await api.client.get("/api/v1/usage/budget", headers=auth(boris))).json()
     assert (mine["limit_usd"], mine["state"]) == (0.01, "exceeded")
     household = (await api.client.get("/api/v1/usage/budgets", headers=auth(anna))).json()
@@ -121,6 +123,8 @@ async def test_the_owner_caps_a_member_and_the_member_sees_it(api: ChatApi) -> N
         (anna, {"limit_usd": -1}, 422),
         (anna, {"limit_usd": 100_001}, 422),
         (anna, {}, 422),
+        (anna, {"limit_usd": 1, "owner_alerts": "sometimes"}, 422),
+        (anna, {"limit_usd": None, "owner_alerts": "all"}, 422),
     ]:
         refused = await api.client.put(url, headers=auth(who), json=body)
         assert refused.status_code == status
@@ -129,6 +133,12 @@ async def test_the_owner_caps_a_member_and_the_member_sees_it(api: ChatApi) -> N
     unknown = f"/api/v1/usage/budgets/{uuid.uuid4()}"
     missing = await api.client.put(unknown, headers=auth(anna), json={"limit_usd": 1})
     assert missing.status_code == 404
+    alerts = await api.client.put(
+        url, headers=auth(anna), json={"limit_usd": 0.01, "owner_alerts": "off"}
+    )
+    assert alerts.json()["owner_alerts"] == "off"
+    kept = await api.client.put(url, headers=auth(anna), json={"limit_usd": 5})
+    assert (kept.json()["limit_usd"], kept.json()["owner_alerts"]) == (5.0, "off")
     removed = await api.client.put(url, headers=auth(anna), json={"limit_usd": None})
     assert (removed.json()["limit_usd"], removed.json()["state"]) == (None, "ok")
 
@@ -140,12 +150,20 @@ def test_the_node_command_sets_budgets(db_url: str, capsys: pytest.CaptureFixtur
     assert main(create, settings=settings, stdin=password) == 0
     capsys.readouterr()
     assert main(["budget", "set", "anna", "25.5"], settings=settings) == 0
-    assert (
-        capsys.readouterr().out == f"anna: 25.50 USD a month, 0.00 spent in {current_month()}, ok\n"
+    month = current_month()
+    assert capsys.readouterr().out == (
+        f"anna: 25.50 USD a month, 0.00 spent in {month}, ok, owner alerts exceeded\n"
     )
+    assert main(["budget", "set", "anna", "25.5", "--owner-alerts", "all"], settings=settings) == 0
+    assert capsys.readouterr().out.endswith("owner alerts all\n")
     assert main(["budget", "list"], settings=settings) == 0
     lines = capsys.readouterr().out.splitlines()
-    assert lines == [f"{current_month()}\tlimit USD\tspent USD\tstate", "anna\t25.50\t0.0000\tok"]
+    assert lines == [
+        f"{month}\tlimit USD\tspent USD\tstate\towner alerts",
+        "anna\t25.50\t0.0000\tok\tall",
+    ]
+    assert main(["budget", "set", "anna", "none", "--owner-alerts", "off"], settings=settings) == 1
+    assert "owner alerts need a limit" in capsys.readouterr().err
     assert main(["budget", "set", "anna", "none"], settings=settings) == 0
     assert capsys.readouterr().out == "anna: no limit\n"
     assert main(["budget", "set", "anna", "lots"], settings=settings) == 1

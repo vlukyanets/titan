@@ -5591,6 +5591,17 @@
             ],
             "title": "Limit Usd",
             "description": "Monthly limit in US dollars, rounded to cents; null removes the cap"
+          },
+          "owner_alerts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OwnerAlerts"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Left out: unchanged, or exceeded for a new limit. Needs a limit"
           }
         },
         "type": "object",
@@ -5626,6 +5637,17 @@
           "state": {
             "$ref": "#/components/schemas/BudgetState",
             "description": "ok below 80 % of the limit, warning from 80 %, exceeded from 100 %"
+          },
+          "owner_alerts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OwnerAlerts"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Which states the owners are notified of: off, exceeded, or all (warning and exceeded); null without a limit"
           }
         },
         "type": "object",
@@ -5633,7 +5655,8 @@
           "month",
           "limit_usd",
           "spent_usd",
-          "state"
+          "state",
+          "owner_alerts"
         ],
         "title": "BudgetOut"
       },
@@ -6484,6 +6507,17 @@
             "$ref": "#/components/schemas/BudgetState",
             "description": "ok below 80 % of the limit, warning from 80 %, exceeded from 100 %"
           },
+          "owner_alerts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OwnerAlerts"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Which states the owners are notified of: off, exceeded, or all (warning and exceeded); null without a limit"
+          },
           "user_id": {
             "type": "string",
             "format": "uuid",
@@ -6500,6 +6534,7 @@
           "limit_usd",
           "spent_usd",
           "state",
+          "owner_alerts",
           "user_id",
           "username"
         ],
@@ -7213,6 +7248,16 @@
           "task_id"
         ],
         "title": "OccurrenceOut"
+      },
+      "OwnerAlerts": {
+        "type": "string",
+        "enum": [
+          "off",
+          "exceeded",
+          "all"
+        ],
+        "title": "OwnerAlerts",
+        "description": "Which of a user's budget states the owners are notified of."
       },
       "PairRequest": {
         "properties": {

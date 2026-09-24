@@ -24,6 +24,6 @@ Tasks:
 - [x] Budget table, service, notifications and migration.
 - [x] Chat falls back to the `fast` tier; usage recording checks the budget.
 - [x] API and CLI, OpenAPI regenerated, docs updated.
-- [ ] Owner alerts: spec, column, notifications, API and CLI.
+- [x] Owner alerts: spec, column, notifications, API and CLI.
 - [ ] Budget check and skipped-run notice in the workflow runner (with the first
       scheduled workflow).
