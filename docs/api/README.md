@@ -77,3 +77,8 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   every day, week or month in between in the owner's time zone, with the
   streak; `GET /trackers/templates` lists the built-in templates. Another
   user's tracker answers `404` ([trackers](../spec/domains/trackers.md)).
+- Notes and memories: `/api/v1/notes` and `/api/v1/memories`. Lists carry
+  an excerpt instead of the body; `q` keeps items that contain every word,
+  ignoring case in any alphabet. A note shared with the caller can be read
+  but not changed (`403`). Posting a memory the caller already has confirms
+  it instead of adding a copy ([notes](../spec/domains/notes-memory.md)).
