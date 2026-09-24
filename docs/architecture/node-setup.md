@@ -75,18 +75,19 @@ Then the unlock method that fits the node:
 
 | Node | Unlock | Command |
 |---|---|---|
-| Home server | TPM2, so it comes back by itself after a power cut | `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 "$DEV"` |
+| Home server | TPM2 and Tang together: back by itself after a power cut, but only on the home network | `clevis luks bind -d "$DEV" sss '{"t":2,"pins":{"tpm2":{"pcr_ids":"7"},"tang":[{"url":"http://<tang>"}]}}'` |
 | Laptop | TPM2 and a PIN, because the whole device can be stolen | `sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 --tpm2-with-pin=yes "$DEV"` |
 | VPS | Tang on the home network, reached over Tailscale; the VPS's TPM belongs to the hoster | `clevis luks bind -d "$DEV" tang '{"url":"http://<tang>.<tailnet>"}'` |
 
 - PCR 7 binds the key to the Secure Boot state, so Secure Boot must be on:
   without it anyone could boot their own system and have the TPM hand over
   the key.
-- A home server that is stolen whole unlocks by itself. To close that, bind
-  it to both TPM2 and a Tang server on the home network, so it unlocks only
-  at home:
-  `clevis luks bind -d "$DEV" sss '{"t":2,"pins":{"tpm2":{"pcr_ids":"7"},"tang":[{"url":"http://<tang>"}]}}'`.
-  Clevis then replaces the `tpm2-device=auto` token in `/etc/crypttab`.
+- Clevis replaces the `tpm2-device=auto` token in `/etc/crypttab` on the
+  home server and the VPS; install `clevis-luks` and `clevis-systemd` (or
+  `clevis-dracut`) for unlocking at boot. The Tang server runs on the router
+  or another small always-on device at home (`tangd`, port 80 on the LAN
+  only). Without it the home server waits at boot for Tang or the recovery
+  key.
 
 ### Swap
 
