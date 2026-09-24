@@ -12,8 +12,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 from pydantic import BaseModel, Field
 
-from titan.agent.chat import TextDelta, ToolActivity
+from titan.agent.chat import ApprovalRequested, TextDelta, ToolActivity
 from titan.agent.runtime import TurnEnded, TurnStream
+from titan.api.autonomy import ApprovalOut
 from titan.api.deps import Chat, ChatTurns, CurrentPrincipal
 from titan.api.problems import PROBLEM_JSON
 from titan.domains.chat.models import ChatMessage, ChatThread, MessageRole, MessageStatus
@@ -114,6 +115,13 @@ class ToolEvent(BaseModel):
     status: Literal["started", "finished", "failed"]
 
 
+class ApprovalEvent(BaseModel):
+    type: Literal["approval"] = "approval"
+    approval: ApprovalOut = Field(
+        description="The request the agent just made; approve or reject it"
+    )
+
+
 class DoneEvent(BaseModel):
     type: Literal["done"] = "done"
     message: MessageOut = Field(
@@ -127,7 +135,7 @@ class ErrorEvent(BaseModel):
 
 
 ChatEvent = Annotated[
-    TurnStartedEvent | TextEvent | ToolEvent | DoneEvent | ErrorEvent,
+    TurnStartedEvent | TextEvent | ToolEvent | ApprovalEvent | DoneEvent | ErrorEvent,
     Field(discriminator="type"),
 ]
 
@@ -157,7 +165,9 @@ async def start_turn(
     return StartedTurn(turn, turns.start(principal.user_id, turn.assistant_message.id))
 
 
-def _sse(event: TurnStartedEvent | TextEvent | ToolEvent | DoneEvent | ErrorEvent) -> Any:
+def _sse(
+    event: TurnStartedEvent | TextEvent | ToolEvent | ApprovalEvent | DoneEvent | ErrorEvent,
+) -> Any:
     # Typed Any: the route's annotation documents the data as ChatEvent, while the
     # ServerSentEvent wrapper adds the event name on the wire.
     return ServerSentEvent(event=event.type, data=event)
@@ -230,7 +240,8 @@ async def list_messages(
     summary="Send a message and stream the reply",
     description=(
         "Answers with `text/event-stream`. Events arrive in this order: `turn` once, then "
-        "`text` and `tool` as the reply is written, then `done` or `error`. Each event's "
+        "`text`, `tool` and `approval` as the reply is written, then `done` or `error`. "
+        "Each event's "
         "data is JSON whose `type` repeats the event name. The reply keeps being written "
         "if the connection closes; reload the messages to get it. A thread runs one reply "
         "at a time (`409`), and `503` means this node cannot reach Claude."
@@ -251,6 +262,8 @@ async def send_message(
             yield _sse(TextEvent(delta=event.text))
         elif isinstance(event, ToolActivity):
             yield _sse(ToolEvent(id=event.id, name=event.name, status=event.status))
+        elif isinstance(event, ApprovalRequested):
+            yield _sse(ApprovalEvent(approval=ApprovalOut.of(event.approval)))
         elif isinstance(event, TurnEnded) and event.message is not None:
             message = MessageOut.of(event.message)
             if event.message.status is MessageStatus.COMPLETE:

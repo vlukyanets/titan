@@ -42,4 +42,11 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   the `done` event's message is the stored reply, which replaces the streamed
   text. Refusals (`404`, `409` while a reply is running, `422`, `503` when the
   node has no working Claude credential) are ordinary problem responses sent
-  before the stream starts ([chat](../spec/domains/chat.md)).
+  before the stream starts ([chat](../spec/domains/chat.md)). An `approval`
+  event carries a request the agent made during the reply.
+- Approvals: an `approval` push carries only the approval id; the app fetches
+  `GET /api/v1/approvals/{id}` and answers with `POST …/approve` or
+  `POST …/reject`. Approving runs exactly the stored call and answers with the
+  result; a decided or expired request answers `409`. The audit log
+  (`GET /api/v1/audit`, `POST /api/v1/audit/{id}/undo`) and the policy
+  (`/api/v1/policy`) are described in [autonomy](../spec/domains/autonomy.md).
