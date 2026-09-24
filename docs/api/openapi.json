@@ -1019,7 +1019,7 @@
           "chat"
         ],
         "summary": "Send a message and stream the reply",
-        "description": "Answers with `text/event-stream`. Events arrive in this order: `turn` once, then `text` and `tool` as the reply is written, then `done` or `error`. Each event's data is JSON whose `type` repeats the event name. The reply keeps being written if the connection closes; reload the messages to get it. A thread runs one reply at a time (`409`), and `503` means this node cannot reach Claude.",
+        "description": "Answers with `text/event-stream`. Events arrive in this order: `turn` once, then `text`, `tool` and `approval` as the reply is written, then `done` or `error`. Each event's data is JSON whose `type` repeats the event name. The reply keeps being written if the connection closes; reload the messages to get it. A thread runs one reply at a time (`409`), and `503` means this node cannot reach Claude.",
         "operationId": "send_message_api_v1_chat_threads__thread_id__messages_post",
         "security": [
           {
@@ -1071,6 +1071,9 @@
                             "$ref": "#/components/schemas/ToolEvent"
                           },
                           {
+                            "$ref": "#/components/schemas/ApprovalEvent"
+                          },
+                          {
                             "$ref": "#/components/schemas/DoneEvent"
                           },
                           {
@@ -1083,6 +1086,7 @@
                             "turn": "#/components/schemas/TurnStartedEvent",
                             "text": "#/components/schemas/TextEvent",
                             "tool": "#/components/schemas/ToolEvent",
+                            "approval": "#/components/schemas/ApprovalEvent",
                             "done": "#/components/schemas/DoneEvent",
                             "error": "#/components/schemas/ErrorEvent"
                           }
@@ -1140,10 +1144,976 @@
           }
         }
       }
+    },
+    "/api/v1/policy": {
+      "get": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "The caller's effective policy for every domain and action class",
+        "operationId": "effective_policy_api_v1_policy_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PolicyRuleOut"
+                  },
+                  "type": "array",
+                  "title": "Response Effective Policy Api V1 Policy Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/policy/{domain}/{action_class}": {
+      "put": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "Set the caller's own rule",
+        "operationId": "set_rule_api_v1_policy__domain___action_class__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Domain"
+            }
+          },
+          {
+            "name": "action_class",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ActionClass"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyRuleIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "Remove the caller's own rule",
+        "operationId": "remove_rule_api_v1_policy__domain___action_class__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Domain"
+            }
+          },
+          {
+            "name": "action_class",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ActionClass"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/policy/household/{domain}/{action_class}": {
+      "put": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "Set a household default (owner only)",
+        "operationId": "set_household_rule_api_v1_policy_household__domain___action_class__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Domain"
+            }
+          },
+          {
+            "name": "action_class",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ActionClass"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyRuleIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "Remove a household default (owner only)",
+        "operationId": "remove_household_rule_api_v1_policy_household__domain___action_class__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Domain"
+            }
+          },
+          {
+            "name": "action_class",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ActionClass"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/approvals": {
+      "get": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "The caller's approval requests, newest first",
+        "description": "Page with `before`: pass the id of the last request you have.",
+        "operationId": "list_approvals_api_v1_approvals_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "pending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only requests still waiting",
+              "default": false,
+              "title": "Pending"
+            },
+            "description": "Only requests still waiting"
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only older than this id",
+              "title": "Before"
+            },
+            "description": "Only older than this id"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApprovalOut"
+                  },
+                  "title": "Response List Approvals Api V1 Approvals Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/{approval_id}": {
+      "get": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "One approval request",
+        "operationId": "get_approval_api_v1_approvals__approval_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "approval_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Approval Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/{approval_id}/approve": {
+      "post": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "Approve a request and run it",
+        "description": "Runs exactly the stored call and answers with the request, now `executed` or `failed`, and its result. The result is also posted to the chat thread.",
+        "operationId": "approve_api_v1_approvals__approval_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "approval_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Approval Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approvals/{approval_id}/reject": {
+      "post": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "Reject a request",
+        "operationId": "reject_api_v1_approvals__approval_id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "approval_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Approval Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audit": {
+      "get": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "The caller's audit log, newest first",
+        "description": "Page with `before`: pass the id of the last entry you have.",
+        "operationId": "list_audit_api_v1_audit_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only older than this id",
+              "title": "Before"
+            },
+            "description": "Only older than this id"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEntryOut"
+                  },
+                  "title": "Response List Audit Api V1 Audit Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audit/{entry_id}/undo": {
+      "post": {
+        "tags": [
+          "autonomy"
+        ],
+        "summary": "Undo one logged action",
+        "description": "Answers `409` if it cannot be undone, or if the entity changed since.",
+        "operationId": "undo_api_v1_audit__entry_id__undo_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entry Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditEntryOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ActionClass": {
+        "type": "string",
+        "enum": [
+          "read",
+          "write-internal",
+          "external",
+          "destructive"
+        ],
+        "title": "ActionClass"
+      },
+      "ApprovalEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "approval",
+            "title": "Type",
+            "default": "approval"
+          },
+          "approval": {
+            "$ref": "#/components/schemas/ApprovalOut",
+            "description": "The request the agent just made; approve or reject it"
+          }
+        },
+        "type": "object",
+        "required": [
+          "approval"
+        ],
+        "title": "ApprovalEvent"
+      },
+      "ApprovalOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "thread_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thread Id",
+            "description": "The chat thread the request came from"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool"
+          },
+          "domain": {
+            "type": "string",
+            "title": "Domain"
+          },
+          "action_class": {
+            "$ref": "#/components/schemas/ActionClass"
+          },
+          "input": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input",
+            "description": "Exactly what runs on approval"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "What is being asked, for people"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApprovalStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result",
+            "description": "What happened when it ran"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "thread_id",
+          "tool",
+          "domain",
+          "action_class",
+          "input",
+          "summary",
+          "status",
+          "created_at",
+          "expires_at",
+          "decided_at",
+          "result"
+        ],
+        "title": "ApprovalOut"
+      },
+      "ApprovalStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "approved",
+          "executed",
+          "failed",
+          "rejected",
+          "expired"
+        ],
+        "title": "ApprovalStatus"
+      },
+      "AuditEntryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "approval_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Id"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool"
+          },
+          "domain": {
+            "type": "string",
+            "title": "Domain"
+          },
+          "action_class": {
+            "$ref": "#/components/schemas/ActionClass"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/Decision",
+            "description": "What allowed it; `confirm` means it was approved"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "input": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "after": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After"
+          },
+          "undoable": {
+            "type": "boolean",
+            "title": "Undoable",
+            "description": "Whether undo is still possible"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "undone_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Undone At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "approval_id",
+          "tool",
+          "domain",
+          "action_class",
+          "decision",
+          "summary",
+          "input",
+          "entity_type",
+          "entity_id",
+          "before",
+          "after",
+          "undoable",
+          "created_at",
+          "undone_at"
+        ],
+        "title": "AuditEntryOut"
+      },
       "CreateUserRequest": {
         "properties": {
           "username": {
@@ -1175,6 +2145,16 @@
           "password"
         ],
         "title": "CreateUserRequest"
+      },
+      "Decision": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "auto-undo",
+          "confirm",
+          "deny"
+        ],
+        "title": "Decision"
       },
       "DeviceOut": {
         "properties": {
@@ -1576,6 +2556,50 @@
           "other"
         ],
         "title": "Platform"
+      },
+      "PolicyRuleIn": {
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/Decision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision"
+        ],
+        "title": "PolicyRuleIn"
+      },
+      "PolicyRuleOut": {
+        "properties": {
+          "domain": {
+            "type": "string",
+            "title": "Domain"
+          },
+          "action_class": {
+            "$ref": "#/components/schemas/ActionClass"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/Decision"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "user",
+              "household",
+              "default"
+            ],
+            "title": "Source",
+            "description": "Your own rule, the owner's household default, or the built-in default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "domain",
+          "action_class",
+          "decision",
+          "source"
+        ],
+        "title": "PolicyRuleOut"
       },
       "PushRegistration": {
         "properties": {
