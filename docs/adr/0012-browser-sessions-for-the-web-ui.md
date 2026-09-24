@@ -67,11 +67,50 @@ Option 3.
   API on the node itself. Nothing listens outside the tailnet. For development,
   browsers treat `http://localhost` as secure.
 
+### Hardening
+
+- **Tokens.** A session token has 256 bits from the operating system's random
+  source, like a device token, and the node stores only its SHA-256 hash.
+  Every sign-in creates a new device and token, so a session cannot be fixed
+  in advance, and a token never appears in a URL, a response body or a log.
+- **Sign-in abuse.** Besides the per-account lockout, sign-in attempts are
+  limited per client address. Sign-in also requires `X-Titan-Request` and a
+  same-origin `Origin`, so another site cannot sign a browser in to an
+  account of its choosing.
+- **Lifetime.** Besides the 30-day idle expiry, a browser session ends 90 days
+  after sign-in whatever its use. Changing a password revokes all of the
+  user's `web` devices except the current one, and disabling a user ends all
+  of them.
+- **Recent sign-in for sensitive changes.** Changing a password, creating or
+  disabling users, revoking another user's device, changing policies or
+  budgets and approving `destructive` actions need a sign-in in the last
+  15 minutes. Older sessions get `403` with a problem type that asks the UI
+  to confirm the password, which refreshes the sign-in time without a new
+  device.
+- **New sign-in notice.** Every browser sign-in sends the user a notification
+  naming the browser and node, so an unexpected sign-in is noticed.
+- **Response headers.** The node serves the UI and the API with
+  `Strict-Transport-Security`, `Content-Security-Policy: default-src 'self';
+  script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none';
+  frame-ancestors 'none'; base-uri 'none'; form-action 'self';
+  require-trusted-types-for 'script'`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: no-referrer`, `Cross-Origin-Opener-Policy: same-origin`,
+  `Cross-Origin-Resource-Policy: same-origin` and a `Permissions-Policy` that
+  turns off camera, microphone, location and payment. API responses carry
+  `Cache-Control: no-store`.
+- **No CORS.** The node sends no `Access-Control-Allow-*` headers, so no other
+  origin can read its responses.
+
 ## Consequences
 
 - Script injection in the UI can still act as the user while the page is
   open, but it cannot carry the token away. The UI's strict
-  `Content-Security-Policy` makes injection itself harder.
+  `Content-Security-Policy` makes injection itself harder: no inline or
+  foreign scripts run, and Trusted Types block HTML strings from reaching the
+  DOM. Inline styles stay allowed because the component libraries inject
+  them; a style injection cannot run code.
+- A UI library that assigns HTML strings must be replaced, or wrapped in a
+  named Trusted Types policy that sanitises its input.
 - Browsers show up in the device list and are revoked like any other device.
 - The cookie belongs to one node address, so a user signs in once per node
   they open in the browser, and each sign-in is its own device.
