@@ -14,6 +14,7 @@ from titan.domains.chat import errors as chat_errors
 from titan.domains.notifications import errors as notifications_errors
 from titan.domains.reminders import errors as reminders_errors
 from titan.domains.tasks import errors as tasks_errors
+from titan.domains.trackers import errors as trackers_errors
 from titan.domains.usage import errors as usage_errors
 
 PROBLEM_JSON = "application/problem+json"
@@ -50,6 +51,7 @@ def install(app: FastAPI) -> None:
     app.add_exception_handler(tasks_errors.TasksError, _domain)
     app.add_exception_handler(reminders_errors.RemindersError, _domain)
     app.add_exception_handler(calendar_errors.CalendarError, _domain)
+    app.add_exception_handler(trackers_errors.TrackersError, _domain)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -92,6 +94,11 @@ _DOMAIN_STATUS: dict[type[Exception], int] = {
     calendar_errors.NotFoundError: 404,
     calendar_errors.ForbiddenError: 403,
     calendar_errors.InvalidEventError: 422,
+    trackers_errors.NotFoundError: 404,
+    trackers_errors.InvalidTrackerError: 422,
+    trackers_errors.InvalidEntryError: 422,
+    trackers_errors.DuplicateNameError: 409,
+    trackers_errors.ArchivedError: 409,
 }
 
 
