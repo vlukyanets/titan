@@ -41,7 +41,12 @@ def db_url(migrated_db_url: str) -> str:
 
     engine = sa.create_engine(migrated_db_url)
     with engine.begin() as conn:
-        conn.execute(sa.text("TRUNCATE notifications, push_subscriptions, devices, users"))
+        conn.execute(
+            sa.text(
+                "TRUNCATE chat_messages, chat_threads, checkpoint_writes, checkpoint_blobs, "
+                "checkpoints, notifications, push_subscriptions, devices, users"
+            )
+        )
     engine.dispose()
     return migrated_db_url
 

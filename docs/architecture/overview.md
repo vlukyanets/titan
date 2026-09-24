@@ -66,8 +66,8 @@ with different entry points.
 ```text
 src/titan/
   api/          FastAPI routers, request/response models, auth
-  domains/      accounts, notifications, tasks, calendar, notes, memory,
-                trackers, reminders
+  domains/      accounts, notifications, chat, tasks, calendar, notes,
+                memory, trackers, reminders
                 (models, services, agent tools, policy declarations)
   agent/        LangGraph workflows, Agent SDK node wrapper, policy hook,
                 Claude auth handling, model tiers, budget tracking
