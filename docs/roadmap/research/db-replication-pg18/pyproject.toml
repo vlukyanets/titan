@@ -1,0 +1,17 @@
+[project]
+name = "db-replication-spike"
+version = "0.0.0"
+description = "Throwaway M0 spike that compares replicated database candidates for ADR 0006"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.14",
+    "asyncpg>=0.30",
+    "numpy>=2.1",
+    "pgvector>=0.3",
+    "psycopg[binary]>=3.2",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "sqlalchemy-cockroachdb>=2.0.2",
+]
+
+[tool.uv]
+package = false

@@ -1,0 +1,178 @@
+{
+  "s7": {
+    "asyncpg": {
+      "insert_select": {
+        "ok": true,
+        "seconds": 0.11,
+        "value": "server_default updated_at populated"
+      },
+      "jsonb_filter": {
+        "ok": true,
+        "seconds": 0.06,
+        "value": 1
+      },
+      "upsert_returning": {
+        "ok": true,
+        "seconds": 0.01,
+        "value": "upserted"
+      },
+      "vector_roundtrip": {
+        "ok": true,
+        "seconds": 0.05,
+        "value": "l2_distance order_by and round trip exact"
+      },
+      "skip_locked": {
+        "ok": true,
+        "seconds": 0.16,
+        "value": "second session skipped the locked row"
+      },
+      "savepoint": {
+        "ok": true,
+        "seconds": 0.01,
+        "value": "nested transaction rolled back alone"
+      }
+    },
+    "asyncpg_without_vector_codec": {
+      "insert_select": {
+        "ok": true,
+        "seconds": 0.06,
+        "value": "server_default updated_at populated"
+      },
+      "jsonb_filter": {
+        "ok": true,
+        "seconds": 0.06,
+        "value": 1
+      },
+      "upsert_returning": {
+        "ok": true,
+        "seconds": 0.01,
+        "value": "upserted"
+      },
+      "vector_roundtrip": {
+        "ok": false,
+        "seconds": 0.16,
+        "error": "InterfaceError: (sqlalchemy.dialects.postgresql.asyncpg.InterfaceError) <class 'asyncpg.exceptions._base.UnsupportedClientFeatureError'>: unhandled standard data type 'vector' (OID 8078)"
+      },
+      "skip_locked": {
+        "ok": true,
+        "seconds": 0.14,
+        "value": "second session skipped the locked row"
+      },
+      "savepoint": {
+        "ok": true,
+        "seconds": 0.01,
+        "value": "nested transaction rolled back alone"
+      }
+    },
+    "psycopg": {
+      "insert_select": {
+        "ok": true,
+        "seconds": 0.17,
+        "value": "server_default updated_at populated"
+      },
+      "jsonb_filter": {
+        "ok": true,
+        "seconds": 0.07,
+        "value": 1
+      },
+      "upsert_returning": {
+        "ok": true,
+        "seconds": 0.02,
+        "value": "upserted"
+      },
+      "vector_roundtrip": {
+        "ok": true,
+        "seconds": 0.06,
+        "value": "l2_distance order_by and round trip exact"
+      },
+      "skip_locked": {
+        "ok": true,
+        "seconds": 0.12,
+        "value": "second session skipped the locked row"
+      },
+      "savepoint": {
+        "ok": true,
+        "seconds": 0.01,
+        "value": "nested transaction rolled back alone"
+      }
+    },
+    "_elapsed_s": 1.8
+  },
+  "s5": {
+    "upgrade_head_on_n1": {
+      "ok": true,
+      "seconds": 1.1,
+      "output": []
+    },
+    "reached_laptop_s": 0.8,
+    "schema_per_node": {
+      "n1": {
+        "version": "0002",
+        "priority_column": true,
+        "ann_index": true
+      },
+      "n2": {
+        "version": "0002",
+        "priority_column": true,
+        "ann_index": true
+      },
+      "n3": {
+        "version": "0002",
+        "priority_column": true,
+        "ann_index": true
+      }
+    },
+    "insert_new_column_via_n2": {
+      "ok": true,
+      "seconds": 0.13,
+      "value": null
+    },
+    "alembic_check_on_n3": {
+      "ok": true,
+      "seconds": 1.5,
+      "output": [
+        "No new upgrade operations detected."
+      ]
+    },
+    "downgrade_on_n1": {
+      "ok": true,
+      "seconds": 0.9,
+      "output": []
+    },
+    "downgrade_reached_laptop_s": 0.4,
+    "upgrade_again_on_n1": {
+      "ok": true,
+      "seconds": 1.0,
+      "output": []
+    },
+    "upgrade_again_reached_laptop_s": 0.8,
+    "_elapsed_s": 8.1
+  },
+  "s6": {
+    "yugabyte-n1": {
+      "cpu_percent_avg": 6.72,
+      "mem_mib_avg": 359.0
+    },
+    "yugabyte-n2": {
+      "cpu_percent_avg": 5.71,
+      "mem_mib_avg": 291.4
+    },
+    "yugabyte-n3": {
+      "cpu_percent_avg": 5.97,
+      "mem_mib_avg": 290.0
+    },
+    "_elapsed_s": 81.5
+  },
+  "s1": {
+    "recorded_manually": true,
+    "summary": "Partition isolating n1 (tablet leaders and master leader moved to n3 within seconds). On n3: UPDATE on the contested row committed in 0.2 s. On n2: reads and INSERTs worked, but UPDATEs failed with 'GetTableSchemaRpc(table_id ...17da) timed out after 120 s' for the whole 15 min partition. n1 YSQL refused connections while isolated. After healing, all tservers ALIVE and no under-replicated tablets, yet UPDATEs on n2 still failed with the same error and n1 statements timed out (60-90 s) 8+ minutes later. No locks (yb_lock_status) or stuck backends were present. The runner hung on these statements and was stopped; S2-S4 and S8 were not run on this candidate.",
+    "t_row_final": {
+      "title": "orig",
+      "notes": "never applied on the majority side"
+    },
+    "u_row_final": {
+      "title": "orig",
+      "notes": "manual-n3 (applied through n3)"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+# Postgres 18 managed by Patroni with a three-member etcd. n1 (home) and n2 (VPS) may be
+# primary; n3 (laptop) is an async replica that never becomes primary or sync standby.
+# /archive is a shared volume standing in for a pgBackRest repository.
+name: patroni
+x-node: &node
+  image: titan-spike/pg:18
+  entrypoint: ["bash", "/entrypoint.sh"]
+  user: root
+  volumes:
+    - ./entrypoint.sh:/entrypoint.sh:ro
+    - ./patroni.yml.tmpl:/patroni.yml.tmpl:ro
+    - archive:/archive
+  networks: [mesh]
+services:
+  n1:
+    <<: *node
+    container_name: patroni-n1
+    hostname: n1
+    environment: {NODE: n1}
+    ports: ["15461:5432"]
+  n2:
+    <<: *node
+    container_name: patroni-n2
+    hostname: n2
+    environment: {NODE: n2}
+    ports: ["15462:5432"]
+  n3:
+    <<: *node
+    container_name: patroni-n3
+    hostname: n3
+    environment: {NODE: n3, NOFAILOVER: "true", NOSYNC: "true"}
+    ports: ["15463:5432"]
+networks:
+  mesh: {}
+volumes:
+  archive: {}
