@@ -1,4 +1,4 @@
-# Domain: reminders and notifications
+# Domain: reminders
 
 Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
 
@@ -7,14 +7,12 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
 | Entity | Key fields |
 |---|---|
 | `Reminder` | id, owner, text, fire_at, recurrence (RRULE)?, linked entity (task, event, tracker)?, status (`scheduled`, `fired`, `snoozed`, `dismissed`) |
-| `Notification` | id, user, kind (`reminder`, `approval`, `plan`, `budget`, `system`), payload, delivered_at?, read_at? |
 
 ## Delivery
 
-- Push goes through **ntfy** with UnifiedPush on Android. The ntfy server runs
-  inside the cluster, on the tailnet, so no Google services are needed.
-- Each notification is also stored, so a client that was offline can list what
-  it missed.
+- A fired reminder becomes a `reminder` notification with Snooze and Done
+  actions, stored and pushed as described in
+  [notifications](notifications.md).
 - Events and tasks with a due time get a default reminder (configurable per user,
   default 15 minutes before).
 - Approval requests from the [autonomy policy](../product.md#autonomy-policy)
