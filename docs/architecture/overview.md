@@ -57,7 +57,7 @@ connection ([ADR 0013](../adr/0013-one-cluster-address.md)).
 | `titan-api` | FastAPI app: REST + SSE/WebSocket API, auth (accounts, device tokens, browser sessions), domain services, OpenAPI schema, and the static files of the Web UI |
 | `titan-worker` | Runs the scheduler and reminder firing; later the agent workflows (chat turns, daily plan, replanning) |
 | `embeddings` | Local embedding model behind a small HTTP API. Separate container so it can be sized, moved to the strongest node or swapped for another model |
-| `db` | Replicated database with vector table support. Engine *open*: [ADR 0006](../adr/0006-replicated-database-with-vectors.md) |
+| `db` | PostgreSQL with pgEdge Spock (asynchronous multi-master replication) and pgvector, from a pinned pgEdge image ([ADR 0006](../adr/0006-replicated-database-with-vectors.md)) |
 | `ntfy` | UnifiedPush server for the phones. Push messages carry only notification ids ([ADR 0008](../adr/0008-push-messages-carry-references.md)) |
 
 `titan-api` and `titan-worker` are the same Python package (`uv`-managed) started
@@ -178,6 +178,18 @@ Database access goes through SQLAlchemy 2.x (async). Alembic manages schema
 changes, which are rolled out safely across peer nodes as described in
 [database-migrations.md](database-migrations.md).
 
+Replication between nodes is asynchronous, so two rules apply to all data
+access:
+
+- **Update only what changed.** Services write the fields the user or agent
+  actually changed, never the whole row read earlier. When two nodes edit the
+  same row at the same time, Spock keeps the later commit, so a whole-row write
+  would overwrite unrelated fields.
+- **Conflicts are visible.** Spock's conflict records and the audit log
+  ([ADR 0005](../adr/0005-per-domain-autonomy-policy.md)) let the owner see and
+  undo an edit that lost. Node clocks are kept in sync because conflicts are
+  resolved by commit time.
+
 Nodes cannot rely on the locale their database was created with: the pgEdge
 images use `C`, where `lower()`, `ILIKE` and sorting treat only ASCII letters
 as letters. Case-insensitive matching in SQL uses the builtin
@@ -209,6 +221,9 @@ jobs run **at least once** and every effect is **idempotent**
   and the time it fired for ([reminders](../spec/domains/reminders.md)).
 - Firing a reminder is a status change in the same transaction as its
   notification, taken with `SKIP LOCKED`, so on one node it fires once.
+- Workflows write their results under **deterministic keys** (for example a
+  UUIDv5 of user and date for the daily plan), so a second run of the same job
+  updates the same rows instead of creating new ones.
 
 ## Cost control
 
