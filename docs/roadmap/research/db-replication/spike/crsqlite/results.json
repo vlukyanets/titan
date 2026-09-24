@@ -1,0 +1,633 @@
+{
+ "run_started": "2026-09-24T09:49:06.519564Z",
+ "S5": {
+  "steps": [
+   {
+    "step": "alembic upgrade 0001_initial on node1 (via node /migrate)",
+    "rc": 0,
+    "seconds": 0.426
+   },
+   {
+    "step": "alembic upgrade 0001_initial on node2",
+    "rc": 0,
+    "seconds": 0.385
+   },
+   {
+    "step": "alembic upgrade 0001_initial on node3",
+    "rc": 0,
+    "seconds": 0.383
+   },
+   {
+    "step": "docker compose stop node3"
+   },
+   {
+    "step": "alembic upgrade head on node1",
+    "rc": 0,
+    "seconds": 0.385,
+    "stderr": "INFO  [alembic.runtime.migration] Context impl SQLiteImpl.\nINFO  [alembic.runtime.migration] Will assume non-transactional DDL.\nINFO  [alembic.runtime.migration] Running upgrade 0001_initial -> 0002_priority_and_ann_index, priority column and ANN index\n"
+   },
+   {
+    "step": "alembic upgrade head on node2",
+    "rc": 0,
+    "seconds": 0.449
+   },
+   {
+    "step": "docker compose start node3 (entrypoint runs `alembic upgrade head` because the node already has alembic_version)"
+   }
+  ],
+  "after_0001_on_node1_only": {
+   "node1": {
+    "tables": [
+     "alembic_version",
+     "embeddings",
+     "job_votes",
+     "jobs",
+     "tasks"
+    ],
+    "alembic_version": "0001_initial"
+   },
+   "node2": {
+    "tables": [],
+    "alembic_version": "none (node2: {\"error\": \"OperationalError: no such table: alembic_version\"})"
+   },
+   "node3": {
+    "tables": [],
+    "alembic_version": "none (node3: {\"error\": \"OperationalError: no such table: alembic_version\"})"
+   }
+  },
+  "probe_row_replicated_s": 0.007796525955200195,
+  "node1_after_head": {
+   "alembic_version": "0002_priority_and_ann_index",
+   "tasks_columns": [
+    "id",
+    "owner",
+    "title",
+    "status",
+    "updated_at",
+    "version",
+    "priority"
+   ],
+   "tables": [
+    "alembic_version",
+    "embeddings",
+    "job_votes",
+    "jobs",
+    "tasks",
+    "vec_embeddings"
+   ]
+  },
+  "mixed_versions_node2_at_0001": {
+   "row_arrived_on_node2": false,
+   "node2_sync_error_from_node1": "OperationalError: SQL logic error"
+  },
+  "node2_after_head_priority_row_s": 0.21340489387512207,
+  "node3_priority_row_s": 0.0025305747985839844,
+  "node3_start_to_priority_row_s": 0.943,
+  "node3_after_start": {
+   "alembic_version": "0002_priority_and_ann_index",
+   "tasks_columns": [
+    "id",
+    "owner",
+    "title",
+    "status",
+    "updated_at",
+    "version",
+    "priority"
+   ],
+   "has_vec_index": true,
+   "vec_index_sql": "CREATE VIRTUAL TABLE vec_embeddings USING vec0(vec float[384] distance_metric=cosine INDEXED BY diskann(neighbor_quantizer=binary))"
+  },
+  "node3_log_tail": "node3 site=E6EBFAFD629E42598E31F5CABBCB5AF1 peers={'node1': 'http://node1-cluster:8080', 'node2': 'http://node2-cluster:8080'}\nentrypoint: alembic upgrade head\nnode3 site=E6EBFAFD629E42598E31F5CABBCB5AF1 peers={'node1': 'http://node1-cluster:8080', 'node2': 'http://node2-cluster:8080'}\nINFO  [alembic.runtime.migration] Context impl SQLiteImpl.\nINFO  [alembic.runtime.migration] Will assume non-transactional DDL.\nINFO  [alembic.runtime.migration] Running upgrade 0001_initial -> 0002_priority_and_ann_index, priority column and ANN index\n",
+  "schema_replicates": false,
+  "batch_recreate_probe": {
+   "batch_recreate_drop_column": "ok",
+   "a_schema": "CREATE TABLE \"t\" (\n\tid TEXT NOT NULL, \n\ta TEXT DEFAULT ('') NOT NULL, \n\tc INTEGER DEFAULT 0 NOT NULL, \n\tPRIMARY KEY (id)\n)",
+   "a_triggers": [
+    "t__crsql_itrig",
+    "t__crsql_utrig",
+    "t__crsql_dtrig"
+   ],
+   "a_changes_after_recreate": [
+    [
+     "c",
+     1,
+     1
+    ],
+    [
+     "a",
+     "x2",
+     2
+    ]
+   ],
+   "merge_into_b_(old_schema)": [
+    [
+     "r1",
+     "x2",
+     null,
+     1
+    ]
+   ]
+  }
+ },
+ "scenario_wall_s": {
+  "S5": 24.1,
+  "S1": 2.0,
+  "S2": 39.4,
+  "S3": 136.8,
+  "S4": 198.7,
+  "S6": 33.6,
+  "S7": 12.7
+ },
+ "S1": {
+  "trials": [
+   {
+    "label": "simultaneous, node2 value sorts higher",
+    "node1_wrote": "A title from node1",
+    "node2_wrote": "B title from node2",
+    "replicated_before_s": 0.014012336730957031,
+    "writes": {
+     "node1": {
+      "ok": true,
+      "error": null,
+      "ms": 4.21
+     },
+     "node2": {
+      "ok": true,
+      "error": null,
+      "ms": 5.78
+     }
+    },
+    "final": {
+     "node1": [
+      "B title from node2",
+      2
+     ],
+     "node2": [
+      "B title from node2",
+      2
+     ],
+     "node3": [
+      "B title from node2",
+      2
+     ]
+    },
+    "converged": true,
+    "convergence_s": 0.015,
+    "node1_clock_after": [
+     [
+      "title",
+      2,
+      "CF8BEAE6522C4B288019253A7426B629"
+     ],
+     [
+      "version",
+      2,
+      "3F520A336AC04285B58E8FA45C899436"
+     ]
+    ]
+   },
+   {
+    "label": "simultaneous, node1 value sorts higher",
+    "node1_wrote": "B title from node1",
+    "node2_wrote": "A title from node2",
+    "replicated_before_s": 0.011053800582885742,
+    "writes": {
+     "node2": {
+      "ok": true,
+      "error": null,
+      "ms": 3.16
+     },
+     "node1": {
+      "ok": true,
+      "error": null,
+      "ms": 3.52
+     }
+    },
+    "final": {
+     "node1": [
+      "B title from node1",
+      2
+     ],
+     "node2": [
+      "B title from node1",
+      2
+     ],
+     "node3": [
+      "B title from node1",
+      2
+     ]
+    },
+    "converged": true,
+    "convergence_s": 0.015,
+    "node1_clock_after": [
+     [
+      "title",
+      2,
+      "3F520A336AC04285B58E8FA45C899436"
+     ],
+     [
+      "version",
+      2,
+      "3F520A336AC04285B58E8FA45C899436"
+     ]
+    ]
+   },
+   {
+    "label": "node2 partitioned; node1 edits title 3x, node2 edits once 1 s later; heal",
+    "node1_wrote": "A node1 third edit",
+    "node2_wrote": "B node2 later edit",
+    "replicated_before_s": 0.0636909008026123,
+    "writes": {
+     "node1": {
+      "ok": true,
+      "error": null,
+      "ms": 5.73
+     },
+     "node2": {
+      "ok": true,
+      "error": null,
+      "ms": 3.25
+     }
+    },
+    "final": {
+     "node1": [
+      "A node1 third edit",
+      4
+     ],
+     "node2": [
+      "A node1 third edit",
+      4
+     ],
+     "node3": [
+      "A node1 third edit",
+      4
+     ]
+    },
+    "converged": true,
+    "convergence_s": 0.468,
+    "node1_clock_after": [
+     [
+      "title",
+      4,
+      "3F520A336AC04285B58E8FA45C899436"
+     ],
+     [
+      "version",
+      4,
+      "3F520A336AC04285B58E8FA45C899436"
+     ]
+    ]
+   }
+  ],
+  "site_ids": {
+   "node1": "3F520A336AC04285B58E8FA45C899436",
+   "node2": "CF8BEAE6522C4B288019253A7426B629",
+   "node3": "E6EBFAFD629E42598E31F5CABBCB5AF1"
+  }
+ },
+ "S2": {
+  "insert_wall_s": 25.16,
+  "write_errors": 0,
+  "error_samples": [],
+  "writes_ok": {
+   "node1": 5000,
+   "node2": 5000
+  },
+  "p50_ms": 2.15,
+  "p95_ms": 4.3,
+  "p99_ms": 12.77,
+  "node1_node2_converged_after_inserts_s": 0.06313562393188477,
+  "expected_rows": 10005,
+  "node3_process_up_s": 1.025,
+  "node3_all_rows_s": 3.593,
+  "node3_identical_checksum_s": 3.667,
+  "checksums": {
+   "node1": [
+    10005,
+    "012ebc2f7ef25cea6ccd6887e9e3ae45"
+   ],
+   "node2": [
+    10005,
+    "012ebc2f7ef25cea6ccd6887e9e3ae45"
+   ],
+   "node3": [
+    10005,
+    "012ebc2f7ef25cea6ccd6887e9e3ae45"
+   ]
+  },
+  "node3_changes_applied": {
+   "node1": 60000,
+   "node2": 60000
+  }
+ },
+ "S3": {
+  "barrier_a_healthy": {
+   "mode": "barrier",
+   "partition": false,
+   "workers_finished_s": 4.03,
+   "exactly_once": 200,
+   "more_than_once": 0,
+   "never": 0,
+   "duplicate_fires_total": 0,
+   "per_worker": {
+    "w1": {
+     "fired": 101,
+     "errors": 0,
+     "error_samples": [],
+     "lost_local": 0,
+     "lost_after_merge": 3,
+     "barrier_incomplete": 0,
+     "vote_claims": 0,
+     "vote_lost": 0,
+     "vote_timeouts": 0,
+     "timed_out": false
+    },
+    "w2": {
+     "fired": 99,
+     "errors": 0,
+     "error_samples": [],
+     "lost_local": 1,
+     "lost_after_merge": 0,
+     "barrier_incomplete": 0,
+     "vote_claims": 0,
+     "vote_lost": 0,
+     "vote_timeouts": 0,
+     "timed_out": false
+    }
+   },
+   "jobs_table_converged_after_s": 0.008529901504516602,
+   "jobs_done_on_node1": 200
+  },
+  "barrier_b_partition": {
+   "mode": "barrier",
+   "partition": true,
+   "fired_before_partition": 101,
+   "partitioned_at_s": 2.25,
+   "fired_during_partition": 198,
+   "healed_at_s": 63.22,
+   "workers_finished_s": 63.4,
+   "exactly_once": 101,
+   "more_than_once": 99,
+   "never": 0,
+   "duplicate_fires_total": 99,
+   "per_worker": {
+    "w1": {
+     "fired": 149,
+     "errors": 0,
+     "error_samples": [],
+     "lost_local": 0,
+     "lost_after_merge": 0,
+     "barrier_incomplete": 0,
+     "vote_claims": 0,
+     "vote_lost": 0,
+     "vote_timeouts": 0,
+     "timed_out": false
+    },
+    "w2": {
+     "fired": 150,
+     "errors": 0,
+     "error_samples": [],
+     "lost_local": 0,
+     "lost_after_merge": 0,
+     "barrier_incomplete": 0,
+     "vote_claims": 0,
+     "vote_lost": 0,
+     "vote_timeouts": 0,
+     "timed_out": false
+    }
+   },
+   "jobs_table_converged_after_s": 0.022737741470336914,
+   "jobs_done_on_node1": 200
+  },
+  "vote_a_healthy": {
+   "mode": "vote",
+   "partition": false,
+   "workers_finished_s": 5.34,
+   "exactly_once": 200,
+   "more_than_once": 0,
+   "never": 0,
+   "duplicate_fires_total": 0,
+   "per_worker": {
+    "w1": {
+     "fired": 98,
+     "errors": 0,
+     "error_samples": [],
+     "lost_local": 0,
+     "lost_after_merge": 0,
+     "barrier_incomplete": 0,
+     "vote_claims": 98,
+     "vote_lost": 0,
+     "vote_timeouts": 0,
+     "timed_out": false
+    },
+    "w2": {
+     "fired": 102,
+     "errors": 0,
+     "error_samples": [],
+     "lost_local": 0,
+     "lost_after_merge": 0,
+     "barrier_incomplete": 0,
+     "vote_claims": 102,
+     "vote_lost": 0,
+     "vote_timeouts": 0,
+     "timed_out": false
+    }
+   },
+   "jobs_table_converged_after_s": 0.020287752151489258,
+   "jobs_done_on_node1": 200
+  },
+  "vote_b_partition": {
+   "mode": "vote",
+   "partition": true,
+   "fired_before_partition": 101,
+   "partitioned_at_s": 2.99,
+   "fired_during_partition": 99,
+   "healed_at_s": 63.25,
+   "workers_finished_s": 63.62,
+   "exactly_once": 200,
+   "more_than_once": 0,
+   "never": 0,
+   "duplicate_fires_total": 0,
+   "per_worker": {
+    "w1": {
+     "fired": 54,
+     "errors": 0,
+     "error_samples": [],
+     "lost_local": 0,
+     "lost_after_merge": 0,
+     "barrier_incomplete": 0,
+     "vote_claims": 61,
+     "vote_lost": 1,
+     "vote_timeouts": 6,
+     "timed_out": false
+    },
+    "w2": {
+     "fired": 146,
+     "errors": 0,
+     "error_samples": [],
+     "lost_local": 0,
+     "lost_after_merge": 0,
+     "barrier_incomplete": 0,
+     "vote_claims": 146,
+     "vote_lost": 0,
+     "vote_timeouts": 0,
+     "timed_out": false
+    }
+   },
+   "jobs_table_converged_after_s": 0.020885705947875977,
+   "jobs_done_on_node1": 200
+  }
+ },
+ "S4": {
+  "index_sql": "CREATE VIRTUAL TABLE vec_embeddings USING vec0(vec float[384] distance_metric=cosine INDEXED BY diskann(neighbor_quantizer=binary))",
+  "node1_insert_and_index_build_s": 173.16,
+  "node1_vec_index_rows": 20000,
+  "node2_index_complete_after_node1_done_s": 17.78,
+  "node2_embeddings_rows": 20000,
+  "node2_vec_index_rows": 20000,
+  "node2_diskann_default": {
+   "p50_ms": 3.17,
+   "p95_ms": 5.18,
+   "recall_at_10": 0.314
+  },
+  "node2_diskann_search_list_512": {
+   "p50_ms": 13.42,
+   "p95_ms": 19.6,
+   "recall_at_10": 0.651
+  },
+  "node2_exact_scan_of_crr_table": {
+   "p50_ms": 47.07,
+   "p95_ms": 56.08,
+   "recall_at_10": 1.0
+  },
+  "usable_on_node2_without_extra_steps": true
+ },
+ "S6": {
+  "nodes": {
+   "node1": {
+    "mem": [
+     "260.2MiB / 15.72GiB",
+     "260MiB / 15.72GiB",
+     "260.5MiB / 15.72GiB"
+    ],
+    "cpu": [
+     "0.63%",
+     "0.42%",
+     "0.45%"
+    ],
+    "data_du": "238973648\t/data\ntotal 233384\n-rw-r--r-- 1 root root 176144384 Sep 24 09:55 titan.db\n-rw-r--r-- 1 root root    131072 Sep 24 09:55 titan.db-shm\n-rw-r--r-- 1 root root  62698192 Sep 24 09:55 titan.db-wal",
+    "python_process": "VmHWM: 67228 kB VmRSS: 49336 kB"
+   },
+   "node2": {
+    "mem": [
+     "305.4MiB / 15.72GiB",
+     "305.1MiB / 15.72GiB",
+     "305.1MiB / 15.72GiB"
+    ],
+    "cpu": [
+     "0.20%",
+     "0.20%",
+     "0.14%"
+    ],
+    "data_du": "260372616\t/data\ntotal 254280\n-rw-r--r-- 1 root root 176164864 Sep 24 09:55 titan.db\n-rw-r--r-- 1 root root    163840 Sep 24 09:55 titan.db-shm\n-rw-r--r-- 1 root root  84043912 Sep 24 09:55 titan.db-wal",
+    "python_process": "VmHWM: 92432 kB VmRSS: 69720 kB"
+   },
+   "node3": {
+    "mem": [
+     "297.5MiB / 15.72GiB",
+     "297.2MiB / 15.72GiB",
+     "297MiB / 15.72GiB"
+    ],
+    "cpu": [
+     "0.21%",
+     "0.21%",
+     "0.07%"
+    ],
+    "data_du": "260393096\t/data\ntotal 254300\n-rw-r--r-- 1 root root 176185344 Sep 24 09:55 titan.db\n-rw-r--r-- 1 root root    163840 Sep 24 09:55 titan.db-shm\n-rw-r--r-- 1 root root  84043912 Sep 24 09:55 titan.db-wal",
+    "python_process": "VmHWM: 92624 kB VmRSS: 69260 kB"
+   }
+  },
+  "image_size_bytes": 58699584,
+  "image_ls": "spike-crsqlite-node:latest 246MB"
+ },
+ "S7": {
+  "method": "VACUUM INTO on the live node (online, consistent snapshot) -> copy file",
+  "backup": {
+   "path": "/tmp/backup.db",
+   "seconds": 0.6026051044464111,
+   "bytes": 175104000
+  },
+  "restore_start_s": 1.19,
+  "counts_node1_at_backup": {
+   "tasks": 10005,
+   "jobs": 800,
+   "embeddings": 20000,
+   "job_votes": 1200,
+   "vec_embeddings": 20000
+  },
+  "counts_restored": {
+   "tasks": 10005,
+   "jobs": 800,
+   "embeddings": 20000,
+   "job_votes": 1200,
+   "vec_embeddings": 20000
+  },
+  "counts_match": true,
+  "restored_alembic_version": "0002_priority_and_ann_index",
+  "restored_site_id_equals_node1": true,
+  "restored_ann_query_rows": 10
+ },
+ "run_finished": "2026-09-24T09:56:33.935601Z",
+ "versions": {
+  "node_image": "spike-crsqlite-node:latest",
+  "sqlite": "3.46.1",
+  "sqlite_vec": "v0.1.10-alpha.4",
+  "crsqlite": "v0.16.3 (crsqlite-linux-x86_64.zip from GitHub releases)"
+ },
+ "run_date": "2026-09-24",
+ "S8": {
+  "cr-sqlite": {
+   "licence": "MIT",
+   "licence_source": "https://github.com/vlcn-io/cr-sqlite/blob/main/LICENSE",
+   "latest_release": "v0.16.3",
+   "latest_release_date": "2024-01-17 (tag commit date; zip entry dated 2024-01-17)",
+   "release_source": "https://github.com/vlcn-io/cr-sqlite/releases/tag/v0.16.3",
+   "commits_per_year_default_branch": {
+    "2022": 911,
+    "2023": 1239,
+    "2024": 13,
+    "2025": 0,
+    "2026": 5
+   },
+   "last_commit": "2026-08-10 (build fixes for macOS/Android/Windows loadables by an outside contributor)",
+   "method": "git clone --filter=blob:none of https://github.com/vlcn-io/cr-sqlite (GitHub API/release pages returned 403 through the session proxy; the release asset download itself worked)"
+  },
+  "sqlite-vec": {
+   "licence": "MIT OR Apache-2.0 (dual)",
+   "licence_source": [
+    "https://github.com/asg017/sqlite-vec/blob/main/LICENSE-MIT",
+    "https://github.com/asg017/sqlite-vec/blob/main/LICENSE-APACHE"
+   ],
+   "latest_stable": "v0.1.9 (tag 2026-03-31, PyPI upload 2026-03-31)",
+   "latest_prerelease": "v0.1.10-alpha.4 (tag 2026-05-17, PyPI 0.1.10a4 upload 2026-05-18)",
+   "used": "0.1.10a4, because DiskANN/IVF ANN indexes exist only in the 0.1.10 alphas; IVF is not compiled into the PyPI wheel",
+   "release_source": [
+    "https://github.com/asg017/sqlite-vec/releases",
+    "https://pypi.org/project/sqlite-vec/"
+   ],
+   "commits_per_year_default_branch": {
+    "2024": 341,
+    "2025": 19,
+    "2026": 104
+   },
+   "versioning": "pre-v1; minor releases may break (site/versioning.md)"
+  },
+  "sqlite": {
+   "version": "3.46.1 (python:3.11-slim)",
+   "licence": "public domain",
+   "licence_source": "https://www.sqlite.org/copyright.html (not re-fetched in this session: proxy returned 403)"
+  },
+  "conditions_for_free_self_hosting": "none found: MIT / Apache-2.0 / public domain"
+ },
+ "first_run_discarded": "A first full run was discarded: the node HTTP server lacked TCP_NODELAY, adding ~40 ms (Nagle + delayed ACK) to every keep-alive request (S2 p50 29.5 ms, S4 DiskANN p50 48 ms). Fixed in node.py and re-run; numbers here are from the second run."
+}
