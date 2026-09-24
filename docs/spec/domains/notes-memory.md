@@ -31,5 +31,8 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
   an answer grounded in the matching items, with links to them.
 - The user can list, edit and delete every memory the agent has stored about
   them.
+- Search and recall find matching notes and memories written in another
+  language than the query (at least English, Russian and Ukrainian, see
+  [Languages](../product.md#languages)).
 - Memories are never used to answer another user unless the source is shared
   with that user.
