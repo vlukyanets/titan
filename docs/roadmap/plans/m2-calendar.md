@@ -11,7 +11,9 @@ Branch `feature/m2-calendar`, stacked on `feature/m2-scheduler`.
   dependency, so slim images have the zone database).
 - REST API under `/api/v1/calendar`.
 - The planner (daily plan, replanning) needs a live agent run and follows once
-  a credential is available. Tasks and reminders adopt the owner's time zone
+  a credential is available. It starts through a common workflow runner that
+  skips runs over the monthly budget and tells the user
+  ([usage](../../spec/domains/usage.md#monthly-budget)). Tasks and reminders adopt the owner's time zone
   for their repeats in a later change.
 
 Tasks:
