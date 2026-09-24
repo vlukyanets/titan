@@ -34,6 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from titan.agent.node import QueryFn, Tier, agent_options, agent_run, stream_agent
 from titan.agent.policy import policy_hooks
 from titan.agent.tools import ToolScope, mcp_servers
+from titan.agent.usage import record_usage
 from titan.domains.autonomy.models import Approval
 from titan.domains.chat.models import ChatMessage, MessageRole
 from titan.domains.chat.service import ChatService, TurnUsage
@@ -189,6 +190,15 @@ async def reply(state: ChatTurnState, runtime: Runtime[ChatContext]) -> dict[str
             runtime.stream_writer(event)
         if isinstance(message, ResultMessage):
             result = message
+    # Before agent_run decides whether the turn failed: failed sessions cost too.
+    await record_usage(
+        context.sessions,
+        result,
+        user_id=uuid.UUID(state["user_id"]),
+        source="chat",
+        model=options.model or "",
+        reference=message_id,
+    )
     run = agent_run(result, options)
     async with context.sessions() as session:
         await ChatService(session).finish_turn(
