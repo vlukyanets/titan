@@ -50,7 +50,7 @@ confirm-class action.
 - [ ] Tasks and projects ([plan](plans/m2-tasks-projects.md)).
 - [ ] Calendar and planner (daily plan, replanning) ([plan](plans/m2-calendar.md)).
 - [ ] Notes, memory and semantic search.
-- [ ] Trackers (habits, health, finance templates).
+- [ ] Trackers (habits, health, finance templates) ([plan](plans/m2-trackers.md)).
 - [ ] Reminders with exactly-once firing ([plan](plans/m2-reminders.md)).
 
 Exit: every acceptance criterion in `docs/spec/domains/` passes on one node.
