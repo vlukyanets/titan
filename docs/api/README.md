@@ -66,3 +66,8 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   `POST /api/v1/reminders/{id}/dismiss`. Snoozing a recurring reminder answers
   a new one-off reminder, because the series has already moved on
   ([reminders](../spec/domains/reminders.md)).
+- Calendar: `/api/v1/calendar`. `GET /calendar/events?start=&end=` answers
+  the occurrences in a window of at most 92 days, with recurring events
+  expanded in their own IANA time zone, so a view is one call.
+  `GET /calendar/busy` gives merged busy intervals and `/calendar/prefs` the
+  caller's time zone and working hours ([calendar](../spec/domains/calendar.md)).
