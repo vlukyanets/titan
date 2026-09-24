@@ -9,7 +9,7 @@ Goal: settle the decisions that block the platform.
 
 - [ ] Database replication research and spike, then decide
       [ADR 0006](../adr/0006-replicated-database-with-vectors.md)
-      ([research notes](research/db-replication.md)).
+      ([research notes](research/db-replication/README.md)).
 - [ ] LangGraph + Agent SDK spike: `daily_plan` end to end with one domain tool,
       a policy interrupt, resume on another process, and token accounting
       ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-nodes.md)).

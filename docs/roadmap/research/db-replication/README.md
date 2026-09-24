@@ -1,6 +1,6 @@
 # Research: replicated database with vectors
 
-Feeds [ADR 0006](../../adr/0006-replicated-database-with-vectors.md). Delete this
+Feeds [ADR 0006](../../../adr/0006-replicated-database-with-vectors.md). Delete this
 file once the ADR is accepted.
 
 ## Questions to answer per candidate
