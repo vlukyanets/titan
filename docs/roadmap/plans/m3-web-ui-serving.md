@@ -56,7 +56,7 @@ Two branches:
 - [x] This plan.
 - [x] Security headers middleware; `/docs` and `/redoc` removed.
 - [x] `TITAN_WEB_UI_DIR` and the static routes.
-- [ ] Architecture, API and agent docs updated; milestone updated.
+- [x] Architecture, API and agent docs updated; milestone updated.
 - [ ] titan-web `v0.1.0` published.
 - [ ] `web-ui.json`, the fetch script, the image stage and their docs
       (`feature/m3-web-ui-image`).
