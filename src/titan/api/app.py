@@ -23,6 +23,7 @@ from titan.api import (
     tasks,
     trackers,
     usage,
+    web,
 )
 from titan.notify import UnifiedPushSender, new_client
 from titan.settings import Settings
@@ -77,4 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(trackers.router, prefix=API_PREFIX)
     app.include_router(notes.notes_router, prefix=API_PREFIX)
     app.include_router(notes.memories_router, prefix=API_PREFIX)
+    if settings.web_ui_dir is not None:
+        # Last: its catch-all route must not shadow any API route.
+        app.include_router(web.router(web.WebUI(settings.web_ui_dir)))
     return app
