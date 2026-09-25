@@ -63,7 +63,7 @@ ignore = ["S101"]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-files = ["src", "tests"]
+files = ["src", "tests", "scripts"]
 exclude = ["spikes/"]
 
 [[tool.mypy.overrides]]

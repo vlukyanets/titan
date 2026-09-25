@@ -65,8 +65,8 @@ with different entry points.
 
 ## Web UI
 
-A node serves a [titan-web](https://github.com/vlukyanets/titan-web) build
-next to its API, on the same origin
+Every node serves the [titan-web](https://github.com/vlukyanets/titan-web)
+build next to its API, on the same origin
 ([titan-web ADR 0002](https://github.com/vlukyanets/titan-web/blob/master/docs/adr/0002-served-by-the-node.md)).
 
 - `TITAN_WEB_UI_DIR` names the build (`index.html` and `assets/`). Unset, the
@@ -81,6 +81,16 @@ next to its API, on the same origin
   file contents, because release archives fix every timestamp. Hidden files
   and paths that leave the build are never served. None of these routes are
   in the OpenAPI schema.
+- **The image pins a release.** `web-ui.json` holds a titan-web version and the
+  SHA-256 of its release archive. The image build runs
+  `scripts/fetch_web_ui.py`, which downloads the archive from the titan-web
+  GitHub release, refuses it unless the hash matches, extracts it with
+  Python's `data` filter into `/app/web` (owned by root, read-only for the
+  service user), and sets `TITAN_WEB_UI_DIR` to it. titan-web builds its
+  archives reproducibly, so the hash in the pin is the hash its CI prints.
+- **Upgrading the UI** is a commit that changes `web-ui.json` to a new
+  release and its hash, and a node picks it up when it is upgraded. The UI
+  and the API therefore always ship together.
 - **Development**: build titan-web (`pnpm build`) and start `titan-api` with
   `TITAN_WEB_UI_DIR` pointing at its `dist/`, or run the UI's development
   server, which proxies `/api` to a node.
