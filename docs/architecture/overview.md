@@ -63,6 +63,28 @@ connection ([ADR 0013](../adr/0013-one-cluster-address.md)).
 `titan-api` and `titan-worker` are the same Python package (`uv`-managed) started
 with different entry points.
 
+## Web UI
+
+A node serves a [titan-web](https://github.com/vlukyanets/titan-web) build
+next to its API, on the same origin
+([titan-web ADR 0002](https://github.com/vlukyanets/titan-web/blob/master/docs/adr/0002-served-by-the-node.md)).
+
+- `TITAN_WEB_UI_DIR` names the build (`index.html` and `assets/`). Unset, the
+  node serves only the API. A directory without `index.html` stops
+  `titan-api` at startup.
+- `/api` and everything below it is the API, and an unknown API path answers
+  the usual `404` problem. `/assets/<file>` holds content-hashed files cached
+  for a year (`public, max-age=31536000, immutable`); a missing one is a `404`,
+  never the page. Any other `GET` or `HEAD` answers the build's file of that
+  name, or `index.html` so the UI's router handles deep links, with
+  `Cache-Control: no-cache`; other methods answer `405`. ETags come from the
+  file contents, because release archives fix every timestamp. Hidden files
+  and paths that leave the build are never served. None of these routes are
+  in the OpenAPI schema.
+- **Development**: build titan-web (`pnpm build`) and start `titan-api` with
+  `TITAN_WEB_UI_DIR` pointing at its `dist/`, or run the UI's development
+  server, which proxies `/api` to a node.
+
 ## Backend layers
 
 ```text
@@ -200,6 +222,15 @@ jobs run **at least once** and every effect is **idempotent**
 ## Security baseline
 
 - The API listens only on the Tailscale interface.
+- Every response carries the headers of
+  [ADR 0012](../adr/0012-browser-sessions-for-the-web-ui.md):
+  `Strict-Transport-Security`, a `Content-Security-Policy` that allows only
+  the node's own scripts and requires Trusted Types, `X-Content-Type-Options`,
+  `Referrer-Policy`, `Cross-Origin-Opener-Policy`,
+  `Cross-Origin-Resource-Policy` and `Permissions-Policy`. API responses are
+  also `Cache-Control: no-store`. One ASGI middleware adds them without
+  buffering streamed replies. The node sends no CORS headers, and it has no
+  interactive API docs, because those load scripts from a CDN.
 - Passwords are hashed with Argon2id. Device tokens are 256-bit random values,
   stored only as SHA-256 digests, and revocable per device
   ([accounts and devices](../spec/accounts.md)).

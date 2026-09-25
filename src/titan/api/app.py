@@ -19,9 +19,11 @@ from titan.api import (
     notifications,
     problems,
     reminders,
+    security,
     tasks,
     trackers,
     usage,
+    web,
 )
 from titan.notify import UnifiedPushSender, new_client
 from titan.settings import Settings
@@ -51,12 +53,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         version=__version__,
         summary="Self-hosted AI assistant, planner and tracker",
         lifespan=lifespan,
+        # The interactive docs load scripts from a CDN, which the node's CSP and
+        # security rules forbid. docs/api/openapi.json is the reference.
+        docs_url=None,
+        redoc_url=None,
     )
     app.state.settings = settings
     app.state.engine = engine
     app.state.sessions = sessions
     app.state.pusher = UnifiedPushSender(push_client)
     app.state.chat_runtime = ChatRuntime(settings, sessions, pusher=app.state.pusher)
+    app.add_middleware(security.SecurityHeadersMiddleware)
     problems.install(app)
     app.include_router(health.router, prefix=API_PREFIX)
     app.include_router(accounts.router, prefix=API_PREFIX)
@@ -71,4 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(trackers.router, prefix=API_PREFIX)
     app.include_router(notes.notes_router, prefix=API_PREFIX)
     app.include_router(notes.memories_router, prefix=API_PREFIX)
+    if settings.web_ui_dir is not None:
+        # Last: its catch-all route must not shadow any API route.
+        app.include_router(web.router(web.WebUI(settings.web_ui_dir)))
     return app
