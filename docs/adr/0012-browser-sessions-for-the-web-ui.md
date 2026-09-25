@@ -43,10 +43,12 @@ Option 3.
   username). It creates a device with platform `web`, named after the browser
   and system from the `User-Agent` header (for example "Firefox on Linux"),
   and answers the user and the device id. The token is never in the body.
-- The token is set as the cookie `__Host-titan_session` with `HttpOnly`,
-  `Secure`, `SameSite=Strict`, `Path=/` and a `Max-Age` of 30 days. The
-  `__Host-` prefix ties it to the exact address, which is the cluster address
-  shared by all nodes ([ADR 0013](0013-one-cluster-address.md)).
+- The token is set as the cookie `__Host-TSID` (TITAN session ID) with
+  `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/` and a `Max-Age` of 30
+  days. The `__Host-` prefix, written in exactly this case, ties it to the
+  exact address, which is the cluster address shared by all nodes
+  ([ADR 0013](0013-one-cluster-address.md)): browsers refuse such a cookie
+  unless it is `Secure`, has `Path=/` and names no domain.
 - `DELETE /api/v1/session` revokes the device and clears the cookie. A `401`
   on a request that sent the cookie clears it too.
 - Authentication accepts a bearer header first, then the cookie. Clients other
