@@ -15,6 +15,9 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
     at build time.
 - Streaming endpoints (chat over SSE) are described in the schema as
   `text/event-stream`. Their event types are documented as schema components.
+- The node serves no interactive docs (`/docs`, `/redoc`): they load scripts
+  from a CDN, which its Content-Security-Policy forbids. Read
+  [`openapi.json`](openapi.json) instead.
 
 ## Conventions
 
@@ -25,6 +28,11 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   `WWW-Authenticate: Bearer`. Flows and rules:
   [accounts and devices](../spec/accounts.md).
 - Timestamps are RFC 3339 in UTC. Recurrence rules are RFC 5545 RRULE strings.
+- Every API response carries `Cache-Control: no-store` and the security
+  headers listed in the
+  [architecture overview](../architecture/overview.md#security-baseline), and
+  no CORS headers. Paths outside `/api` belong to the Web UI when the node
+  serves one ([Web UI](../architecture/overview.md#web-ui)).
 - Errors use RFC 9457 problem details (`application/problem+json`). Validation
   errors list the failing fields but never echo submitted values.
 - `GET /api/v1/health` (process is up) and `GET /api/v1/health/ready` (database
