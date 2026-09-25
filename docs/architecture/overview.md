@@ -45,14 +45,16 @@ flowchart LR
     WK2 --> Claude
 ```
 
-Clients connect to one node by its Tailscale name. A client that loses its node
-can switch to another one; failover is a client setting in v1.
+Clients connect to the cluster address `titan.<tailnet>.ts.net`, a Tailscale
+Service that every ready node advertises. Tailscale sends each connection to
+the nearest available node, so losing a node costs a client at most a dropped
+connection ([ADR 0013](../adr/0013-one-cluster-address.md)).
 
 ## Containers
 
 | Container | Responsibility |
 |---|---|
-| `titan-api` | FastAPI app: REST + SSE/WebSocket API, auth (accounts, device tokens), domain services, OpenAPI schema |
+| `titan-api` | FastAPI app: REST + SSE/WebSocket API, auth (accounts, device tokens, browser sessions), domain services, OpenAPI schema, and the static files of the Web UI |
 | `titan-worker` | Runs the scheduler and reminder firing; later the agent workflows (chat turns, daily plan, replanning) |
 | `embeddings` | Local embedding model behind a small HTTP API. Separate container so it can be sized, moved to the strongest node or swapped for another model |
 | `db` | Replicated database with vector table support. Engine *open*: [ADR 0006](../adr/0006-replicated-database-with-vectors.md) |

@@ -3,7 +3,8 @@
 These rules for branches, commits and pull requests apply to humans and AI
 agents alike, in every TITAN repository
 ([titan](https://github.com/vlukyanets/titan),
-[titan-android](https://github.com/vlukyanets/titan-android)). Branches,
+[titan-android](https://github.com/vlukyanets/titan-android),
+[titan-web](https://github.com/vlukyanets/titan-web)). Branches,
 commits and pull requests are read by people, so write them for people.
 
 ## Branches
@@ -27,14 +28,14 @@ changes, so the list of branches reads like a status board.
   | `chore` | Build, CI, dependencies, tooling |
 
 - **milestone** is the roadmap milestone the work belongs to: `m0`–`m4` in
-  titan, `a1`–`a4` in titan-android. Leave it out only for work outside any
-  milestone (`fix/crash-on-empty-plan`).
+  titan, `a1`–`a4` in titan-android, `w1`–`w4` in titan-web. Leave it out
+  only for work outside any milestone (`fix/crash-on-empty-plan`).
 - **topic** is two to five words in kebab-case that name the feature or change.
 - Lowercase letters, digits and hyphens only, one `/`, at most 50 characters.
 - No personal names, dates, ticket numbers or tool-generated names such as
   `claude/bold-ritchie-f571jn`.
-- A change that spans both repositories uses the **same branch name** in each,
-  with the backend milestone (`feature/m1-device-pairing` in both).
+- A change that spans several repositories uses the **same branch name** in
+  each, with the backend milestone (`feature/m1-device-pairing` in all of them).
 - Branch from `master`. Delete the branch once it has been merged.
 
 | Good | Bad | Why it is bad |

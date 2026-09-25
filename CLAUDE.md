@@ -43,7 +43,7 @@ Full rules: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). In short:
   Milestone comes from the roadmap (`m0`–`m4`). Lowercase kebab-case, at most 50
   characters. Never keep a tool-generated name: if the session starts on one
   (such as `claude/…`), rename it before the first push. Cross-repo changes use
-  the same branch name, with the backend milestone, in both repositories.
+  the same branch name, with the backend milestone, in every repository.
 - Title: past-tense verb first (`Added …`, `Fixed …`), ≤ 72 characters, no
   trailing period, no `feat:`-style prefixes, no issue numbers.
 - Body: exactly one plain-language paragraph explaining what and why.
@@ -108,10 +108,13 @@ The stack is fixed by the ADRs. Update this section when the commands change.
 - Claude credentials follow [claude-auth.md](docs/architecture/claude-auth.md).
   `oauth` mode must never fall back to an API key, so do not weaken the
   environment cleaning or the startup self-check.
-- The API binds only to the Tailscale interface. Do not add public listeners.
+- The API binds only to loopback, behind `tailscale serve` for the cluster
+  address ([ADR 0013](docs/adr/0013-one-cluster-address.md)), or to the
+  Tailscale interface. Do not add public listeners.
 
 ## Related repositories
 
 - [titan-android](https://github.com/vlukyanets/titan-android): Android client
   that uses the API contract from this repository.
-- titan-web (planned): Web UI.
+- [titan-web](https://github.com/vlukyanets/titan-web): Web UI, served by the
+  nodes of this repository.
