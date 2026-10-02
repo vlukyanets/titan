@@ -36,4 +36,6 @@ Tasks:
       `rename_thread`, `notify_member`), wired into `chat_turn`, with a fake
       Claude Code that calls hooks and tools the way the CLI does.
 - [x] Policy, approvals and audit API, OpenAPI regenerated, docs updated.
-- [ ] Live: the M1 exit scenario with a real credential (blocked).
+- [x] Live: the M1 exit scenario with a real credential. Checked on 2026-10-02
+      in `oauth` mode on one node: the CLI paired, chatted with streaming and
+      approved `notify_member`; the audit entry and the notification were stored.
