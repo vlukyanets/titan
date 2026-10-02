@@ -42,8 +42,9 @@ Tasks:
 - [x] `claude-auth.md` records the expected `apiKeySource` values.
 - [x] `titan claude check` against the bundled Claude Code with fake
       credentials in both modes, as a test.
-- [ ] Live: one real session per mode once a credential is available
-      (blocked).
+- [ ] Live: one real session per mode once a credential is available.
+      `oauth` checked on 2026-10-02 (`titan claude check` reports `none`);
+      `api-key` waits for an API key.
 
 ## Stage 2: LangGraph and the chat turn
 
