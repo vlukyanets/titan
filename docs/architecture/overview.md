@@ -137,6 +137,8 @@ TITAN combines two frameworks ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-n
   approval request with the exact input. On approval TITAN runs the stored call
   itself, without the model, and posts the result to the thread
   ([ADR 0010](../adr/0010-approved-calls-run-outside-the-session.md)).
+  Domain tools are never in `allowed_tools`, so a call that skipped the hook
+  falls back to Claude Code's own permission check and is refused.
 - **Audit log**: TITAN's in-process wrapper around every domain tool records
   each executed call that is not `read`, with its before and after state, which
   makes undo possible.

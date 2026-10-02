@@ -65,6 +65,8 @@ and the owner would be billed per token. In `oauth` mode TITAN therefore:
    silent fallback this check exists to catch. The same check runs on the
    `system/init` message of every agent session, and `titan claude check` runs
    it by hand.
+   Checked live in `oauth` mode on 2026-10-02. `api-key` mode is checked only
+   against the bundled Claude Code with a fake key, until a real key is used.
 
 The same rules work the other way round: in `api-key` mode
 `CLAUDE_CODE_OAUTH_TOKEN` is removed from the subprocess environment.
