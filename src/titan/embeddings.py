@@ -31,6 +31,10 @@ class Embedder(Protocol):
     @property
     def model(self) -> str: ...
 
+    # Cosine distance beyond which a search match is dropped; it depends on the model.
+    @property
+    def max_distance(self) -> float: ...
+
     async def embed(self, texts: Sequence[str], *, query: bool = False) -> list[list[float]]:
         """One vector per text, in order. `query` picks the query prefix."""
         ...
@@ -45,16 +49,22 @@ class HttpEmbedder:
         *,
         query_prefix: str = "",
         document_prefix: str = "",
+        max_distance: float = 1.0,
     ) -> None:
         self._client = client
         self._url = url.rstrip("/") + "/v1/embeddings"
         self._model = model
         self._query_prefix = query_prefix
         self._document_prefix = document_prefix
+        self._max_distance = max_distance
 
     @property
     def model(self) -> str:
         return self._model
+
+    @property
+    def max_distance(self) -> float:
+        return self._max_distance
 
     async def embed(self, texts: Sequence[str], *, query: bool = False) -> list[list[float]]:
         prefix = self._query_prefix if query else self._document_prefix
@@ -97,4 +107,5 @@ def from_settings(settings: Settings, client: httpx.AsyncClient) -> HttpEmbedder
         settings.embeddings_model,
         query_prefix=settings.embeddings_query_prefix,
         document_prefix=settings.embeddings_document_prefix,
+        max_distance=settings.embeddings_max_distance,
     )

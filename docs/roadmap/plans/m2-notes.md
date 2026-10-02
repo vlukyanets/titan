@@ -92,9 +92,13 @@ Tasks:
       mid-size candidate with good cross-language retrieval.
 - [x] Compose service, settings, `embeddings` table and migration.
 - [x] Client, chunking and the indexing sweep.
-- [ ] Hybrid search in notes and memories, API rules for `q`, OpenAPI
+- [x] Hybrid search in notes and memories, API rules for `q`, OpenAPI
       regenerated.
-- [ ] Docs: architecture overview (container, sweep), CLAUDE.md, the client
-      repositories' notes on search order.
-- [ ] Live check on a node: cross-language search in all three languages.
+- [x] Docs: architecture overview (container, sweep), CLAUDE.md, the client
+      repositories' notes on search order. The clients already list semantic
+      search and have no notes screens yet, so they needed no change.
+- [x] Live check on a node: cross-language search in all three languages.
+      With a cut-off of 0.2, every query found its note first and unrelated
+      queries found nothing; a few near misses either side of the cut-off are
+      left for the benchmark.
 - [x] Agent tools for notes and memory (`feature/m2-notes-agent-tools`).

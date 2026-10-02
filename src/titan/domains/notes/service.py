@@ -6,6 +6,7 @@ actor cannot see are reported as missing, so ids cannot be probed.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -25,8 +26,11 @@ from titan.domains.notes.errors import (
     InvalidNoteError,
     NotFoundError,
 )
-from titan.domains.notes.models import Memory, MemorySource, Note, NoteShare
+from titan.domains.notes.models import Embedding, Memory, MemorySource, Note, NoteShare
+from titan.embeddings import Embedder, EmbeddingsError
 from titan.storage.collation import UNICODE
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_PAGE = 50
 MAX_PAGE = 100
@@ -39,6 +43,10 @@ EXCERPT_LENGTH = 200
 STATEMENT_LENGTH = 500
 QUERY_LENGTH = 200
 MAX_WORDS = 10
+# Search by meaning: the nearest items considered, and the constant of
+# reciprocal rank fusion, which merges them with the word matches.
+NEAREST = 50
+RRF_K = 60
 
 NOTE_FIELDS = frozenset({"title", "body", "tags", "shared_with"})
 
@@ -125,6 +133,26 @@ def contains_words(
     return and_(True, *conditions)
 
 
+async def query_vector(embedder: Embedder | None, text: str) -> list[float] | None:
+    """The query's vector, or None: then search matches words only."""
+    if embedder is None:
+        return None
+    try:
+        return (await embedder.embed([text[:QUERY_LENGTH]], query=True))[0]
+    except EmbeddingsError as exc:
+        logger.warning("searching by words only: %s", exc)
+        return None
+
+
+def fuse(*rankings: Sequence[uuid.UUID]) -> list[uuid.UUID]:
+    """Reciprocal rank fusion: best first, and an id in several lists ranks higher."""
+    scores: dict[uuid.UUID, float] = {}
+    for ranking in rankings:
+        for rank, item in enumerate(ranking, 1):
+            scores[item] = scores.get(item, 0.0) + 1 / (RRF_K + rank)
+    return sorted(scores, key=lambda item: -scores[item])
+
+
 def _excerpt(start: str) -> str:
     text = " ".join(start.split())
     if len(text) <= EXCERPT_LENGTH:
@@ -166,11 +194,15 @@ def readable_by(actor: uuid.UUID) -> ColumnElement[bool]:
 
 
 class NotesService:
-    def __init__(self, session: AsyncSession, *, commit: bool = True) -> None:
+    def __init__(
+        self, session: AsyncSession, *, commit: bool = True, embedder: Embedder | None = None
+    ) -> None:
         self.session = session
         # Agent tools pass commit=False: their caller commits the change together
         # with its audit entry.
         self._commit = commit
+        # Without one, search matches words only.
+        self._embedder = embedder
 
     async def _done(self) -> None:
         if self._commit:
@@ -246,32 +278,44 @@ class NotesService:
         before: uuid.UUID | None = None,
         limit: int = DEFAULT_PAGE,
     ) -> list[NoteSummary]:
-        """Most recently changed first, with an excerpt instead of the body."""
+        """Most recently changed first, with an excerpt instead of the body.
+
+        With text: best match first and not paged.
+        """
         query = query or NoteQuery()
-        start = func.left(Note.body, EXCERPT_LENGTH * 2)
-        stmt = select(Note, start).options(defer(Note.body)).where(readable_by(actor))
+        limit = max(1, min(limit, MAX_PAGE))
+        conditions = [readable_by(actor)]
         if query.mine is True:
-            stmt = stmt.where(Note.owner_id == actor)
+            conditions.append(Note.owner_id == actor)
         elif query.mine is False:
-            stmt = stmt.where(Note.owner_id != actor)
+            conditions.append(Note.owner_id != actor)
         if query.tag:
-            stmt = stmt.where(Note.tags.contains([query.tag.strip().lower()]))
+            conditions.append(Note.tags.contains([query.tag.strip().lower()]))
+        start = func.left(Note.body, EXCERPT_LENGTH * 2)
+        stmt = select(Note, start).options(defer(Note.body))
         if query.text:
-            tags = func.array_to_string(Note.tags, " ", type_=Text)
-            stmt = stmt.where(contains_words([Note.title, Note.body, tags], query.text))
-        if before is not None:
-            cursor = await self.session.scalar(
-                select(Note.updated_at).where(Note.id == before, readable_by(actor))
-            )
-            if cursor is None:
-                raise InvalidNoteError("before names no note you can see")
-            stmt = stmt.where(
-                or_(Note.updated_at < cursor, and_(Note.updated_at == cursor, Note.id < before))
-            )
-        stmt = stmt.order_by(Note.updated_at.desc(), Note.id.desc()).limit(
-            max(1, min(limit, MAX_PAGE))
-        )
-        rows = (await self.session.execute(stmt)).all()
+            if before is not None:
+                raise InvalidNoteError("search results are not paged: drop before")
+            found = await self._search(conditions, query.text, limit)
+            stmt = stmt.where(Note.id.in_(found))
+        else:
+            stmt = stmt.where(*conditions)
+            if before is not None:
+                cursor = await self.session.scalar(
+                    select(Note.updated_at).where(Note.id == before, readable_by(actor))
+                )
+                if cursor is None:
+                    raise InvalidNoteError("before names no note you can see")
+                stmt = stmt.where(
+                    or_(
+                        Note.updated_at < cursor,
+                        and_(Note.updated_at == cursor, Note.id < before),
+                    )
+                )
+            stmt = stmt.order_by(Note.updated_at.desc(), Note.id.desc()).limit(limit)
+        rows = list((await self.session.execute(stmt)).all())
+        if query.text:
+            rows.sort(key=lambda row: found.index(row[0].id))
         readers: dict[uuid.UUID, list[uuid.UUID]] = {note.id: [] for note, _ in rows}
         if readers:
             shares = await self.session.execute(
@@ -292,6 +336,33 @@ class NotesService:
             )
             for note, text in rows
         ]
+
+    async def _search(
+        self, conditions: list[ColumnElement[bool]], text: str, limit: int
+    ) -> list[uuid.UUID]:
+        tags = func.array_to_string(Note.tags, " ", type_=Text)
+        by_words = await self.session.scalars(
+            select(Note.id)
+            .where(*conditions, contains_words([Note.title, Note.body, tags], text))
+            .order_by(Note.updated_at.desc(), Note.id.desc())
+            .limit(limit)
+        )
+        rankings = [list(by_words)]
+        vector = await query_vector(self._embedder, text)
+        if self._embedder is not None and vector is not None:
+            # A note ranks by its best chunk.
+            distance = func.min(Embedding.vector.cosine_distance(vector))
+            near = await self.session.scalars(
+                select(Embedding.note_id)
+                .join(Note, Note.id == Embedding.note_id)
+                .where(*conditions, Embedding.model == self._embedder.model)
+                .group_by(Embedding.note_id)
+                .having(distance <= self._embedder.max_distance)
+                .order_by(distance)
+                .limit(NEAREST)
+            )
+            rankings.append([note_id for note_id in near if note_id is not None])
+        return fuse(*rankings)[:limit]
 
     async def get_note(self, actor: uuid.UUID, note_id: uuid.UUID) -> SharedNote:
         note = await self._note(actor, note_id)
@@ -338,9 +409,12 @@ class NotesService:
 class MemoryService:
     """A user's memories. Nobody but their owner ever sees or recalls them."""
 
-    def __init__(self, session: AsyncSession, *, commit: bool = True) -> None:
+    def __init__(
+        self, session: AsyncSession, *, commit: bool = True, embedder: Embedder | None = None
+    ) -> None:
         self.session = session
         self._commit = commit
+        self._embedder = embedder
 
     async def _done(self) -> None:
         if self._commit:
@@ -356,14 +430,44 @@ class MemoryService:
         before: uuid.UUID | None = None,
         limit: int = DEFAULT_PAGE,
     ) -> list[Memory]:
-        """Newest first; `text` keeps those whose statement has every word."""
-        stmt = select(Memory).where(Memory.owner_id == actor)
+        """Newest first; with text, best match first and not paged."""
+        limit = max(1, min(limit, MAX_PAGE))
         if text:
-            stmt = stmt.where(contains_words([Memory.statement], text))
+            if before is not None:
+                raise InvalidMemoryError("search results are not paged: drop before")
+            found = await self._search(actor, text, limit)
+            matches = await self.session.scalars(select(Memory).where(Memory.id.in_(found)))
+            return sorted(matches.all(), key=lambda memory: found.index(memory.id))
+        stmt = select(Memory).where(Memory.owner_id == actor)
         if before is not None:
             stmt = stmt.where(Memory.id < before)
-        stmt = stmt.order_by(Memory.id.desc()).limit(max(1, min(limit, MAX_PAGE)))
+        stmt = stmt.order_by(Memory.id.desc()).limit(limit)
         return list((await self.session.scalars(stmt)).all())
+
+    async def _search(self, actor: uuid.UUID, text: str, limit: int) -> list[uuid.UUID]:
+        by_words = await self.session.scalars(
+            select(Memory.id)
+            .where(Memory.owner_id == actor, contains_words([Memory.statement], text))
+            .order_by(Memory.id.desc())
+            .limit(limit)
+        )
+        rankings = [list(by_words)]
+        vector = await query_vector(self._embedder, text)
+        if self._embedder is not None and vector is not None:
+            distance = Embedding.vector.cosine_distance(vector)
+            near = await self.session.scalars(
+                select(Embedding.memory_id)
+                .join(Memory, Memory.id == Embedding.memory_id)
+                .where(
+                    Memory.owner_id == actor,
+                    Embedding.model == self._embedder.model,
+                    distance <= self._embedder.max_distance,
+                )
+                .order_by(distance)
+                .limit(NEAREST)
+            )
+            rankings.append([memory_id for memory_id in near if memory_id is not None])
+        return fuse(*rankings)[:limit]
 
     async def get_memory(
         self, actor: uuid.UUID, memory_id: uuid.UUID, *, lock: bool = False

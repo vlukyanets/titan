@@ -38,6 +38,7 @@ from titan.agent.chat import (
 from titan.agent.node import AgentRunError, QueryFn, self_check
 from titan.domains.chat.models import ChatMessage
 from titan.domains.chat.service import ChatService
+from titan.embeddings import Embedder
 from titan.notify import Pusher
 from titan.settings import Settings
 
@@ -151,11 +152,13 @@ class ChatRuntime:
         environ: MutableMapping[str, str] | None = None,
         checkpointer: BaseCheckpointSaver[str] | None = None,
         pusher: Pusher | None = None,
+        embedder: Embedder | None = None,
     ) -> None:
         self.settings = settings
         self.sessions = sessions
         self.query_fn = query_fn
         self.pusher = pusher
+        self.embedder = embedder
         # The agent process's environment, cleaned by `ready()`. Tests pass a dict.
         self.environ = os.environ if environ is None else environ
         self._checkpointer = checkpointer
@@ -235,6 +238,7 @@ class ChatRuntime:
                     query_fn=self.query_fn,
                     environ=self.environ,
                     pusher=self.pusher,
+                    embedder=self.embedder,
                 )
                 state: ChatTurnState = {
                     "user_id": str(user_id),

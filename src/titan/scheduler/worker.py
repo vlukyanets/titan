@@ -197,7 +197,7 @@ class Worker:
 async def serve(settings: Settings) -> None:
     engine = create_engine(settings)
     client = new_client(settings.push_timeout_seconds)
-    embeddings_client = httpx.AsyncClient()
+    embeddings_client = httpx.AsyncClient(trust_env=False)
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):

@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     embeddings_model: str = "intfloat/multilingual-e5-base"
     embeddings_query_prefix: str = "query: "
     embeddings_document_prefix: str = "passage: "
+    # Measured on e5-base: matches fall within 0.15-0.2, unrelated texts beyond 0.2.
+    embeddings_max_distance: float = Field(default=0.2, gt=0, le=2)
 
     # Scheduler (docs/architecture/overview.md#scheduler-and-reminders).
     node_name: str = Field(default_factory=socket.gethostname, min_length=1, max_length=64)

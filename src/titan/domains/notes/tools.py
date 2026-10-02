@@ -49,11 +49,11 @@ SHOWN_BODY = 20_000
 
 
 def _notes(context: ToolContext) -> NotesService:
-    return NotesService(context.session, commit=False)
+    return NotesService(context.session, commit=False, embedder=context.embedder)
 
 
 def _memory(context: ToolContext) -> MemoryService:
-    return MemoryService(context.session, commit=False)
+    return MemoryService(context.session, commit=False, embedder=context.embedder)
 
 
 def _guard(run: RunFn) -> RunFn:
@@ -135,7 +135,8 @@ async def _search_notes(context: ToolContext, args: dict[str, Any]) -> ToolResul
         if note.excerpt:
             line += f"\n  {note.excerpt}"
         lines.append(line)
-    return ToolResult("Notes, most recently changed first:\n" + "\n".join(lines))
+    order = "best match first" if args.get("text") else "most recently changed first"
+    return ToolResult(f"Notes, {order}:\n" + "\n".join(lines))
 
 
 async def _get_note(context: ToolContext, args: dict[str, Any]) -> ToolResult:
@@ -277,9 +278,10 @@ SEARCH_NOTES = ToolSpec(
     domain="notes",
     name="search_notes",
     description=(
-        "Find notes the user owns or that are shared with them, most recently "
-        "changed first, with an excerpt. text matches notes containing every word, "
-        "also inside longer words, in any language."
+        "Find notes the user owns or that are shared with them, with an excerpt. "
+        "Without text, most recently changed first. text finds notes containing "
+        "every word, also inside longer words, and notes close in meaning in any "
+        "language; best match first."
     ),
     action_class=ActionClass.READ,
     input_schema={
@@ -370,7 +372,8 @@ async def _recall(context: ToolContext, args: dict[str, Any]) -> ToolResult:
     if not found:
         return ToolResult("Nothing remembered matches.")
     lines = [f"- {m.id} {m.statement} (confidence {m.confidence:.2f})" for m in found]
-    return ToolResult("Remembered, newest first:\n" + "\n".join(lines))
+    order = "best match first" if args.get("text") else "newest first"
+    return ToolResult(f"Remembered, {order}:\n" + "\n".join(lines))
 
 
 async def _remember(context: ToolContext, args: dict[str, Any]) -> ToolResult:
@@ -468,7 +471,8 @@ RECALL = ToolSpec(
     name="recall",
     description=(
         "Look up what you remember about the user: facts, preferences, people. "
-        "text keeps statements containing every word."
+        "text finds statements containing every word, and statements close in "
+        "meaning in any language; best match first."
     ),
     action_class=ActionClass.READ,
     input_schema={

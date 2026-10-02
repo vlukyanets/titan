@@ -30,6 +30,7 @@ from titan.domains.notifications import tools as notifications_tools
 from titan.domains.reminders import tools as reminders_tools
 from titan.domains.tasks import tools as tasks_tools
 from titan.domains.trackers import tools as trackers_tools
+from titan.embeddings import Embedder
 from titan.notify import Pusher
 
 log = logging.getLogger(__name__)
@@ -59,10 +60,17 @@ class ToolScope:
     pusher: Pusher | None = None
     push_origins: tuple[str, ...] = ()
     exposure: Exposure = Exposure.FULL
+    embedder: Embedder | None = None
 
     def context(self, session: AsyncSession) -> ToolContext:
         return ToolContext(
-            session, self.user_id, self.thread_id, self.pusher, self.push_origins, self.exposure
+            session,
+            self.user_id,
+            self.thread_id,
+            self.pusher,
+            self.push_origins,
+            self.exposure,
+            self.embedder,
         )
 
 
