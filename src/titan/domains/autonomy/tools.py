@@ -11,6 +11,7 @@ outside the database, such as a push, may commit before causing it.
 
 from __future__ import annotations
 
+import enum
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
@@ -22,6 +23,15 @@ from titan.domains.autonomy.models import ActionClass
 from titan.notify import Pusher
 
 
+class Exposure(enum.StrEnum):
+    """How much of a user's health and finance data tools show (ADR 0007)."""
+
+    # Individual entries: the default in the user's own chat.
+    FULL = "full"
+    # Sums, averages and streaks only: the default in scheduled workflows.
+    AGGREGATES = "aggregates"
+
+
 @dataclass(frozen=True)
 class ToolContext:
     """Who a tool acts for, and what it may use."""
@@ -31,6 +41,7 @@ class ToolContext:
     thread_id: uuid.UUID | None = None
     pusher: Pusher | None = None
     push_origins: tuple[str, ...] = ()
+    exposure: Exposure = Exposure.FULL
 
 
 @dataclass(frozen=True)

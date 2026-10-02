@@ -59,6 +59,18 @@ EXAMPLES: dict[str, dict[str, Any]] = {
     "mcp__tasks__create_project": {"title": "Kitchen", "shared_with": ["boris"]},
     "mcp__tasks__update_project": {"project_id": SOME_ID, "status": "archived"},
     "mcp__tasks__delete_project": {"project_id": SOME_ID},
+    "mcp__trackers__list_trackers": {"kind": "health"},
+    "mcp__trackers__tracker_stats": {"tracker": "Weight", "period": "week"},
+    "mcp__trackers__list_entries": {"tracker": "Weight", "from": "2026-10-01T00:00"},
+    "mcp__trackers__create_tracker": {"name": "Expenses", "template": "expense", "unit": "EUR"},
+    "mcp__trackers__update_tracker": {
+        "tracker": "Water",
+        "target": {"value": 8, "period": "day", "direction": "at_least"},
+    },
+    "mcp__trackers__delete_tracker": {"tracker": SOME_ID},
+    "mcp__trackers__log_entry": {"tracker": "Expenses", "value": "23.40", "category": "groceries"},
+    "mcp__trackers__update_entry": {"tracker": "Weight", "entry_id": SOME_ID, "value": 72.4},
+    "mcp__trackers__delete_entry": {"tracker": "Weight", "entry_id": SOME_ID},
 }
 
 

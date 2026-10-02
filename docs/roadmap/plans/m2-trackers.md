@@ -11,12 +11,13 @@ Branch `feature/m2-trackers`, stacked on `feature/m2-push-retries`.
   templates, the service with owner-only access, stats per local period
   (computed in SQL with the owner's time zone) and streaks.
 - REST API under `/api/v1/trackers`.
-- Agent tools, with the exposure levels of ADR 0007, need a live agent run and
-  follow once a credential is available.
+- Agent tools, with the exposure levels of ADR 0007.
 
 Tasks:
 
 - [x] Spec and this plan.
 - [x] Tables, migration, templates, service, stats and streaks.
 - [x] Trackers API, OpenAPI regenerated, docs updated.
-- [ ] Agent tools with exposure levels (after a live agent run).
+- [x] Agent tools with exposure levels (`feature/m2-trackers-agent-tools`): the
+      tool context carries the level, `full` in chat.
+- [ ] Per-user exposure settings, with the settings API (W4, A4).

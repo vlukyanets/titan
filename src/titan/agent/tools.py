@@ -21,11 +21,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from titan.domains.accounts import tools as accounts_tools
 from titan.domains.autonomy.models import ActionClass, Approval, Decision
 from titan.domains.autonomy.service import ApprovalsService, AuditService, PolicyService
-from titan.domains.autonomy.tools import ToolContext, ToolResult, ToolSpec
+from titan.domains.autonomy.tools import Exposure, ToolContext, ToolResult, ToolSpec
 from titan.domains.chat import tools as chat_tools
 from titan.domains.chat.service import ChatService
 from titan.domains.notifications import tools as notifications_tools
 from titan.domains.tasks import tools as tasks_tools
+from titan.domains.trackers import tools as trackers_tools
 from titan.notify import Pusher
 
 log = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ REGISTRY: Mapping[str, ToolSpec] = {
         *chat_tools.TOOLS,
         *notifications_tools.TOOLS,
         *tasks_tools.TOOLS,
+        *trackers_tools.TOOLS,
     )
 }
 
@@ -50,9 +52,12 @@ class ToolScope:
     thread_id: uuid.UUID | None = None
     pusher: Pusher | None = None
     push_origins: tuple[str, ...] = ()
+    exposure: Exposure = Exposure.FULL
 
     def context(self, session: AsyncSession) -> ToolContext:
-        return ToolContext(session, self.user_id, self.thread_id, self.pusher, self.push_origins)
+        return ToolContext(
+            session, self.user_id, self.thread_id, self.pusher, self.push_origins, self.exposure
+        )
 
 
 @dataclass(frozen=True)
