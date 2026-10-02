@@ -81,4 +81,5 @@ Tasks:
 - [x] `chat_turn` graph with the Postgres checkpointer, tested with a fake
       `query`.
 - [x] Chat API with SSE, OpenAPI regenerated, docs updated.
-- [ ] Live: one real chat turn once a credential is available (blocked).
+- [x] Live: one real chat turn, checked on 2026-10-02 in `oauth` mode: replies
+      streamed, `--continue` kept the thread, usage was recorded.
