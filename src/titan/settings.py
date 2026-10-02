@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     # such as http://100.64.0.1:8080 (ADR 0008). Empty refuses push registration.
     push_allowed_origins: Annotated[tuple[str, ...], NoDecode] = ()
     push_timeout_seconds: float = 5.0
+    # A titan-web build (index.html and assets/) that titan-api serves next to the
+    # API (titan-web ADR 0002). The image points it at its pinned release; unset,
+    # the node serves only the API.
+    web_ui_dir: Path | None = None
 
     # Claude credentials (ADR 0003, docs/architecture/claude-auth.md).
     claude_auth_mode: Literal["api-key", "oauth"] = "api-key"

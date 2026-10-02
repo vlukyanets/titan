@@ -60,7 +60,8 @@ Exit: every acceptance criterion in `docs/spec/domains/` passes on one node.
 - [ ] `titan` CLI covering chat, domains and admin
       ([plan](plans/m3-cli-client.md)).
 - [ ] Web UI in [titan-web](https://github.com/vlukyanets/titan-web): the
-      node serves its pinned build next to the API, and browsers sign in with
+      node serves its pinned build next to the API
+      ([plan](plans/m3-web-ui-serving.md)), and browsers sign in with
       cookie sessions ([ADR 0012](../adr/0012-browser-sessions-for-the-web-ui.md)).
 - [ ] Spike Tailscale Services on a test tailnet: failover time, the service
       certificate, draining from a container, SSE through the service
