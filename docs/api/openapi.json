@@ -7433,6 +7433,20 @@
             "title": "Default Reminder Minutes",
             "description": "How long before its due time a task reminds its owner; null turns it off",
             "default": 15
+          },
+          "daily_plan_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Plan At",
+            "description": "Local time the daily plan runs on working days; null turns it off",
+            "default": "07:00:00"
           }
         },
         "additionalProperties": false,

@@ -23,7 +23,8 @@ Tasks:
 - [x] Agent tools and the planner's placing (`feature/m2-calendar-agent-tools`):
       `plan_day` and `replan_block` place blocks in code, the model only
       chooses what to plan.
-- [ ] The `daily_plan` workflow and replanning of missed blocks in
-      `titan-worker` (`feature/m2-daily-plan`).
+- [x] The `daily_plan` workflow and replanning of missed blocks in
+      `titan-worker` (`feature/m2-daily-plan`), with `daily_plan_at` in the
+      planning preferences.
 - [x] Tasks and reminders repeat in the owner's time zone (branch
       `feature/m2-local-recurrence`).

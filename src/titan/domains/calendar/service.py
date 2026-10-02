@@ -181,6 +181,7 @@ class CalendarService:
             work_days=[1, 2, 3, 4, 5],
             buffer_minutes=10,
             default_reminder_minutes=15,
+            daily_plan_at=time(7),
             updated_at=_now(),
         )
 
@@ -194,6 +195,7 @@ class CalendarService:
         work_days: Iterable[int],
         buffer_minutes: int,
         default_reminder_minutes: int | None = 15,
+        daily_plan_at: time | None = time(7),
     ) -> PlanningPrefs:
         zone(time_zone)
         if work_end <= work_start:
@@ -215,6 +217,7 @@ class CalendarService:
         stored.work_days = days
         stored.buffer_minutes = buffer_minutes
         stored.default_reminder_minutes = default_reminder_minutes
+        stored.daily_plan_at = None if daily_plan_at is None else daily_plan_at.replace(tzinfo=None)
         stored.updated_at = _now()
         await self._done()
         return stored

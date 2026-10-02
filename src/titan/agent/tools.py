@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Awaitable, Callable, Collection, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -148,10 +148,18 @@ def _handler(
     return handle
 
 
-def mcp_servers(scope: ToolScope) -> dict[str, McpServerConfig]:
-    """One in-process MCP server per domain, bound to the scope's user and thread."""
+def mcp_servers(
+    scope: ToolScope, only: Collection[str] | None = None
+) -> dict[str, McpServerConfig]:
+    """One in-process MCP server per domain, bound to the scope's user and thread.
+
+    `only` limits the tools to these qualified names, for a workflow that needs
+    a few; the policy hook still decides every call.
+    """
     by_domain: dict[str, list[SdkMcpTool[Any]]] = {}
     for spec in REGISTRY.values():
+        if only is not None and spec.qualified_name not in only:
+            continue
         by_domain.setdefault(spec.domain, []).append(
             SdkMcpTool(
                 name=spec.name,

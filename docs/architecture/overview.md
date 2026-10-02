@@ -55,7 +55,7 @@ connection ([ADR 0013](../adr/0013-one-cluster-address.md)).
 | Container | Responsibility |
 |---|---|
 | `titan-api` | FastAPI app: REST + SSE/WebSocket API, auth (accounts, device tokens, browser sessions), domain services, OpenAPI schema, and the static files of the Web UI |
-| `titan-worker` | Runs the scheduler and reminder firing; later the agent workflows (chat turns, daily plan, replanning) |
+| `titan-worker` | Runs the scheduler: reminder firing, push retries, the daily plan and replanning of missed time blocks; later chat turns too |
 | `embeddings` | Local embedding model behind a small HTTP API. Separate container so it can be sized, moved to the strongest node or swapped for another model |
 | `db` | PostgreSQL with pgEdge Spock (asynchronous multi-master replication) and pgvector, from a pinned pgEdge image ([ADR 0006](../adr/0006-replicated-database-with-vectors.md)) |
 | `ntfy` | UnifiedPush server for the phones. Push messages carry only notification ids ([ADR 0008](../adr/0008-push-messages-carry-references.md)) |
@@ -227,7 +227,9 @@ jobs run **at least once** and every effect is **idempotent**
 - `titan-worker` (`titan.scheduler`) runs the scheduler loop on every node.
   Every few seconds (`TITAN_SCHEDULER_TICK_SECONDS`, default 5) it tries to hold
   the lease of each sweep, and the holder does the sweep's work. The sweeps
-  fire due reminders and retry pushes that no device accepted.
+  fire due reminders, retry pushes that no device accepted, move time blocks
+  that ended with their task still open, and start the daily plans that are
+  due.
 - A lease is a row in `scheduler_leases` with its holder and expiry
   (`TITAN_SCHEDULER_LEASE_SECONDS`, default 30). The holder renews it on every
   tick.
@@ -248,6 +250,31 @@ jobs run **at least once** and every effect is **idempotent**
 - Workflows write their results under **deterministic keys** (for example a
   UUIDv5 of user and date for the daily plan), so a second run of the same job
   updates the same rows instead of creating new ones.
+
+### Scheduled workflows
+
+`titan.agent.workflows` holds the agent work the worker starts on its own:
+
+- **The common runner** starts every run of an agent workflow. A run ends in
+  one notification whose id is the run's UUIDv5, so a run that ended is not
+  started again. While the user's budget is exceeded the runner skips the run
+  and that notification is a `budget` one saying so
+  ([usage](../spec/domains/usage.md#monthly-budget)); a failed run ends in a
+  notification that says it failed, and is not retried that day.
+- **The daily plan** is a LangGraph graph of two nodes: an Agent SDK session
+  on the `fast` tier with a few read tools and `plan_day`, under the policy
+  hook and the `aggregates` exposure ([ADR 0007](../adr/0007-sensitive-data-protection.md)),
+  then a `plan` notification with its summary. It is due on a working day from
+  the user's `daily_plan_at` (07:00 by default) until the end of working
+  hours, once they have an open task. Plans run as tasks of their own, so a
+  slow session never delays reminders.
+- **Replanning** needs no model: a time block that ended in the last hour with
+  its task still open goes through `replan_block` and the user's policy for
+  calendar writes. `auto` and `auto-undo` move it and send a `plan`
+  notification, `confirm` stores an approval request, `deny` leaves it.
+- The worker runs the same credential cleaning and self-check as the API
+  before its first agent session ([claude-auth.md](claude-auth.md)). If it
+  fails, daily plans do not start and everything else keeps running.
 
 ## Cost control
 

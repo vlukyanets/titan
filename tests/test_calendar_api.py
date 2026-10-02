@@ -37,6 +37,7 @@ async def test_a_week_view_in_the_owners_zone(api: Api) -> None:
         "work_days": [1, 2, 3, 4, 5],
         "buffer_minutes": 10,
         "default_reminder_minutes": 15,
+        "daily_plan_at": "07:00:00",
     }
     prefs = {**defaults.json(), "time_zone": "Europe/Kyiv", "work_days": [5, 1, 1]}
     saved = await api.client.put("/api/v1/calendar/prefs", headers=anna, json=prefs)

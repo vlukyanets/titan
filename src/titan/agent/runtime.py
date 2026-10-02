@@ -73,6 +73,36 @@ def failure_reason(exc: BaseException, timeout: float) -> str:
     return "internal error"
 
 
+async def prepare_claude(
+    settings: Settings,
+    *,
+    query_fn: QueryFn = query,
+    environ: MutableMapping[str, str] | None = None,
+    what: str,
+) -> bool:
+    """Clean the process environment and run the credential self-check.
+
+    Call once per process before its first agent session. `what` names what
+    stays unavailable in the log when the check fails.
+    """
+    environ = os.environ if environ is None else environ
+    try:
+        mode = auth.install(settings, environ)
+        disable_tracing(environ)
+        async with asyncio.timeout(SELF_CHECK_TIMEOUT):
+            source = await self_check(settings, query_fn=query_fn, environ=environ)
+    except TimeoutError:
+        log.error(
+            "%s is unavailable: Claude Code did not start within %ss", what, SELF_CHECK_TIMEOUT
+        )
+        return False
+    except (ClaudeAuthError, ClaudeSDKError, OSError) as exc:
+        log.error("%s is unavailable: %s", what, exc)
+        return False
+    log.info("Claude credential check passed: %s mode, source %s", mode, source)
+    return True
+
+
 @dataclass(frozen=True)
 class TurnEnded:
     """The last event of a turn: the stored assistant message, complete or failed.
@@ -146,23 +176,9 @@ class ChatRuntime:
             return self._ready
 
     async def _check(self) -> bool:
-        try:
-            mode = auth.install(self.settings, self.environ)
-            disable_tracing(self.environ)
-            async with asyncio.timeout(SELF_CHECK_TIMEOUT):
-                source = await self_check(
-                    self.settings, query_fn=self.query_fn, environ=self.environ
-                )
-        except TimeoutError:
-            log.error(
-                "chat is unavailable: Claude Code did not start within %ss", SELF_CHECK_TIMEOUT
-            )
-            return False
-        except (ClaudeAuthError, ClaudeSDKError, OSError) as exc:
-            log.error("chat is unavailable: %s", exc)
-            return False
-        log.info("Claude credential check passed: %s mode, source %s", mode, source)
-        return True
+        return await prepare_claude(
+            self.settings, query_fn=self.query_fn, environ=self.environ, what="chat"
+        )
 
     def start(self, user_id: uuid.UUID, assistant_message_id: uuid.UUID) -> TurnStream:
         """Run the turn in the background and return its event stream."""

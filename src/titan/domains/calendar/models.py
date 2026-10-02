@@ -88,4 +88,8 @@ class PlanningPrefs(Base):
     default_reminder_minutes: Mapped[int | None] = mapped_column(
         SmallInteger, default=15, server_default="15"
     )
+    # Local time the daily plan runs on working days; None turns it off.
+    daily_plan_at: Mapped[time | None] = mapped_column(
+        Time, default=time(7), server_default="07:00"
+    )
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
