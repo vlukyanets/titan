@@ -57,7 +57,7 @@ connection ([ADR 0013](../adr/0013-one-cluster-address.md)).
 | `titan-api` | FastAPI app: REST + SSE/WebSocket API, auth (accounts, device tokens, browser sessions), domain services, OpenAPI schema, and the static files of the Web UI |
 | `titan-worker` | Runs the scheduler and reminder firing; later the agent workflows (chat turns, daily plan, replanning) |
 | `embeddings` | Local embedding model behind a small HTTP API. Separate container so it can be sized, moved to the strongest node or swapped for another model |
-| `db` | Replicated database with vector table support. Engine *open*: [ADR 0006](../adr/0006-replicated-database-with-vectors.md) |
+| `db` | PostgreSQL with pgEdge Spock (asynchronous multi-master replication) and pgvector, from a pinned pgEdge image ([ADR 0006](../adr/0006-replicated-database-with-vectors.md)) |
 | `ntfy` | UnifiedPush server for the phones. Push messages carry only notification ids ([ADR 0008](../adr/0008-push-messages-carry-references.md)) |
 
 `titan-api` and `titan-worker` are the same Python package (`uv`-managed) started
@@ -178,6 +178,26 @@ Database access goes through SQLAlchemy 2.x (async). Alembic manages schema
 changes, which are rolled out safely across peer nodes as described in
 [database-migrations.md](database-migrations.md).
 
+Replication between nodes is asynchronous, so these rules apply to all data
+access:
+
+- **Write affinity.** API processes send writes to the preferred node (the
+  home server) while it is reachable, and to their local node only when it is
+  not. Spock resolves conflicts by keeping the later row image, whole rows
+  at a time: the M0 spike lost a title change because the other node had
+  changed only the notes of the same row. Conflicts are therefore kept to
+  real partitions.
+- **Update only what changed**, and model rows that several writers change at
+  once (counters, streaks, aggregates) as append-only rows or Spock
+  `delta_apply` columns.
+- **Keys.** Primary keys are application-generated UUIDs. Natural-key unique
+  constraints are rare, because two partitioned nodes can each insert the same
+  key and stay diverged.
+- **Conflicts are visible.** Spock's conflict records, `spock.exception_log`
+  and the audit log ([ADR 0005](../adr/0005-per-domain-autonomy-policy.md))
+  let the owner see and undo an edit that lost. Node clocks are kept in sync
+  because conflicts are resolved by commit time.
+
 Nodes cannot rely on the locale their database was created with: the pgEdge
 images use `C`, where `lower()`, `ILIKE` and sorting treat only ASCII letters
 as letters. Case-insensitive matching in SQL uses the builtin
@@ -204,11 +224,16 @@ jobs run **at least once** and every effect is **idempotent**
   a non-preferred holder gives the lease up once it sees the preferred node
   active again, so the preferred node gets it back after at most one lease
   period. Nodes are named by `TITAN_NODE_NAME` (default: the host name).
+  The preferred node is essential: without it, two nodes racing for the same
+  jobs fired 20 % of them twice on a healthy cluster in the M0 spike.
 - Duplicates can then only happen during a real network partition, and their
   effects collapse: a reminder's notification id is derived from the reminder
   and the time it fired for ([reminders](../spec/domains/reminders.md)).
 - Firing a reminder is a status change in the same transaction as its
   notification, taken with `SKIP LOCKED`, so on one node it fires once.
+- Workflows write their results under **deterministic keys** (for example a
+  UUIDv5 of user and date for the daily plan), so a second run of the same job
+  updates the same rows instead of creating new ones.
 
 ## Cost control
 
@@ -240,5 +265,7 @@ jobs run **at least once** and every effect is **idempotent**
   ([notifications](../spec/domains/notifications.md)).
 - Secrets (Claude credentials, database passwords) come from environment or
   Docker secrets, never from the repository.
-- Protection of sensitive domains is *open*:
-  [ADR 0007](../adr/0007-sensitive-data-protection.md).
+- All of TITAN's data lives in an encrypted Docker volume on every node, and
+  what the agent sends to Claude about health and finance is limited per
+  domain ([ADR 0007](../adr/0007-sensitive-data-protection.md),
+  [node setup](node-setup.md)).
