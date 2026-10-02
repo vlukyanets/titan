@@ -8,16 +8,15 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
 |---|---|
 | `Note` | id, owner, title, body (Markdown), tags, shared_with, created_at, updated_at |
 | `Memory` | id, owner, statement ("Anna is allergic to peanuts"), source (chat id or note id), confidence, created_at, last_confirmed_at |
-| `Embedding` | id, entity_type, entity_id, chunk_index, vector, model |
+| `Embedding` | id, note or memory, chunk_index, model, content_hash, vector |
 
 - Notes are written by the user. Memories are short facts that the agent
   extracts from conversations and the user can review.
-- Notes and memories are split into chunks and embedded by the local
-  embeddings service. Vectors are stored in the main database
-  ([ADR 0006](../../adr/0006-replicated-database-with-vectors.md)).
-  Embeddings and semantic search arrive with the embedding model
-  ([open question 3](../../roadmap/open-questions.md)); until then search
-  matches words.
+- Notes and memories are split into chunks and embedded by a local
+  embeddings server ([ADR 0014](../../adr/0014-embeddings-from-a-local-server.md)).
+  Vectors are stored in the main database
+  ([ADR 0006](../../adr/0006-replicated-database-with-vectors.md)) and
+  removed with their note or memory.
 
 ## Notes
 
@@ -34,10 +33,27 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
 
 ## Search
 
-- Until embeddings arrive, `q` matches notes whose title, body or tags
-  contain every word of the query, also inside longer words, ignoring case in
-  every alphabet: "молок" finds "Молоко". Up to 10 words count.
-- Memories are searched the same way, in the statement.
+- **Words.** `q` matches notes whose title, body or tags contain every word of
+  the query, also inside longer words, ignoring case in every alphabet:
+  "молок" finds "Молоко". Up to 10 words count. Memories are matched the same
+  way, in the statement.
+- **Meaning.** When the embeddings server is set up, `q` also finds notes and
+  memories close in meaning, in any language: "car service" finds "ТО
+  автомобиля". Items too far from the query are left out, so an unrelated
+  query finds nothing rather than everything.
+- Both kinds of match are merged into one list, best first. An item found
+  both ways ranks higher.
+- Search sees only what the user can read: their notes, notes shared with
+  them, and only their own memories.
+- **Chunks.** A note is embedded in chunks of about 1000 characters, cut at
+  paragraph or sentence ends where possible, each with the note's title. A
+  memory is one chunk. A note ranks by its best chunk.
+- **Indexing** runs in the background on the worker, a few seconds after a
+  note or memory is written or changed. Writing never waits for it and never
+  fails because of it.
+- **Fallback.** While the server is down, not set up, or still indexing (for
+  example after a model change), search falls back to words for what has no
+  current vector.
 
 ## Memories
 
@@ -66,7 +82,9 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
 | `POST /api/v1/memories` | Add a memory by hand (source `user`) |
 | `PATCH`, `DELETE /api/v1/memories/{id}` | Change the statement, forget it |
 
-`PATCH` changes only the fields it sends.
+`PATCH` changes only the fields it sends. With `q`, lists come best match
+first and are not paged: `limit` caps them, and `before` together with `q`
+answers `400`.
 
 ## Agent tools
 
@@ -82,8 +100,8 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
 | `forget` | memory | `destructive` | – |
 | Sharing a note, or changing one that is shared | notes | `external` | As above |
 
-- `search_notes` matches words until semantic search arrives. `get_note`
-  shows at most 20 000 characters of a body.
+- `search_notes` and `recall` search as described in [Search](#search).
+  `get_note` shows at most 20 000 characters of a body.
 - `remember` stores a memory with its source: the current chat thread, or
   the note it was read in. Outside a chat it needs the note. The agent's
   confidence defaults to 0.8.

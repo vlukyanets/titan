@@ -44,6 +44,7 @@ changes often lives separately in [`roadmap/`](roadmap/README.md).
 | [0011](adr/0011-cli-client-over-http.md) | The CLI client talks HTTP and keeps its token in a private file | Accepted |
 | [0012](adr/0012-browser-sessions-for-the-web-ui.md) | Browser sessions for the Web UI | Accepted |
 | [0013](adr/0013-one-cluster-address.md) | One cluster address through Tailscale Services | Accepted |
+| [0014](adr/0014-embeddings-from-a-local-server.md) | Embeddings from a local server | Proposed |
 
 New ADRs start from the [template](adr/0000-template.md).
 
