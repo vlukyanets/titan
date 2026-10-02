@@ -166,15 +166,17 @@ class ApprovalsService:
         tool_input: dict[str, Any],
         *,
         thread_id: uuid.UUID | None = None,
+        action_class: ActionClass | None = None,
+        summary: str | None = None,
     ) -> Approval:
         approval = Approval(
             user_id=user_id,
             thread_id=thread_id,
             tool=spec.qualified_name,
             domain=spec.domain,
-            action_class=spec.action_class,
+            action_class=action_class or spec.action_class,
             input=tool_input,
-            summary=spec.summarize(tool_input)[:SUMMARY_LENGTH],
+            summary=(summary or spec.summarize(tool_input))[:SUMMARY_LENGTH],
             status=ApprovalStatus.PENDING,
             expires_at=_now() + self.ttl,
         )
@@ -287,6 +289,8 @@ class AuditService:
         change: Change | None,
         *,
         approval_id: uuid.UUID | None = None,
+        action_class: ActionClass | None = None,
+        summary: str | None = None,
     ) -> AuditEntry:
         """Add an entry to the session; the caller commits it with the change."""
         entry = AuditEntry(
@@ -294,9 +298,9 @@ class AuditService:
             approval_id=approval_id,
             tool=spec.qualified_name,
             domain=spec.domain,
-            action_class=spec.action_class,
+            action_class=action_class or spec.action_class,
             decision=decision,
-            summary=spec.summarize(tool_input)[:SUMMARY_LENGTH],
+            summary=(summary or spec.summarize(tool_input))[:SUMMARY_LENGTH],
             input=tool_input,
             entity_type=change.entity_type if change else None,
             entity_id=change.entity_id if change else None,

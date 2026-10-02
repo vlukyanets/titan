@@ -65,19 +65,23 @@ and the owner would be billed per token. In `oauth` mode TITAN therefore:
    silent fallback this check exists to catch. The same check runs on the
    `system/init` message of every agent session, and `titan claude check` runs
    it by hand.
+   Checked live in `oauth` mode on 2026-10-02. `api-key` mode is checked only
+   against the bundled Claude Code with a fake key, until a real key is used.
 
 The same rules work the other way round: in `api-key` mode
 `CLAUDE_CODE_OAUTH_TOKEN` is removed from the subprocess environment.
 
-## In the API process
+## In the API and worker processes
 
-Until `titan-worker` runs agent workflows, `titan-api` runs chat turns itself. At startup it
-cleans its own environment as described above and runs the self-check, with a
-60-second limit. If the credential is missing, the check fails or Claude Code
-does not start, the reason is logged, chat answers `503`, and the rest of the
-API keeps working. Fixing the credential needs a restart. The environment
-cleaning also removes every `LANGSMITH_*` and `LANGCHAIN_*` variable, so
-LangSmith tracing can never send conversations out of the cluster.
+`titan-api` runs chat turns itself, and `titan-worker` runs the scheduled
+workflows such as the daily plan. Each cleans its own environment as described
+above and runs the self-check, with a 60-second limit: the API at startup, the
+worker before its first agent workflow. If the credential is missing, the
+check fails or Claude Code does not start, the reason is logged and that
+process's agent work stays off: chat answers `503`, daily plans do not start.
+Everything else keeps working. Fixing the credential needs a restart. The
+environment cleaning also removes every `LANGSMITH_*` and `LANGCHAIN_*`
+variable, so LangSmith tracing can never send conversations out of the cluster.
 
 ## Tests
 

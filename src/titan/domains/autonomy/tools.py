@@ -11,6 +11,7 @@ outside the database, such as a push, may commit before causing it.
 
 from __future__ import annotations
 
+import enum
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
@@ -22,6 +23,15 @@ from titan.domains.autonomy.models import ActionClass
 from titan.notify import Pusher
 
 
+class Exposure(enum.StrEnum):
+    """How much of a user's health and finance data tools show (ADR 0007)."""
+
+    # Individual entries: the default in the user's own chat.
+    FULL = "full"
+    # Sums, averages and streaks only: the default in scheduled workflows.
+    AGGREGATES = "aggregates"
+
+
 @dataclass(frozen=True)
 class ToolContext:
     """Who a tool acts for, and what it may use."""
@@ -31,6 +41,7 @@ class ToolContext:
     thread_id: uuid.UUID | None = None
     pusher: Pusher | None = None
     push_origins: tuple[str, ...] = ()
+    exposure: Exposure = Exposure.FULL
 
 
 @dataclass(frozen=True)
@@ -56,6 +67,15 @@ RunFn = Callable[[ToolContext, dict[str, Any]], Awaitable[ToolResult]]
 # Restores `change.before`; raises UndoConflictError if the entity no longer
 # has `change.after`.
 UndoFn = Callable[[ToolContext, Change], Awaitable[None]]
+# The class of one call, when it depends on what the call touches, such as a
+# write to an item shared with another user (`external`). Never lower than the
+# spec's own class.
+ClassifyFn = Callable[[ToolContext, Mapping[str, Any]], Awaitable[ActionClass]]
+# The summary with what only the database knows, such as the title of the task
+# a call changes; None falls back to `summarize`.
+DescribeFn = Callable[[ToolContext, Mapping[str, Any]], Awaitable[str | None]]
+
+_ORDER = list(ActionClass)
 
 
 @dataclass(frozen=True)
@@ -69,8 +89,37 @@ class ToolSpec:
     # A line a person can approve without seeing the raw input.
     summarize: Callable[[Mapping[str, Any]], str]
     undo: UndoFn | None = None
+    classify: ClassifyFn | None = None
+    describe: DescribeFn | None = None
 
     @property
     def qualified_name(self) -> str:
         """The name Claude Code gives the tool of an SDK MCP server."""
         return f"mcp__{self.domain}__{self.name}"
+
+    async def action_class_for(
+        self, context: ToolContext, tool_input: Mapping[str, Any]
+    ) -> ActionClass:
+        if self.classify is None:
+            return self.action_class
+        found = await self.classify(context, tool_input)
+        return max(found, self.action_class, key=_ORDER.index)
+
+    async def summary_for(self, context: ToolContext, tool_input: Mapping[str, Any]) -> str:
+        described = None if self.describe is None else await self.describe(context, tool_input)
+        return described or self.summarize(tool_input)
+
+
+def guarded(run: RunFn, errors: tuple[type[Exception], ...]) -> RunFn:
+    """`run` with the domain's errors as the model's answer.
+
+    Only for errors whose messages are safe to show, as domain errors are.
+    """
+
+    async def guard(context: ToolContext, args: dict[str, Any]) -> ToolResult:
+        try:
+            return await run(context, args)
+        except errors as exc:
+            return ToolResult(f"Could not do it: {exc}.", is_error=True)
+
+    return guard

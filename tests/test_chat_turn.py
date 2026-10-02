@@ -70,11 +70,11 @@ def test_prompt_puts_history_before_the_new_message() -> None:
         '<message role="assistant">\nHello!\n</message>\n'
         "</conversation>\n"
         "\n"
-        "Current time: 2026-09-24T07:30+00:00\n"
+        "Current time: 2026-09-24T07:30+00:00 (UTC)\n"
         "\n"
         "What is due?"
     )
-    assert render_prompt([], "Hi", now) == "Current time: 2026-09-24T07:30+00:00\n\nHi"
+    assert render_prompt([], "Hi", now) == "Current time: 2026-09-24T07:30+00:00 (UTC)\n\nHi"
 
 
 def test_events_show_the_main_agent_only() -> None:

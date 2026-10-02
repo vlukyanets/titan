@@ -55,8 +55,13 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
   off). TITAN keeps it in step with the task: it moves with `due_at`, follows
   the title, and goes away when the task is completed, cancelled, deleted or
   loses its due time. A task due sooner than the lead time gets none. It
-  belongs to the task's owner and is marked `is_default`. Events get default
-  reminders later.
+  belongs to the task's owner and is marked `is_default`.
+- Timed events (not all-day events or time blocks) give their owner and every
+  attendee a default reminder, each with their own lead time, kept in step
+  with the event the same way: it follows the title and the start, goes to
+  new attendees and away from removed ones, and goes away with the event. A
+  recurring event's reminder repeats with the event's rule, for the next
+  occurrence that is still ahead by the lead time.
 - Approval requests from the [autonomy policy](../product.md#autonomy-policy)
   are delivered as `approval` notifications with Approve and Reject actions.
 
@@ -74,12 +79,18 @@ Reminders are private: someone else's reminder answers `404`.
 
 ## Agent tools
 
-| Tool | Action class |
-|---|---|
-| `reminders.list` | `read` |
-| `reminders.create` / `reminders.snooze` / `reminders.update` | `write-internal` |
-| Creating a reminder for another user | `external` |
-| `reminders.delete` | `destructive` |
+| Tool | Action class | Undo |
+|---|---|---|
+| `list_reminders` | `read` | – |
+| `create_reminder` | `write-internal` | Deletes the reminder |
+| `update_reminder` | `write-internal` | Restores the reminder |
+| `snooze_reminder` | `write-internal` | Restores it, or deletes the one-off copy of a series |
+| `delete_reminder` | `destructive` | – |
+
+- Reminders are private, so no call is `external`. Reminding another member
+  is not in v1; `notify_member` sends them a message now.
+- Undo answers `409` once the reminder has fired or changed since.
+- Times are given and shown in the user's time zone.
 
 ## Acceptance criteria (v1)
 

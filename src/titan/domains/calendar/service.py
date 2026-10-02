@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from titan.domains.accounts.models import User
 from titan.domains.calendar.errors import ForbiddenError, InvalidEventError, NotFoundError
 from titan.domains.calendar.models import Event, EventAttendee, EventKind, PlanningPrefs
+from titan.domains.reminders.defaults import drop_event_reminders, sync_event_reminders
 from titan.domains.tasks import errors as tasks_errors
 from titan.domains.tasks import recurrence
 from titan.domains.tasks.service import TasksService
@@ -154,8 +155,17 @@ def merge(intervals: Iterable[tuple[datetime, datetime]]) -> list[tuple[datetime
 
 
 class CalendarService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, *, commit: bool = True) -> None:
         self.session = session
+        # Agent tools pass commit=False: their caller commits the change together
+        # with its audit entry.
+        self._commit = commit
+
+    async def _done(self) -> None:
+        if self._commit:
+            await self.session.commit()
+        else:
+            await self.session.flush()
 
     # ---------------------------------------------------------- prefs
 
@@ -171,6 +181,7 @@ class CalendarService:
             work_days=[1, 2, 3, 4, 5],
             buffer_minutes=10,
             default_reminder_minutes=15,
+            daily_plan_at=time(7),
             updated_at=_now(),
         )
 
@@ -184,6 +195,7 @@ class CalendarService:
         work_days: Iterable[int],
         buffer_minutes: int,
         default_reminder_minutes: int | None = 15,
+        daily_plan_at: time | None = time(7),
     ) -> PlanningPrefs:
         zone(time_zone)
         if work_end <= work_start:
@@ -205,8 +217,9 @@ class CalendarService:
         stored.work_days = days
         stored.buffer_minutes = buffer_minutes
         stored.default_reminder_minutes = default_reminder_minutes
+        stored.daily_plan_at = None if daily_plan_at is None else daily_plan_at.replace(tzinfo=None)
         stored.updated_at = _now()
-        await self.session.commit()
+        await self._done()
         return stored
 
     # --------------------------------------------------------- access
@@ -314,7 +327,8 @@ class CalendarService:
         self.session.add(event)
         await self.session.flush()
         self.session.add_all(EventAttendee(event_id=event.id, user_id=m) for m in members)
-        await self.session.commit()
+        await sync_event_reminders(self.session, event, members)
+        await self._done()
         return SharedEvent(event, members)
 
     async def get_event(self, actor: uuid.UUID, event_id: uuid.UUID) -> SharedEvent:
@@ -360,7 +374,8 @@ class CalendarService:
         for name, value in values.items():
             setattr(event, name, value)
         event.updated_at = _now()
-        await self.session.commit()
+        await sync_event_reminders(self.session, event, members)
+        await self._done()
         return SharedEvent(event, members)
 
     async def delete_event(self, actor: uuid.UUID, event_id: uuid.UUID) -> None:
@@ -368,8 +383,9 @@ class CalendarService:
         if event.owner_id != actor:
             raise ForbiddenError("only the event's owner can delete it")
         await self.session.execute(delete(EventAttendee).where(EventAttendee.event_id == event.id))
+        await drop_event_reminders(self.session, event.id)
         await self.session.delete(event)
-        await self.session.commit()
+        await self._done()
 
     # ---------------------------------------------------------- views
 

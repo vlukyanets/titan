@@ -1,55 +1,54 @@
 # Milestones
 
-Last updated: 2026-09-24. Client milestones live in the client repositories and
+Last updated: 2026-10-02. Client milestones live in the client repositories and
 are aligned with these.
 
-## M0: Research and spikes
+## M0: Research and spikes (done)
 
 Goal: settle the decisions that block the platform.
 
 - [x] Database replication research and spike, then decide
       [ADR 0006](../adr/0006-replicated-database-with-vectors.md): PostgreSQL +
       pgEdge Spock + pgvector.
-- [ ] LangGraph + Agent SDK spike: `daily_plan` end to end with one domain tool,
-      a policy interrupt, resume on another process, and token accounting
-      ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-nodes.md)).
-- [ ] Claude auth spike: confirm env sanitisation and pin the `apiKeySource`
-      value expected in `oauth` mode ([claude-auth.md](../architecture/claude-auth.md)).
-- [ ] Pick the embedding model and container image (multilingual, CPU-friendly).
+- [x] LangGraph + Agent SDK spike: folded into M1. The `chat_turn` graph runs
+      Agent SDK sessions with the Postgres checkpointer and token accounting,
+      and approved calls run outside the session
+      ([ADR 0010](../adr/0010-approved-calls-run-outside-the-session.md)).
+- [x] Claude auth spike: folded into M1. The expected `apiKeySource` values are
+      pinned in [claude-auth.md](../architecture/claude-auth.md).
+- [x] Embedding model: moved to M2 with the notes item, which is the first to
+      need it.
 - [x] Draft [ADR 0007](../adr/0007-sensitive-data-protection.md) options with a
       recommendation.
 
 Exit: ADR 0006 accepted, the spike code thrown away or folded into M1.
 
-## M1: Core platform
+## M1: Core platform (done)
 
 - [x] `uv` project skeleton, lint (ruff), type checks (mypy), pytest,
-      GitHub Actions CI ([plan](plans/m1-project-skeleton.md)).
-- [ ] Docker images for `titan-api`, `titan-worker` and `embeddings`, plus a
-      Compose file for one node. `titan-api`, `titan-worker` and the Compose
-      file are done; `embeddings` waits for the model choice in M0.
+      GitHub Actions CI.
+- [x] Docker images for `titan-api` and `titan-worker`, plus a Compose file for
+      one node. The `embeddings` image moved to M2 with the model choice.
 - [x] SQLAlchemy + Alembic setup with CI migration tests
       ([database-migrations.md](../architecture/database-migrations.md)).
-- [x] Accounts, device pairing and device tokens
-      ([plan](plans/m1-accounts-devices.md)).
-- [x] Agent runtime: LangGraph + Agent SDK node wrapper, model tiers, auth modes
-      ([plan](plans/m1-agent-runtime.md); a live run waits for a credential).
-- [x] Policy hook, approvals API, audit log with undo
-      ([plan](plans/m1-autonomy.md); a live run waits for a credential).
+- [x] Accounts, device pairing and device tokens.
+- [x] Agent runtime: LangGraph + Agent SDK node wrapper, model tiers, auth modes.
+- [x] Policy hook, approvals API, audit log with undo.
 - [x] Chat API with SSE streaming ([chat](../spec/domains/chat.md)).
-- [x] ntfy notifier and the notification store
-      ([plan](plans/m1-notifications.md)).
+- [x] ntfy notifier and the notification store.
 - [x] OpenAPI export to `docs/api/openapi.json` with a CI drift check.
-- [x] Token usage tracking per user ([plan](plans/m1-token-usage.md)).
+- [x] Token usage tracking per user.
 
 Exit: an Android or CLI client can pair, chat with streaming, and approve a
-confirm-class action.
+confirm-class action. Met on 2026-10-02 with the CLI against a live node in
+`oauth` mode.
 
 ## M2: Thin domains
 
 - [ ] Tasks and projects ([plan](plans/m2-tasks-projects.md)).
 - [ ] Calendar and planner (daily plan, replanning) ([plan](plans/m2-calendar.md)).
-- [ ] Notes, memory and semantic search ([plan](plans/m2-notes.md)).
+- [ ] Notes, memory and semantic search, with the embedding model and the
+      `embeddings` image ([plan](plans/m2-notes.md)).
 - [ ] Trackers (habits, health, finance templates) ([plan](plans/m2-trackers.md)).
 - [ ] Reminders with exactly-once firing ([plan](plans/m2-reminders.md)).
 

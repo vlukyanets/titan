@@ -12,7 +12,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Literal, TypedDict
 
 from claude_agent_sdk import (
@@ -36,6 +36,7 @@ from titan.agent.policy import policy_hooks
 from titan.agent.tools import ToolScope, mcp_servers
 from titan.agent.usage import record_usage
 from titan.domains.autonomy.models import Approval
+from titan.domains.calendar.zones import user_zone
 from titan.domains.chat.models import ChatMessage, MessageRole
 from titan.domains.chat.service import ChatService, TurnUsage
 from titan.domains.usage.budget import BudgetService
@@ -55,6 +56,9 @@ refer back to something, name it, because the next turn sees only the text of \
 your replies.
 - Use your tools to look things up and to act. Never claim an action was done \
 unless a tool said so.
+- When the user's own life matters to the answer, recall what you remember and \
+search their notes first. Remember lasting facts they tell you about \
+themselves, not passing remarks.
 - Some actions need the user's approval. When a tool answers that the user has \
 been asked, tell them briefly what you asked for and do not call it again.
 """
@@ -98,7 +102,10 @@ class ChatContext:
 
 
 def render_prompt(history: Sequence[ChatMessage], message: str, now: datetime) -> str:
-    """The session prompt: earlier messages, the current time, then the new message."""
+    """The session prompt: earlier messages, the current time, then the new message.
+
+    `now` carries the user's time zone.
+    """
     lines: list[str] = []
     if history:
         lines.append("<conversation>")
@@ -107,7 +114,8 @@ def render_prompt(history: Sequence[ChatMessage], message: str, now: datetime) -
             lines.append(f'<message role="{role}">\n{item.content}\n</message>')
         lines.append("</conversation>")
         lines.append("")
-    lines.append(f"Current time: {now.astimezone(UTC).isoformat(timespec='minutes')}")
+    # In the user's zone, so "tomorrow at 9" means their 9.
+    lines.append(f"Current time: {now.isoformat(timespec='minutes')} ({now.tzinfo})")
     lines.append("")
     lines.append(message)
     return "\n".join(lines)
@@ -161,6 +169,7 @@ async def reply(state: ChatTurnState, runtime: Runtime[ChatContext]) -> dict[str
             user_id, message_id, history_limit=settings.chat_history_messages
         )
         budget = await BudgetService(session).status(user_id)
+        zone = await user_zone(session, user_id)
     scope = ToolScope(
         context.sessions,
         user_id,
@@ -184,7 +193,7 @@ async def reply(state: ChatTurnState, runtime: Runtime[ChatContext]) -> dict[str
         max_turns=MAX_TURNS,
         partial_messages=True,
     )
-    prompt = render_prompt(turn.history, turn.user_message.content, datetime.now(UTC))
+    prompt = render_prompt(turn.history, turn.user_message.content, datetime.now(zone))
     mapper = EventMapper()
     result: ResultMessage | None = None
     async for message in stream_agent(

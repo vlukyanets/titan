@@ -57,18 +57,26 @@ services:
     restart: unless-stopped
 
   worker:
-    # Same image, other entry point: the scheduler loop that fires reminders.
-    # No ports: it only talks to the database and the push server.
+    # Same image, other entry point: the scheduler loop that fires reminders and
+    # runs the daily plan. No ports: it talks to the database, the push server
+    # and Claude.
     image: titan:dev
     command: ["titan-worker"]
     environment:
       <<: *app-env
       TITAN_PUSH_ALLOWED_ORIGINS: http://${TITAN_TAILSCALE_IP}:8080
+      # Scheduled workflows (docs/architecture/claude-auth.md); without a working
+      # credential they do not start, and reminders keep firing.
+      TITAN_CLAUDE_AUTH_MODE: ${TITAN_CLAUDE_AUTH_MODE:-api-key}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
       # Names this node in scheduler leases; the preferred node (the home server)
       # runs the sweeps while it is up. Both default to this node.
       TITAN_NODE_NAME: ${TITAN_NODE_NAME:-titan}
       TITAN_PREFERRED_NODE: ${TITAN_PREFERRED_NODE:-}
       TITAN_WORKER_HEARTBEAT_FILE: /tmp/titan-worker.alive
+    tmpfs:
+      - /app/.local/state/titan:uid=10001,gid=10001,mode=0700
     healthcheck:
       # Healthy while ticks succeed; a lost database makes the heartbeat go stale.
       test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/titan-worker.alive') > 60)"]

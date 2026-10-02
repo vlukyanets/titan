@@ -81,7 +81,8 @@ The stack is fixed by the ADRs. Update this section when the commands change.
   ([ADR 0002](docs/adr/0002-langgraph-with-agent-sdk-nodes.md)).
 - Docker Compose for local runs: copy `.env.example` to `.env`, then
   `docker compose up -d`. Nodes communicate over Tailscale only.
-- `uv run titan-worker`: the scheduler loop that fires due reminders
+- `uv run titan-worker`: the scheduler loop that fires due reminders, replans
+  missed time blocks and runs the daily plan
   ([scheduler](docs/architecture/overview.md#scheduler-and-reminders)).
 - `uv run titan login|chat|approvals …`: the client commands, which talk to a
   node's HTTP API with a saved device token ([CLI spec](docs/spec/cli.md)).
@@ -90,7 +91,10 @@ The stack is fixed by the ADRs. Update this section when the commands change.
 - After an API change, run `uv run titan openapi` and commit
   `docs/api/openapi.json` ([ADR 0004](docs/adr/0004-openapi-from-fastapi.md)).
   A test fails when the committed file is stale.
-- The Web UI: `titan-api` serves the titan-web build in `TITAN_WEB_UI_DIR`
+- The Web UI: `titan-api` serves the titan-web build in `TITAN_WEB_UI_DIR`. The
+  image takes the release pinned in `web-ui.json` (version and SHA-256), fetched
+  by `scripts/fetch_web_ui.py`. To upgrade it, change both values to the new
+  release's, never just the version
   ([Web UI](docs/architecture/overview.md#web-ui)).
 
 ## Rules for code

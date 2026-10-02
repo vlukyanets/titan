@@ -10,8 +10,7 @@ Branch `feature/m2-calendar`, stacked on `feature/m2-scheduler`.
   expanded in their own time zone with `zoneinfo` (`tzdata` shipped as a
   dependency, so slim images have the zone database).
 - REST API under `/api/v1/calendar`.
-- The planner (daily plan, replanning) needs a live agent run and follows once
-  a credential is available. It starts through a common workflow runner that
+- The planner (daily plan, replanning) starts through a common workflow runner that
   skips runs over the monthly budget and tells the user
   ([usage](../../spec/domains/usage.md#monthly-budget)). Tasks and reminders adopt the owner's time zone
   for their repeats in a later change.
@@ -21,6 +20,11 @@ Tasks:
 - [x] Spec (time zones answer open question 8) and this plan.
 - [x] Tables, migration, service, occurrence expansion and busy intervals.
 - [x] Calendar API, OpenAPI regenerated, docs updated.
-- [ ] Agent tools and the planner (after a live agent run).
+- [x] Agent tools and the planner's placing (`feature/m2-calendar-agent-tools`):
+      `plan_day` and `replan_block` place blocks in code, the model only
+      chooses what to plan.
+- [x] The `daily_plan` workflow and replanning of missed blocks in
+      `titan-worker` (`feature/m2-daily-plan`), with `daily_plan_at` in the
+      planning preferences.
 - [x] Tasks and reminders repeat in the owner's time zone (branch
       `feature/m2-local-recurrence`).

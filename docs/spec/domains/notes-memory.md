@@ -70,11 +70,24 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
 
 ## Agent tools
 
-| Tool | Action class |
-|---|---|
-| `notes.search` (semantic + keyword) / `notes.get` / `memory.recall` | `read` |
-| `notes.create` / `notes.update` / `memory.remember` / `memory.revise` | `write-internal` |
-| `notes.delete` / `memory.forget` | `destructive` |
+| Tool | Domain | Action class | Undo |
+|---|---|---|---|
+| `search_notes` / `get_note` | notes | `read` | – |
+| `create_note` | notes | `write-internal` | Deletes the note |
+| `update_note` | notes | `write-internal` | Restores title, body, tags and readers |
+| `delete_note` | notes | `destructive` | – |
+| `recall` | memory | `read` | – |
+| `remember` | memory | `write-internal` | Forgets a new memory, or restores the confirmed one |
+| `revise_memory` | memory | `write-internal` | Restores the statement |
+| `forget` | memory | `destructive` | – |
+| Sharing a note, or changing one that is shared | notes | `external` | As above |
+
+- `search_notes` matches words until semantic search arrives. `get_note`
+  shows at most 20 000 characters of a body.
+- `remember` stores a memory with its source: the current chat thread, or
+  the note it was read in. Outside a chat it needs the note. The agent's
+  confidence defaults to 0.8.
+- Members are named by username, as `list_members` shows them.
 
 ## Acceptance criteria (v1)
 

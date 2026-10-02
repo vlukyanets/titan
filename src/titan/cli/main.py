@@ -26,6 +26,7 @@ from typing import TextIO
 import httpx
 from alembic import command
 from alembic.config import Config
+from pydantic import ValidationError
 from sqlalchemy import create_engine, text
 
 import titan.migrations
@@ -69,7 +70,15 @@ class Cli:
     stdin: TextIO
 
     def settings(self) -> Settings:
-        return self.load_settings()
+        try:
+            return self.load_settings()
+        except ValidationError as exc:
+            # Names only: the values can hold a password.
+            names = sorted({"TITAN_" + str(e["loc"][0]).upper() for e in exc.errors() if e["loc"]})
+            raise SystemExit(
+                f"missing or invalid settings: {', '.join(names)}. This command runs on "
+                "a node, for example: docker compose exec api titan ..."
+            ) from None
 
     # ------------------------------------------------------------- migrate
 

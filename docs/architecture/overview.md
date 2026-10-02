@@ -55,7 +55,7 @@ connection ([ADR 0013](../adr/0013-one-cluster-address.md)).
 | Container | Responsibility |
 |---|---|
 | `titan-api` | FastAPI app: REST + SSE/WebSocket API, auth (accounts, device tokens, browser sessions), domain services, OpenAPI schema, and the static files of the Web UI |
-| `titan-worker` | Runs the scheduler and reminder firing; later the agent workflows (chat turns, daily plan, replanning) |
+| `titan-worker` | Runs the scheduler: reminder firing, push retries, the daily plan and replanning of missed time blocks; later chat turns too |
 | `embeddings` | Local embedding model behind a small HTTP API. Separate container so it can be sized, moved to the strongest node or swapped for another model |
 | `db` | PostgreSQL with pgEdge Spock (asynchronous multi-master replication) and pgvector, from a pinned pgEdge image ([ADR 0006](../adr/0006-replicated-database-with-vectors.md)) |
 | `ntfy` | UnifiedPush server for the phones. Push messages carry only notification ids ([ADR 0008](../adr/0008-push-messages-carry-references.md)) |
@@ -65,8 +65,8 @@ with different entry points.
 
 ## Web UI
 
-A node serves a [titan-web](https://github.com/vlukyanets/titan-web) build
-next to its API, on the same origin
+Every node serves the [titan-web](https://github.com/vlukyanets/titan-web)
+build next to its API, on the same origin
 ([titan-web ADR 0002](https://github.com/vlukyanets/titan-web/blob/master/docs/adr/0002-served-by-the-node.md)).
 
 - `TITAN_WEB_UI_DIR` names the build (`index.html` and `assets/`). Unset, the
@@ -81,6 +81,16 @@ next to its API, on the same origin
   file contents, because release archives fix every timestamp. Hidden files
   and paths that leave the build are never served. None of these routes are
   in the OpenAPI schema.
+- **The image pins a release.** `web-ui.json` holds a titan-web version and the
+  SHA-256 of its release archive. The image build runs
+  `scripts/fetch_web_ui.py`, which downloads the archive from the titan-web
+  GitHub release, refuses it unless the hash matches, extracts it with
+  Python's `data` filter into `/app/web` (owned by root, read-only for the
+  service user), and sets `TITAN_WEB_UI_DIR` to it. titan-web builds its
+  archives reproducibly, so the hash in the pin is the hash its CI prints.
+- **Upgrading the UI** is a commit that changes `web-ui.json` to a new
+  release and its hash, and a node picks it up when it is upgraded. The UI
+  and the API therefore always ship together.
 - **Development**: build titan-web (`pnpm build`) and start `titan-api` with
   `TITAN_WEB_UI_DIR` pointing at its `dist/`, or run the UI's development
   server, which proxies `/api` to a node.
@@ -122,11 +132,15 @@ TITAN combines two frameworks ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-n
   `ToolSpec`s in its own `tools.py` (action class, JSON schema, summary, undo);
   `titan.agent.tools` collects them and is the one path that runs them.
   Built-in Claude Code tools such as shell and file access are disabled.
-- **Policy gate**: a `PreToolUse` hook looks up the tool's action class and the
-  user's policy. It allows the call, denies it, or denies it and stores an
+- **Policy gate**: a `PreToolUse` hook looks up the call's action class and the
+  user's policy. A tool may raise its class for one call, such as a write to a
+  shared item, and the wrapper checks the policy again in the transaction that
+  runs the call. It allows the call, denies it, or denies it and stores an
   approval request with the exact input. On approval TITAN runs the stored call
   itself, without the model, and posts the result to the thread
   ([ADR 0010](../adr/0010-approved-calls-run-outside-the-session.md)).
+  Domain tools are never in `allowed_tools`, so a call that skipped the hook
+  falls back to Claude Code's own permission check and is refused.
 - **Audit log**: TITAN's in-process wrapper around every domain tool records
   each executed call that is not `read`, with its before and after state, which
   makes undo possible.
@@ -213,7 +227,9 @@ jobs run **at least once** and every effect is **idempotent**
 - `titan-worker` (`titan.scheduler`) runs the scheduler loop on every node.
   Every few seconds (`TITAN_SCHEDULER_TICK_SECONDS`, default 5) it tries to hold
   the lease of each sweep, and the holder does the sweep's work. The sweeps
-  fire due reminders and retry pushes that no device accepted.
+  fire due reminders, retry pushes that no device accepted, move time blocks
+  that ended with their task still open, and start the daily plans that are
+  due.
 - A lease is a row in `scheduler_leases` with its holder and expiry
   (`TITAN_SCHEDULER_LEASE_SECONDS`, default 30). The holder renews it on every
   tick.
@@ -234,6 +250,31 @@ jobs run **at least once** and every effect is **idempotent**
 - Workflows write their results under **deterministic keys** (for example a
   UUIDv5 of user and date for the daily plan), so a second run of the same job
   updates the same rows instead of creating new ones.
+
+### Scheduled workflows
+
+`titan.agent.workflows` holds the agent work the worker starts on its own:
+
+- **The common runner** starts every run of an agent workflow. A run ends in
+  one notification whose id is the run's UUIDv5, so a run that ended is not
+  started again. While the user's budget is exceeded the runner skips the run
+  and that notification is a `budget` one saying so
+  ([usage](../spec/domains/usage.md#monthly-budget)); a failed run ends in a
+  notification that says it failed, and is not retried that day.
+- **The daily plan** is a LangGraph graph of two nodes: an Agent SDK session
+  on the `fast` tier with a few read tools and `plan_day`, under the policy
+  hook and the `aggregates` exposure ([ADR 0007](../adr/0007-sensitive-data-protection.md)),
+  then a `plan` notification with its summary. It is due on a working day from
+  the user's `daily_plan_at` (07:00 by default) until the end of working
+  hours, once they have an open task. Plans run as tasks of their own, so a
+  slow session never delays reminders.
+- **Replanning** needs no model: a time block that ended in the last hour with
+  its task still open goes through `replan_block` and the user's policy for
+  calendar writes. `auto` and `auto-undo` move it and send a `plan`
+  notification, `confirm` stores an approval request, `deny` leaves it.
+- The worker runs the same credential cleaning and self-check as the API
+  before its first agent session ([claude-auth.md](claude-auth.md)). If it
+  fails, daily plans do not start and everything else keeps running.
 
 ## Cost control
 

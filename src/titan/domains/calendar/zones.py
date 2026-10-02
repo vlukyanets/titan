@@ -7,6 +7,7 @@ importing the calendar (which imports tasks).
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import select
@@ -26,3 +27,13 @@ async def user_zone(session: AsyncSession, user_id: uuid.UUID) -> ZoneInfo:
         return ZoneInfo(name) if name else UTC_ZONE
     except (ZoneInfoNotFoundError, ValueError):
         return UTC_ZONE
+
+
+def parse_local(text: str, zone: ZoneInfo) -> datetime:
+    """ISO 8601; a time without an offset is in `zone`. Raises ValueError."""
+    parsed = datetime.fromisoformat(text)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=zone)
+
+
+def show_local(value: datetime | None, zone: ZoneInfo) -> str:
+    return "" if value is None else value.astimezone(zone).strftime("%Y-%m-%d %H:%M")

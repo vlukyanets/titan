@@ -55,15 +55,22 @@ TITAN keeps its own calendar. There is no sync with external calendars in v1.
   end, 09:00–17:00 by default), working days (ISO weekdays, Monday to Friday
   by default), the buffer between blocks (10 minutes by default) and how long
   before its due time a task reminds its owner (`default_reminder_minutes`,
-  15 by default, `null` for none; see [reminders](reminders.md#delivery)).
+  15 by default, `null` for none; see [reminders](reminders.md#delivery)), and
+  when the daily plan runs (`daily_plan_at`, 07:00 local by default, `null`
+  turns it off).
 
 ## Planning behaviour
 
-- **Daily plan** (scheduled workflow, default 07:00 in the user's time zone):
-  the agent looks at open tasks, deadlines, estimates and existing events. It
-  places time blocks inside working hours and sends the user a short summary.
-- **Replanning**: when a time block ends and its task is not done, the agent
-  proposes or applies (depending on policy) a new slot.
+- **Daily plan** (scheduled workflow, at `daily_plan_at` in the user's time
+  zone): the agent looks at open tasks, deadlines, estimates and existing
+  events, has `plan_day` place time blocks inside working hours, and sends the
+  user a short summary as a `plan` notification. It runs on working days
+  once the user has an open task, at most once a day, and not after working
+  hours. Health and finance trackers show it sums only.
+- **Replanning**: when a time block ends and its task is not done, TITAN moves
+  the block to the next free slot within 15 minutes, or asks first, as the
+  user's policy for `calendar` `write-internal` says; it tells the user
+  either way.
 - **On request**: "find two hours for the tax return this week".
 
 ## API
@@ -78,13 +85,28 @@ TITAN keeps its own calendar. There is no sync with external calendars in v1.
 
 ## Agent tools
 
-| Tool | Action class |
-|---|---|
-| `calendar.list` / `calendar.free_busy` | `read` |
-| `calendar.create` / `calendar.update` / `calendar.move` | `write-internal` |
-| `planner.plan_day` / `planner.replan` | `write-internal` |
-| Creating or changing an event with other attendees | `external` |
-| `calendar.delete` | `destructive` |
+| Tool | Action class | Undo |
+|---|---|---|
+| `list_events` / `free_busy` | `read` | – |
+| `create_event` | `write-internal` | Deletes the event |
+| `update_event` (also moves) | `write-internal` | Restores the event |
+| `plan_day` | `write-internal` | Deletes the blocks it placed |
+| `replan_block` | `write-internal` | Moves the block back |
+| Creating or changing an event with other attendees | `external` | As above |
+| `delete_event` | `destructive` | – |
+
+- `free_busy` answers the free time inside working hours, keeping the buffer,
+  and the busy intervals.
+- `plan_day` places time blocks on one working day. The model picks the day
+  and, if it wants, the tasks and their order; without them it takes the
+  user's open tasks by due date, then priority. TITAN does the placing: first
+  fit inside working hours, a buffer from every event, other blocks and now,
+  and 30 minutes for a task without an estimate. Tasks that already have a
+  block that day are skipped, and the answer names the ones with no room.
+- `replan_block` moves a time block whose task is still open to the first free
+  slot of the same length, from now or the block's end, within 7 days.
+- Times are given and shown in the user's time zone; a date means its local
+  midnight.
 
 ## Acceptance criteria (v1)
 

@@ -376,7 +376,8 @@ class MemoryService:
             raise NotFoundError("memory not found")
         return memory
 
-    async def _same(self, actor: uuid.UUID, statement: str) -> Memory | None:
+    async def same(self, actor: uuid.UUID, statement: str) -> Memory | None:
+        """The memory with this statement, ignoring case and spacing; locked."""
         # casefold() under the builtin collation, so the match does not depend
         # on the database's locale.
         wanted = func.casefold(literal(statement, Text).collate(UNICODE))
@@ -428,7 +429,7 @@ class MemoryService:
         source = MemorySource(source)
         await self._check_source(actor, source, source_id)
         now = now or _now()
-        memory = await self._same(actor, text)
+        memory = await self.same(actor, text)
         if memory is None:
             memory = Memory(
                 owner_id=actor,

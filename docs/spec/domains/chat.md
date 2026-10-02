@@ -41,6 +41,9 @@ A turn is one user message and the assistant's reply to it.
   complete messages (`TITAN_CHAT_HISTORY_MESSAGES`, 40 by default) and the new
   message ([ADR 0009](../../adr/0009-chat-history-in-titan-tables.md)). Failed
   replies are left out.
+- The agent is told the current time in the user's time zone, from their
+  [planning preferences](calendar.md#time-zones), so "tomorrow at 9" means the
+  user's 9.
 - The assistant answers in the language of the user's message. English,
   Russian and Ukrainian are expected, but any language works.
 - Chat uses the `strong` model tier. The budget fallback to the `fast` tier

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import functools
 import logging
 import signal
 from collections.abc import Awaitable, Callable
@@ -17,6 +18,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from titan.agent.workflows import Due, Workflows
 from titan.domains.notifications.service import NotificationsService
 from titan.domains.reminders.service import RemindersService
 from titan.notify import Pusher, UnifiedPushSender, new_client
@@ -44,10 +46,17 @@ class Worker:
     sessions: async_sessionmaker[AsyncSession]
     pusher: Pusher | None = None
     clock: Callable[[], datetime] = _now
+    # Agent workflows; None in tests that only fire reminders.
+    workflows: Workflows | None = None
     sweeps: dict[str, Sweep] = field(init=False)
+    # Daily plans run as tasks of their own, so a slow agent session never holds
+    # up the reminders of the next tick.
+    plans: dict[Due, asyncio.Task[bool]] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
         self.sweeps = {"reminders": self.fire_reminders, "push_retries": self.retry_pushes}
+        if self.workflows is not None:
+            self.sweeps |= {"replan_blocks": self.replan_blocks, "daily_plan": self.start_plans}
         self.policy = leases.LeasePolicy(
             node=self.settings.node_name,
             preferred_node=self.settings.preferred_node or self.settings.node_name,
@@ -92,6 +101,28 @@ class Worker:
                     log.error("push retry %s failed: %s", notification_id, type(exc).__name__)
         return delivered
 
+    async def replan_blocks(self, now: datetime) -> int:
+        assert self.workflows is not None
+        return await self.workflows.replan_missed(now)
+
+    async def start_plans(self, now: datetime) -> int:
+        """Start the daily plans that are due and not running yet."""
+        workflows = self.workflows
+        if workflows is None or not await workflows.ready():
+            return 0
+        started = 0
+        for item in await workflows.due_daily_plans(now):
+            if item in self.plans:
+                continue
+            task = asyncio.create_task(workflows.daily_plan(item), name=f"daily-plan-{item.day}")
+            self.plans[item] = task
+            task.add_done_callback(functools.partial(self._plan_done, item))
+            started += 1
+        return started
+
+    def _plan_done(self, item: Due, _: asyncio.Task[bool]) -> None:
+        self.plans.pop(item, None)
+
     async def tick(self) -> dict[str, int]:
         """One round: the sweeps this node held the lease for, with what they did."""
         done: dict[str, int] = {}
@@ -121,6 +152,9 @@ class Worker:
                     self.settings.worker_heartbeat_file.touch()
             with contextlib.suppress(TimeoutError):
                 await asyncio.wait_for(stop.wait(), timeout=interval)
+        for task in list(self.plans.values()):
+            task.cancel()
+        await asyncio.gather(*self.plans.values(), return_exceptions=True)
         log.info("worker %s stopped", self.policy.node)
 
 
@@ -133,7 +167,10 @@ async def serve(settings: Settings) -> None:
         loop.add_signal_handler(sig, stop.set)
     try:
         await check_revision(engine)
-        await Worker(settings, session_factory(engine), UnifiedPushSender(client)).run(stop)
+        sessions = session_factory(engine)
+        pusher = UnifiedPushSender(client)
+        workflows = Workflows(settings, sessions, pusher=pusher)
+        await Worker(settings, sessions, pusher, workflows=workflows).run(stop)
     finally:
         await client.aclose()
         await engine.dispose()

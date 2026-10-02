@@ -38,10 +38,65 @@ RENAME = "mcp__chat__rename_thread"
 NOTIFY = "mcp__notifications__notify_member"
 MEMBERS = "mcp__accounts__list_members"
 
+SOME_ID = "0199a000-0000-7000-8000-000000000000"
+
 EXAMPLES: dict[str, dict[str, Any]] = {
     RENAME: {"title": "Weekend trip"},
     NOTIFY: {"username": "boris", "message": "Buy milk"},
     MEMBERS: {},
+    "mcp__tasks__list_tasks": {"status": ["todo"], "due_before": "2026-10-09T00:00"},
+    "mcp__tasks__get_task": {"task_id": SOME_ID},
+    "mcp__tasks__create_task": {
+        "title": "Renew the passport",
+        "due_at": "2026-11-02T09:00",
+        "priority": 2,
+        "tags": ["documents"],
+    },
+    "mcp__tasks__update_task": {"task_id": SOME_ID, "due_at": None, "status": "doing"},
+    "mcp__tasks__complete_task": {"task_id": SOME_ID},
+    "mcp__tasks__delete_task": {"task_id": SOME_ID},
+    "mcp__tasks__list_projects": {"status": "active"},
+    "mcp__tasks__create_project": {"title": "Kitchen", "shared_with": ["boris"]},
+    "mcp__tasks__update_project": {"project_id": SOME_ID, "status": "archived"},
+    "mcp__tasks__delete_project": {"project_id": SOME_ID},
+    "mcp__trackers__list_trackers": {"kind": "health"},
+    "mcp__trackers__tracker_stats": {"tracker": "Weight", "period": "week"},
+    "mcp__trackers__list_entries": {"tracker": "Weight", "from": "2026-10-01T00:00"},
+    "mcp__trackers__create_tracker": {"name": "Expenses", "template": "expense", "unit": "EUR"},
+    "mcp__trackers__update_tracker": {
+        "tracker": "Water",
+        "target": {"value": 8, "period": "day", "direction": "at_least"},
+    },
+    "mcp__trackers__delete_tracker": {"tracker": SOME_ID},
+    "mcp__trackers__log_entry": {"tracker": "Expenses", "value": "23.40", "category": "groceries"},
+    "mcp__trackers__update_entry": {"tracker": "Weight", "entry_id": SOME_ID, "value": 72.4},
+    "mcp__trackers__delete_entry": {"tracker": "Weight", "entry_id": SOME_ID},
+    "mcp__notes__search_notes": {"text": "молок", "shared": "mine"},
+    "mcp__notes__get_note": {"note_id": SOME_ID},
+    "mcp__notes__create_note": {"title": "Recipes", "body": "# Soup", "tags": ["food"]},
+    "mcp__notes__update_note": {"note_id": SOME_ID, "shared_with": ["boris"]},
+    "mcp__notes__delete_note": {"note_id": SOME_ID},
+    "mcp__memory__recall": {"text": "allergic"},
+    "mcp__memory__remember": {"statement": "Anna is allergic to peanuts", "confidence": 0.9},
+    "mcp__memory__revise_memory": {"memory_id": SOME_ID, "statement": "Anna likes tea"},
+    "mcp__memory__forget": {"memory_id": SOME_ID},
+    "mcp__reminders__list_reminders": {"status": "scheduled"},
+    "mcp__reminders__create_reminder": {"text": "Take the pills", "fire_at": "2026-10-03T09:00"},
+    "mcp__reminders__update_reminder": {"reminder_id": SOME_ID, "recurrence": None},
+    "mcp__reminders__snooze_reminder": {"reminder_id": SOME_ID, "minutes": 30},
+    "mcp__reminders__delete_reminder": {"reminder_id": SOME_ID},
+    "mcp__calendar__list_events": {"start": "2026-10-05", "end": "2026-10-12"},
+    "mcp__calendar__free_busy": {"start": "2026-10-05"},
+    "mcp__calendar__create_event": {
+        "title": "Dentist",
+        "starts_at": "2026-10-06T15:00",
+        "ends_at": "2026-10-06T16:00",
+        "attendees": ["boris"],
+    },
+    "mcp__calendar__update_event": {"event_id": SOME_ID, "starts_at": "2026-10-06T16:00"},
+    "mcp__calendar__delete_event": {"event_id": SOME_ID},
+    "mcp__calendar__plan_day": {"date": "2026-10-05", "task_ids": [SOME_ID]},
+    "mcp__calendar__replan_block": {"event_id": SOME_ID},
 }
 
 

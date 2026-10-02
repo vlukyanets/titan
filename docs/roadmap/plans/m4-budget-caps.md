@@ -25,5 +25,5 @@ Tasks:
 - [x] Chat falls back to the `fast` tier; usage recording checks the budget.
 - [x] API and CLI, OpenAPI regenerated, docs updated.
 - [x] Owner alerts: spec, column, notifications, API and CLI.
-- [ ] Budget check and skipped-run notice in the workflow runner (with the first
-      scheduled workflow).
+- [x] Budget check and skipped-run notice in the workflow runner
+      (`feature/m2-daily-plan`).

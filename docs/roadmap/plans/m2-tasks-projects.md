@@ -19,4 +19,4 @@ Tasks:
 - [x] Spec and this plan.
 - [x] Tables, migration, service and recurrence.
 - [x] Projects and tasks API, OpenAPI regenerated, docs updated.
-- [ ] Agent tools with audit and undo (separate branch).
+- [x] Agent tools with audit and undo (`feature/m2-tasks-agent-tools`).

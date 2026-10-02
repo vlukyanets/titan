@@ -13,12 +13,16 @@ Branch `feature/m2-notes`, stacked on `fix/m2-task-search-case`.
   storing it twice.
 - REST API under `/api/v1/notes` and `/api/v1/memories`.
 - Embeddings, chunking and semantic search need the model and the
-  `embeddings` image; agent tools need a live agent run.
+  `embeddings` image. Picking the model moved here from M0: multilingual
+  (English, Russian and Ukrainian), CPU-friendly, benchmarked on a small
+  note set for quality, latency and memory, decided in an ADR.
 
 Tasks:
 
 - [x] Spec and this plan.
 - [x] Tables, migration and service for notes and memories.
 - [x] Notes and memories API, OpenAPI regenerated, docs updated.
-- [ ] Embeddings and semantic search (after the model choice).
-- [ ] Agent tools: `notes.*` and `memory.*` (after a live agent run).
+- [ ] Embedding model: shortlist, benchmark on a node, ADR.
+- [ ] The `embeddings` image and its Compose service.
+- [ ] Embeddings and semantic search.
+- [x] Agent tools for notes and memory (`feature/m2-notes-agent-tools`).

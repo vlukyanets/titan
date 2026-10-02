@@ -95,16 +95,25 @@ field. Another user's tracker answers `404`.
 
 ## Agent tools
 
-| Tool | Action class |
-|---|---|
-| `trackers.list` / `trackers.stats` (sum, average, streak over a period) | `read` |
-| `trackers.create` / `entries.log` / `entries.update` | `write-internal` |
-| `trackers.delete` / `entries.delete` | `destructive` |
+| Tool | Action class | Undo |
+|---|---|---|
+| `list_trackers` / `tracker_stats` / `list_entries` | `read` | – |
+| `create_tracker` | `write-internal` | Deletes the tracker while it has no entries |
+| `update_tracker` (also archives and restores) | `write-internal` | Restores the tracker |
+| `log_entry` | `write-internal` | Deletes the entry |
+| `update_entry` | `write-internal` | Restores the entry |
+| `delete_tracker` / `delete_entry` | `destructive` | – |
 
-What these tools return for `health` and `finance` trackers depends on the
-user's exposure level ([ADR 0007](../../adr/0007-sensitive-data-protection.md)):
-individual entries at `full` (the default in the user's own chat), only sums,
-averages and streaks at `aggregates` (the default in scheduled workflows).
+- Tools name a tracker by id or by name, ignoring case, so "log 72.4 in
+  weight" needs no lookup.
+- Trackers are private, so no call is `external`.
+- What these tools return for `health` and `finance` trackers depends on the
+  exposure level ([ADR 0007](../../adr/0007-sensitive-data-protection.md)):
+  `full` (the default in the user's own chat) shows single entries;
+  `aggregates` (the default in scheduled workflows) refuses `list_entries` and
+  leaves the lowest and highest entry out of `tracker_stats`, which keeps
+  sums, averages, streaks and targets. Per-user settings for the levels come
+  with the settings screens.
 
 ## Acceptance criteria (v1)
 

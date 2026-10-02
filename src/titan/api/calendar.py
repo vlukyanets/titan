@@ -175,6 +175,10 @@ class PrefsIO(BaseModel):
         le=1440,
         description="How long before its due time a task reminds its owner; null turns it off",
     )
+    daily_plan_at: time | None = Field(
+        default=time(7),
+        description="Local time the daily plan runs on working days; null turns it off",
+    )
 
     @classmethod
     def of(cls, prefs: PlanningPrefs) -> PrefsIO:
@@ -185,6 +189,7 @@ class PrefsIO(BaseModel):
             work_days=list(prefs.work_days),
             buffer_minutes=prefs.buffer_minutes,
             default_reminder_minutes=prefs.default_reminder_minutes,
+            daily_plan_at=prefs.daily_plan_at,
         )
 
 
