@@ -73,12 +73,25 @@ def _rule(value: object) -> str | None:
 
 class RemindersService:
     def __init__(
-        self, session: AsyncSession, *, notifications: NotificationsService | None = None
+        self,
+        session: AsyncSession,
+        *,
+        notifications: NotificationsService | None = None,
+        commit: bool = True,
     ) -> None:
         self.session = session
+        # Agent tools pass commit=False: their caller commits the change together
+        # with its audit entry. Firing always commits, with its notification.
+        self._commit = commit
         # Needed only to fire; built on the same session so the notification and
         # the reminder's new state commit together.
         self.notifications = notifications or NotificationsService(session)
+
+    async def _done(self) -> None:
+        if self._commit:
+            await self.session.commit()
+        else:
+            await self.session.flush()
 
     async def create(
         self,
@@ -108,7 +121,7 @@ class RemindersService:
             link_id=link_id,
         )
         self.session.add(reminder)
-        await self.session.commit()
+        await self._done()
         return reminder
 
     async def reminders(
@@ -156,7 +169,7 @@ class RemindersService:
             reminder.fire_at = reminder.occurs_at = start
             reminder.status = ReminderStatus.SCHEDULED
         reminder.updated_at = _now()
-        await self.session.commit()
+        await self._done()
         return reminder
 
     async def snooze(
@@ -192,7 +205,7 @@ class RemindersService:
             snoozed.fire_at = later
             snoozed.status = ReminderStatus.SNOOZED
             snoozed.updated_at = now
-        await self.session.commit()
+        await self._done()
         return snoozed
 
     async def dismiss(self, actor: uuid.UUID, reminder_id: uuid.UUID) -> Reminder:
@@ -201,13 +214,13 @@ class RemindersService:
         if reminder.recurrence is None:
             reminder.status = ReminderStatus.DISMISSED
             reminder.updated_at = _now()
-            await self.session.commit()
+            await self._done()
         return reminder
 
     async def delete(self, actor: uuid.UUID, reminder_id: uuid.UUID) -> None:
         reminder = await self.get(actor, reminder_id, lock=True)
         await self.session.delete(reminder)
-        await self.session.commit()
+        await self._done()
 
     # ------------------------------------------------------------- firing
 

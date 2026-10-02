@@ -280,3 +280,75 @@ async def test_the_lead_time_is_a_preference(sessions: async_sessionmaker[AsyncS
         assert await default_reminder(session, quiet.id) is None
         with pytest.raises(InvalidEventError):
             await lead(0)
+
+
+async def event_reminders(session: AsyncSession, event_id: uuid.UUID) -> dict[uuid.UUID, Reminder]:
+    found = await session.scalars(
+        select(Reminder).where(
+            Reminder.link_type == LinkType.EVENT,
+            Reminder.link_id == event_id,
+            Reminder.is_default.is_(True),
+        )
+    )
+    return {r.owner_id: r for r in found}
+
+
+async def test_events_remind_their_owner_and_attendees(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    anna = await user(sessions, "anna")
+    boris = await user(sessions, "boris")
+    soon = datetime.now(UTC).replace(microsecond=0) + timedelta(hours=2)
+    async with sessions() as session:
+        calendar = CalendarService(session)
+        await calendar.set_prefs(
+            boris,
+            time_zone="UTC",
+            work_start=time(9),
+            work_end=time(17),
+            work_days=[1, 2, 3, 4, 5],
+            buffer_minutes=10,
+            default_reminder_minutes=60,
+        )
+        dinner = await calendar.create_event(
+            anna, "Dinner", soon, soon + timedelta(hours=1), attendees=[boris]
+        )
+        found = await event_reminders(session, dinner.event.id)
+        assert {u: r.fire_at for u, r in found.items()} == {
+            anna: soon - timedelta(minutes=15),
+            boris: soon - timedelta(minutes=60),
+        }
+        kept = found[anna].id
+
+        later = soon + timedelta(hours=1)
+        await calendar.update_event(
+            anna,
+            dinner.event.id,
+            {"starts_at": later, "ends_at": later + timedelta(hours=1), "attendees": []},
+        )
+        moved = await event_reminders(session, dinner.event.id)
+        assert set(moved) == {anna}
+        assert (moved[anna].id, moved[anna].fire_at) == (kept, later - timedelta(minutes=15))
+
+        await calendar.delete_event(anna, dinner.event.id)
+        assert await event_reminders(session, dinner.event.id) == {}
+
+
+async def test_recurring_events_remind_of_their_next_occurrence(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    anna = await user(sessions, "anna")
+    # A daily series that started yesterday and whose time has passed today.
+    start = datetime.now(UTC).replace(microsecond=0) - timedelta(days=1, minutes=5)
+    async with sessions() as session:
+        calendar = CalendarService(session)
+        standup = await calendar.create_event(
+            anna, "Standup", start, start + timedelta(minutes=15), recurrence="FREQ=DAILY"
+        )
+        all_day = await calendar.create_event(
+            anna, "Holiday", start + timedelta(days=3), start + timedelta(days=4), all_day=True
+        )
+        found = await event_reminders(session, standup.event.id)
+        assert found[anna].fire_at == start + timedelta(days=2, minutes=-15)
+        assert found[anna].recurrence == "FREQ=DAILY"
+        assert await event_reminders(session, all_day.event.id) == {}

@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from titan.domains.accounts.models import User
 from titan.domains.calendar.errors import ForbiddenError, InvalidEventError, NotFoundError
 from titan.domains.calendar.models import Event, EventAttendee, EventKind, PlanningPrefs
+from titan.domains.reminders.defaults import drop_event_reminders, sync_event_reminders
 from titan.domains.tasks import errors as tasks_errors
 from titan.domains.tasks import recurrence
 from titan.domains.tasks.service import TasksService
@@ -314,6 +315,7 @@ class CalendarService:
         self.session.add(event)
         await self.session.flush()
         self.session.add_all(EventAttendee(event_id=event.id, user_id=m) for m in members)
+        await sync_event_reminders(self.session, event, members)
         await self.session.commit()
         return SharedEvent(event, members)
 
@@ -360,6 +362,7 @@ class CalendarService:
         for name, value in values.items():
             setattr(event, name, value)
         event.updated_at = _now()
+        await sync_event_reminders(self.session, event, members)
         await self.session.commit()
         return SharedEvent(event, members)
 
@@ -368,6 +371,7 @@ class CalendarService:
         if event.owner_id != actor:
             raise ForbiddenError("only the event's owner can delete it")
         await self.session.execute(delete(EventAttendee).where(EventAttendee.event_id == event.id))
+        await drop_event_reminders(self.session, event.id)
         await self.session.delete(event)
         await self.session.commit()
 

@@ -17,7 +17,8 @@ Design: [ADR 0005](../../adr/0005-per-domain-autonomy-policy.md) and
 - Action classes: `read`, `write-internal`, `external`, `destructive`.
   Decisions: `auto`, `auto-undo`, `confirm`, `deny`.
 - Domains with agent tools: `accounts`, `chat`, `notifications`, `tasks`,
-  `trackers`, `notes`, `memory`; the other domains join as they get tools.
+  `trackers`, `notes`, `memory`, `reminders`; `calendar` joins with its
+  tools.
   Policy rules can already be set for all of them.
 - A tool has an action class, which a call can raise but never lower: a write
   to an item shared with another user is `external`. The class of a call is
@@ -97,6 +98,7 @@ Design: [ADR 0005](../../adr/0005-per-domain-autonomy-policy.md) and
 | Tasks and projects | tasks | see the [tasks spec](tasks.md#agent-tools) | |
 | Trackers and entries | trackers | see the [trackers spec](trackers.md#agent-tools) | |
 | Notes and memories | notes, memory | see the [notes spec](notes-memory.md#agent-tools) | |
+| Reminders | reminders | see the [reminders spec](reminders.md#agent-tools) | |
 
 `notify_member` sends a `system` notification to another household member, so
 the default policy asks before it runs.

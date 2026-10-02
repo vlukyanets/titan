@@ -27,4 +27,5 @@ Tasks:
       grace period, the reminders sweep, the startup revision check, the
       Compose service.
 - [x] Default reminders for tasks (branch `feature/m2-default-reminders`).
-- [ ] Default reminders for events, agent tools.
+- [x] Default reminders for events, agent tools
+      (`feature/m2-reminders-agent-tools`).

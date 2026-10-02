@@ -80,6 +80,11 @@ EXAMPLES: dict[str, dict[str, Any]] = {
     "mcp__memory__remember": {"statement": "Anna is allergic to peanuts", "confidence": 0.9},
     "mcp__memory__revise_memory": {"memory_id": SOME_ID, "statement": "Anna likes tea"},
     "mcp__memory__forget": {"memory_id": SOME_ID},
+    "mcp__reminders__list_reminders": {"status": "scheduled"},
+    "mcp__reminders__create_reminder": {"text": "Take the pills", "fire_at": "2026-10-03T09:00"},
+    "mcp__reminders__update_reminder": {"reminder_id": SOME_ID, "recurrence": None},
+    "mcp__reminders__snooze_reminder": {"reminder_id": SOME_ID, "minutes": 30},
+    "mcp__reminders__delete_reminder": {"reminder_id": SOME_ID},
 }
 
 

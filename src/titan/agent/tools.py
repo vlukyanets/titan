@@ -26,6 +26,7 @@ from titan.domains.chat import tools as chat_tools
 from titan.domains.chat.service import ChatService
 from titan.domains.notes import tools as notes_tools
 from titan.domains.notifications import tools as notifications_tools
+from titan.domains.reminders import tools as reminders_tools
 from titan.domains.tasks import tools as tasks_tools
 from titan.domains.trackers import tools as trackers_tools
 from titan.notify import Pusher
@@ -41,6 +42,7 @@ REGISTRY: Mapping[str, ToolSpec] = {
         *tasks_tools.TOOLS,
         *trackers_tools.TOOLS,
         *notes_tools.TOOLS,
+        *reminders_tools.TOOLS,
     )
 }
 
