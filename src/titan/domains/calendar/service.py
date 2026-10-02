@@ -155,8 +155,17 @@ def merge(intervals: Iterable[tuple[datetime, datetime]]) -> list[tuple[datetime
 
 
 class CalendarService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, *, commit: bool = True) -> None:
         self.session = session
+        # Agent tools pass commit=False: their caller commits the change together
+        # with its audit entry.
+        self._commit = commit
+
+    async def _done(self) -> None:
+        if self._commit:
+            await self.session.commit()
+        else:
+            await self.session.flush()
 
     # ---------------------------------------------------------- prefs
 
@@ -207,7 +216,7 @@ class CalendarService:
         stored.buffer_minutes = buffer_minutes
         stored.default_reminder_minutes = default_reminder_minutes
         stored.updated_at = _now()
-        await self.session.commit()
+        await self._done()
         return stored
 
     # --------------------------------------------------------- access
@@ -316,7 +325,7 @@ class CalendarService:
         await self.session.flush()
         self.session.add_all(EventAttendee(event_id=event.id, user_id=m) for m in members)
         await sync_event_reminders(self.session, event, members)
-        await self.session.commit()
+        await self._done()
         return SharedEvent(event, members)
 
     async def get_event(self, actor: uuid.UUID, event_id: uuid.UUID) -> SharedEvent:
@@ -363,7 +372,7 @@ class CalendarService:
             setattr(event, name, value)
         event.updated_at = _now()
         await sync_event_reminders(self.session, event, members)
-        await self.session.commit()
+        await self._done()
         return SharedEvent(event, members)
 
     async def delete_event(self, actor: uuid.UUID, event_id: uuid.UUID) -> None:
@@ -373,7 +382,7 @@ class CalendarService:
         await self.session.execute(delete(EventAttendee).where(EventAttendee.event_id == event.id))
         await drop_event_reminders(self.session, event.id)
         await self.session.delete(event)
-        await self.session.commit()
+        await self._done()
 
     # ---------------------------------------------------------- views
 

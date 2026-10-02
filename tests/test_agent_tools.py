@@ -85,6 +85,18 @@ EXAMPLES: dict[str, dict[str, Any]] = {
     "mcp__reminders__update_reminder": {"reminder_id": SOME_ID, "recurrence": None},
     "mcp__reminders__snooze_reminder": {"reminder_id": SOME_ID, "minutes": 30},
     "mcp__reminders__delete_reminder": {"reminder_id": SOME_ID},
+    "mcp__calendar__list_events": {"start": "2026-10-05", "end": "2026-10-12"},
+    "mcp__calendar__free_busy": {"start": "2026-10-05"},
+    "mcp__calendar__create_event": {
+        "title": "Dentist",
+        "starts_at": "2026-10-06T15:00",
+        "ends_at": "2026-10-06T16:00",
+        "attendees": ["boris"],
+    },
+    "mcp__calendar__update_event": {"event_id": SOME_ID, "starts_at": "2026-10-06T16:00"},
+    "mcp__calendar__delete_event": {"event_id": SOME_ID},
+    "mcp__calendar__plan_day": {"date": "2026-10-05", "task_ids": [SOME_ID]},
+    "mcp__calendar__replan_block": {"event_id": SOME_ID},
 }
 
 
