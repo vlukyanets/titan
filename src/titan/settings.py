@@ -48,6 +48,14 @@ class Settings(BaseSettings):
     # Autonomy (docs/spec/domains/autonomy.md): unanswered approvals expire.
     approval_ttl_hours: float = Field(default=24.0, gt=0)
 
+    # Semantic search (ADR 0014): an OpenAI-compatible /v1/embeddings server on this
+    # node. Empty turns it off and search matches words only. The model, its
+    # prefixes and the cut-off belong together; all nodes use the same model.
+    embeddings_url: str | None = None
+    embeddings_model: str = "intfloat/multilingual-e5-base"
+    embeddings_query_prefix: str = "query: "
+    embeddings_document_prefix: str = "passage: "
+
     # Scheduler (docs/architecture/overview.md#scheduler-and-reminders).
     node_name: str = Field(default_factory=socket.gethostname, min_length=1, max_length=64)
     # The node that runs sweeps while it is up; empty means this node.
@@ -72,6 +80,14 @@ class Settings(BaseSettings):
         if isinstance(value, list | tuple):
             return tuple(origin_of(str(item)) for item in value)
         return value
+
+    @field_validator("embeddings_url")
+    @classmethod
+    def _embeddings_url(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        origin_of(value)  # a plain http(s) URL with a host
+        return value.strip()
 
     def check_bind(self) -> None:
         if ipaddress.ip_address(self.bind_host).is_unspecified and not self.allow_wildcard_bind:

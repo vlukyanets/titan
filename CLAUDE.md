@@ -82,7 +82,7 @@ The stack is fixed by the ADRs. Update this section when the commands change.
 - Docker Compose for local runs: copy `.env.example` to `.env`, then
   `docker compose up -d`. Nodes communicate over Tailscale only.
 - `uv run titan-worker`: the scheduler loop that fires due reminders, replans
-  missed time blocks and runs the daily plan
+  missed time blocks, runs the daily plan and embeds notes and memories
   ([scheduler](docs/architecture/overview.md#scheduler-and-reminders)).
 - `uv run titan login|chat|approvals …`: the client commands, which talk to a
   node's HTTP API with a saved device token ([CLI spec](docs/spec/cli.md)).

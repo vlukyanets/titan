@@ -6,12 +6,14 @@ import enum
 import uuid
 from datetime import datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
     Uuid,
@@ -76,3 +78,32 @@ class Memory(Base):
     last_confirmed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class Embedding(Base):
+    """One chunk's vector of a note or a memory, from one model (ADR 0014).
+
+    Derived data: the worker's indexing sweep is the only writer, and the rows go
+    with their note or memory.
+    """
+
+    __tablename__ = "embeddings"
+    __table_args__ = (
+        CheckConstraint("(note_id IS NULL) <> (memory_id IS NULL)", name="one_item"),
+        Index("ix_embeddings_note_id_model_chunk", "note_id", "model", "chunk_index", unique=True),
+        Index(
+            "ix_embeddings_memory_id_model_chunk", "memory_id", "model", "chunk_index", unique=True
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid7)
+    note_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("notes.id", ondelete="CASCADE"))
+    memory_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("memories.id", ondelete="CASCADE")
+    )
+    chunk_index: Mapped[int] = mapped_column(Integer)
+    model: Mapped[str] = mapped_column(String(200))
+    # md5 of the whole item's text when it was embedded; a change re-embeds it.
+    content_hash: Mapped[str] = mapped_column(String(32))
+    # No dimension: it depends on the model, and changing the model is a setting.
+    vector: Mapped[list[float]] = mapped_column(Vector())

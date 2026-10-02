@@ -56,7 +56,7 @@ connection ([ADR 0013](../adr/0013-one-cluster-address.md)).
 |---|---|
 | `titan-api` | FastAPI app: REST + SSE/WebSocket API, auth (accounts, device tokens, browser sessions), domain services, OpenAPI schema, and the static files of the Web UI |
 | `titan-worker` | Runs the scheduler: reminder firing, push retries, the daily plan and replanning of missed time blocks; later chat turns too |
-| `embeddings` | Local embedding model behind a small HTTP API. Separate container so it can be sized, moved to the strongest node or swapped for another model |
+| `embeddings` | Local embedding model for semantic search: Hugging Face Text Embeddings Inference with the model from `TITAN_EMBEDDINGS_MODEL`, behind its OpenAI-compatible `/v1/embeddings` ([ADR 0014](../adr/0014-embeddings-from-a-local-server.md)). Separate container so it can be sized, moved to the strongest node or swapped for another model |
 | `db` | PostgreSQL with pgEdge Spock (asynchronous multi-master replication) and pgvector, from a pinned pgEdge image ([ADR 0006](../adr/0006-replicated-database-with-vectors.md)) |
 | `ntfy` | UnifiedPush server for the phones. Push messages carry only notification ids ([ADR 0008](../adr/0008-push-messages-carry-references.md)) |
 
@@ -228,8 +228,14 @@ jobs run **at least once** and every effect is **idempotent**
   Every few seconds (`TITAN_SCHEDULER_TICK_SECONDS`, default 5) it tries to hold
   the lease of each sweep, and the holder does the sweep's work. The sweeps
   fire due reminders, retry pushes that no device accepted, move time blocks
-  that ended with their task still open, and start the daily plans that are
-  due.
+  that ended with their task still open, start the daily plans that are due,
+  and embed notes and memories that are new or changed (only when
+  `TITAN_EMBEDDINGS_URL` is set).
+- Embedding is derived data: vectors carry their model and the hash of the
+  text they were computed from, so the sweep finds stale ones by comparing
+  hashes, and replication brings the vectors to the other nodes. When the
+  model changes, the sweep embeds everything again and then deletes the old
+  model's vectors.
 - A lease is a row in `scheduler_leases` with its holder and expiry
   (`TITAN_SCHEDULER_LEASE_SECONDS`, default 30). The holder renews it on every
   tick.

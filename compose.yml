@@ -29,6 +29,11 @@ services:
     command: ["titan", "migrate"]
     environment: &app-env
       TITAN_DATABASE_URL: postgresql+psycopg://titan:${TITAN_DB_PASSWORD}@db:5432/titan
+      # Semantic search (ADR 0014). An empty TITAN_EMBEDDINGS_URL turns it off.
+      TITAN_EMBEDDINGS_URL: ${TITAN_EMBEDDINGS_URL-http://embeddings}
+      TITAN_EMBEDDINGS_MODEL: ${TITAN_EMBEDDINGS_MODEL:-intfloat/multilingual-e5-base}
+      TITAN_EMBEDDINGS_QUERY_PREFIX: "${TITAN_EMBEDDINGS_QUERY_PREFIX-query: }"
+      TITAN_EMBEDDINGS_DOCUMENT_PREFIX: "${TITAN_EMBEDDINGS_DOCUMENT_PREFIX-passage: }"
     depends_on:
       db: {condition: service_healthy}
     restart: "no"
@@ -87,6 +92,20 @@ services:
       migrate: {condition: service_completed_successfully}
     restart: unless-stopped
 
+  embeddings:
+    # Local embedding model for semantic search (ADR 0014). Texts never leave the
+    # node; the weights are downloaded once into the volume. No ports: only the
+    # api and the worker call it, and they fall back to word search while it is
+    # down or still loading.
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4
+    command:
+      - --model-id=${TITAN_EMBEDDINGS_MODEL:-intfloat/multilingual-e5-base}
+      - --revision=${TITAN_EMBEDDINGS_REVISION:-d128750597153bb5987e10b1c3493a34e5a4502a}
+      - --auto-truncate
+    volumes:
+      - embeddings-models:/data
+    restart: unless-stopped
+
   ntfy:
     # UnifiedPush server for the phones' ntfy app (ADR 0008). Messages carry only
     # notification ids, so its cache holds no user content.
@@ -109,4 +128,5 @@ services:
 
 volumes:
   db-data: {}
+  embeddings-models: {}
   ntfy-cache: {}
