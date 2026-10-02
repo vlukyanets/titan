@@ -25,4 +25,4 @@ Tasks:
 - [ ] Embedding model: shortlist, benchmark on a node, ADR.
 - [ ] The `embeddings` image and its Compose service.
 - [ ] Embeddings and semantic search.
-- [ ] Agent tools: `notes.*` and `memory.*`.
+- [x] Agent tools for notes and memory (`feature/m2-notes-agent-tools`).

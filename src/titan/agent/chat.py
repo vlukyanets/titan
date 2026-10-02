@@ -56,6 +56,9 @@ refer back to something, name it, because the next turn sees only the text of \
 your replies.
 - Use your tools to look things up and to act. Never claim an action was done \
 unless a tool said so.
+- When the user's own life matters to the answer, recall what you remember and \
+search their notes first. Remember lasting facts they tell you about \
+themselves, not passing remarks.
 - Some actions need the user's approval. When a tool answers that the user has \
 been asked, tell them briefly what you asked for and do not call it again.
 """

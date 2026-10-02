@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import delete, select
 
-from titan.domains.accounts.models import User
+from titan.domains.accounts.tools import member_ids, member_names
 from titan.domains.autonomy.errors import UndoConflictError
 from titan.domains.autonomy.models import ActionClass
 from titan.domains.autonomy.tools import (
@@ -77,34 +77,11 @@ def _when(value: object, zone: ZoneInfo) -> datetime | None:
 
 
 async def _user_ids(context: ToolContext, usernames: Iterable[object]) -> list[uuid.UUID]:
-    wanted = [str(u).strip().lower() for u in usernames]
-    found = dict(
-        (
-            await context.session.execute(
-                select(User.username, User.id).where(
-                    User.username.in_(wanted), User.disabled_at.is_(None)
-                )
-            )
-        )
-        .tuples()
-        .all()
-    )
-    missing = [u for u in wanted if u not in found]
-    if missing:
-        raise InvalidTaskError(f"there is no household member called {missing[0]}")
-    return [found[u] for u in wanted]
+    return await member_ids(context.session, usernames, InvalidTaskError)
 
 
 async def _usernames(context: ToolContext, ids: Iterable[uuid.UUID]) -> list[str]:
-    ids = list(ids)
-    if not ids:
-        return []
-    names = dict(
-        (await context.session.execute(select(User.id, User.username).where(User.id.in_(ids))))
-        .tuples()
-        .all()
-    )
-    return [names.get(i, "?") for i in ids]
+    return await member_names(context.session, ids)
 
 
 def _guard(run: RunFn) -> RunFn:

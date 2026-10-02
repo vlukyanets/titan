@@ -71,6 +71,15 @@ EXAMPLES: dict[str, dict[str, Any]] = {
     "mcp__trackers__log_entry": {"tracker": "Expenses", "value": "23.40", "category": "groceries"},
     "mcp__trackers__update_entry": {"tracker": "Weight", "entry_id": SOME_ID, "value": 72.4},
     "mcp__trackers__delete_entry": {"tracker": "Weight", "entry_id": SOME_ID},
+    "mcp__notes__search_notes": {"text": "молок", "shared": "mine"},
+    "mcp__notes__get_note": {"note_id": SOME_ID},
+    "mcp__notes__create_note": {"title": "Recipes", "body": "# Soup", "tags": ["food"]},
+    "mcp__notes__update_note": {"note_id": SOME_ID, "shared_with": ["boris"]},
+    "mcp__notes__delete_note": {"note_id": SOME_ID},
+    "mcp__memory__recall": {"text": "allergic"},
+    "mcp__memory__remember": {"statement": "Anna is allergic to peanuts", "confidence": 0.9},
+    "mcp__memory__revise_memory": {"memory_id": SOME_ID, "statement": "Anna likes tea"},
+    "mcp__memory__forget": {"memory_id": SOME_ID},
 }
 
 

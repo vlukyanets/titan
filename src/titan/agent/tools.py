@@ -24,6 +24,7 @@ from titan.domains.autonomy.service import ApprovalsService, AuditService, Polic
 from titan.domains.autonomy.tools import Exposure, ToolContext, ToolResult, ToolSpec
 from titan.domains.chat import tools as chat_tools
 from titan.domains.chat.service import ChatService
+from titan.domains.notes import tools as notes_tools
 from titan.domains.notifications import tools as notifications_tools
 from titan.domains.tasks import tools as tasks_tools
 from titan.domains.trackers import tools as trackers_tools
@@ -39,6 +40,7 @@ REGISTRY: Mapping[str, ToolSpec] = {
         *notifications_tools.TOOLS,
         *tasks_tools.TOOLS,
         *trackers_tools.TOOLS,
+        *notes_tools.TOOLS,
     )
 }
 
