@@ -45,12 +45,12 @@ confirm-class action. Met on 2026-10-02 with the CLI against a live node in
 
 ## M2: Thin domains
 
-- [ ] Tasks and projects ([plan](plans/m2-tasks-projects.md)).
-- [ ] Calendar and planner (daily plan, replanning) ([plan](plans/m2-calendar.md)).
+- [x] Tasks and projects ([plan](plans/m2-tasks-projects.md)).
+- [x] Calendar and planner (daily plan, replanning) ([plan](plans/m2-calendar.md)).
 - [ ] Notes, memory and semantic search, with the embedding model and the
       `embeddings` image ([plan](plans/m2-notes.md)).
 - [ ] Trackers (habits, health, finance templates) ([plan](plans/m2-trackers.md)).
-- [ ] Reminders with exactly-once firing ([plan](plans/m2-reminders.md)).
+- [x] Reminders with exactly-once firing ([plan](plans/m2-reminders.md)).
 
 Exit: every acceptance criterion in `docs/spec/domains/` passes on one node.
 
@@ -76,7 +76,7 @@ loss, and a reminder fires exactly once.
 
 ## M4: Hardening
 
-- [ ] Monthly budget caps with warnings and fallback to the fast model tier
+- [x] Monthly budget caps with warnings and fallback to the fast model tier
       ([plan](plans/m4-budget-caps.md)).
 - [ ] Prompt caching tuned per workflow.
 - [ ] Backups and a tested restore.
