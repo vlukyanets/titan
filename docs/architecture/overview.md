@@ -132,8 +132,10 @@ TITAN combines two frameworks ([ADR 0002](../adr/0002-langgraph-with-agent-sdk-n
   `ToolSpec`s in its own `tools.py` (action class, JSON schema, summary, undo);
   `titan.agent.tools` collects them and is the one path that runs them.
   Built-in Claude Code tools such as shell and file access are disabled.
-- **Policy gate**: a `PreToolUse` hook looks up the tool's action class and the
-  user's policy. It allows the call, denies it, or denies it and stores an
+- **Policy gate**: a `PreToolUse` hook looks up the call's action class and the
+  user's policy. A tool may raise its class for one call, such as a write to a
+  shared item, and the wrapper checks the policy again in the transaction that
+  runs the call. It allows the call, denies it, or denies it and stores an
   approval request with the exact input. On approval TITAN runs the stored call
   itself, without the model, and posts the result to the thread
   ([ADR 0010](../adr/0010-approved-calls-run-outside-the-session.md)).

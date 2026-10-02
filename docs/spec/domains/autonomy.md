@@ -16,9 +16,14 @@ Design: [ADR 0005](../../adr/0005-per-domain-autonomy-policy.md) and
 
 - Action classes: `read`, `write-internal`, `external`, `destructive`.
   Decisions: `auto`, `auto-undo`, `confirm`, `deny`.
-- Domains with agent tools: `accounts`, `chat`, `notifications`; the other
-  domains join as they get tools. Policy rules can already be set for all of
-  them.
+- Domains with agent tools: `accounts`, `chat`, `notifications`, `tasks`;
+  the other domains join as they get tools. Policy rules can already be set
+  for all of them.
+- A tool has an action class, which a call can raise but never lower: a write
+  to an item shared with another user is `external`. The class of a call is
+  decided from the item's state, by the hook and again in the transaction that
+  runs the call; if it has risen in between, the call is refused. Approvals
+  and audit entries record the class of the call.
 
 ## Policy
 
@@ -36,7 +41,8 @@ Design: [ADR 0005](../../adr/0005-per-domain-autonomy-policy.md) and
 ## Approvals
 
 - An approval request stores the exact tool input and a one-line summary for
-  people, such as "Send Boris a notification: Buy milk". It is shown in the
+  people, such as "Send Boris a notification: Buy milk" or "Complete the task
+  “Buy tiles”", which names the item as it is when the request is made. It is shown in the
   chat stream as an `approval` event and sent as an `approval` notification
   whose data holds the approval id.
 - The agent is told that the user was asked and that the action runs once they
@@ -81,13 +87,14 @@ Design: [ADR 0005](../../adr/0005-per-domain-autonomy-policy.md) and
 | `GET /api/v1/audit` | The caller's audit log, newest first |
 | `POST /api/v1/audit/{id}/undo` | Undo one entry |
 
-## Agent tools in M1
+## Agent tools
 
 | Tool | Domain | Action class | Undo |
 |---|---|---|---|
 | `list_members` | accounts | `read` | – |
 | `rename_thread` | chat | `write-internal` | Restores the old title |
 | `notify_member` | notifications | `external` | – |
+| Tasks and projects | tasks | see the [tasks spec](tasks.md#agent-tools) | |
 
 `notify_member` sends a `system` notification to another household member, so
 the default policy asks before it runs.

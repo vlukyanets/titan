@@ -61,18 +61,25 @@ def policy_hook(
         tool_input: dict[str, Any] = dict(raw_input) if isinstance(raw_input, dict) else {}
         try:
             async with scope.sessions() as session:
+                tool_context = scope.context(session)
+                action_class = await spec.action_class_for(tool_context, tool_input)
                 decision = await PolicyService(session).decide(
-                    scope.user_id, spec.domain, spec.action_class
+                    scope.user_id, spec.domain, action_class
                 )
                 if decision in (Decision.AUTO, Decision.AUTO_UNDO):
                     return allow()
                 if decision is Decision.DENY:
                     return deny(
-                        f"The user's policy does not allow {spec.action_class.value} actions "
+                        f"The user's policy does not allow {action_class.value} actions "
                         f"in {spec.domain}. Do not try again; tell the user."
                     )
                 approval = await ApprovalsService(session, ttl=approval_ttl).request(
-                    scope.user_id, spec, tool_input, thread_id=scope.thread_id
+                    scope.user_id,
+                    spec,
+                    tool_input,
+                    thread_id=scope.thread_id,
+                    action_class=action_class,
+                    summary=await spec.summary_for(tool_context, tool_input),
                 )
                 await NotificationsService(
                     session, pusher=scope.pusher, push_origins=scope.push_origins

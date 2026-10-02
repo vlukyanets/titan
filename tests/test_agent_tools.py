@@ -38,10 +38,27 @@ RENAME = "mcp__chat__rename_thread"
 NOTIFY = "mcp__notifications__notify_member"
 MEMBERS = "mcp__accounts__list_members"
 
+SOME_ID = "0199a000-0000-7000-8000-000000000000"
+
 EXAMPLES: dict[str, dict[str, Any]] = {
     RENAME: {"title": "Weekend trip"},
     NOTIFY: {"username": "boris", "message": "Buy milk"},
     MEMBERS: {},
+    "mcp__tasks__list_tasks": {"status": ["todo"], "due_before": "2026-10-09T00:00"},
+    "mcp__tasks__get_task": {"task_id": SOME_ID},
+    "mcp__tasks__create_task": {
+        "title": "Renew the passport",
+        "due_at": "2026-11-02T09:00",
+        "priority": 2,
+        "tags": ["documents"],
+    },
+    "mcp__tasks__update_task": {"task_id": SOME_ID, "due_at": None, "status": "doing"},
+    "mcp__tasks__complete_task": {"task_id": SOME_ID},
+    "mcp__tasks__delete_task": {"task_id": SOME_ID},
+    "mcp__tasks__list_projects": {"status": "active"},
+    "mcp__tasks__create_project": {"title": "Kitchen", "shared_with": ["boris"]},
+    "mcp__tasks__update_project": {"project_id": SOME_ID, "status": "archived"},
+    "mcp__tasks__delete_project": {"project_id": SOME_ID},
 }
 
 

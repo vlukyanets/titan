@@ -25,13 +25,19 @@ from titan.domains.autonomy.tools import ToolContext, ToolResult, ToolSpec
 from titan.domains.chat import tools as chat_tools
 from titan.domains.chat.service import ChatService
 from titan.domains.notifications import tools as notifications_tools
+from titan.domains.tasks import tools as tasks_tools
 from titan.notify import Pusher
 
 log = logging.getLogger(__name__)
 
 REGISTRY: Mapping[str, ToolSpec] = {
     spec.qualified_name: spec
-    for spec in (*accounts_tools.TOOLS, *chat_tools.TOOLS, *notifications_tools.TOOLS)
+    for spec in (
+        *accounts_tools.TOOLS,
+        *chat_tools.TOOLS,
+        *notifications_tools.TOOLS,
+        *tasks_tools.TOOLS,
+    )
 }
 
 
@@ -60,19 +66,45 @@ async def execute(
     scope: ToolScope,
     tool_input: dict[str, Any],
     *,
-    decision: Decision,
+    decision: Decision | None = None,
     approval_id: uuid.UUID | None = None,
 ) -> Execution:
-    """Run one call and record it. Never raises for a failing tool."""
+    """Run one call and record it. Never raises for a failing tool.
+
+    A call from the model passes no `decision`: the policy is checked again for
+    the class of this very call, in the transaction that runs it, so a write the
+    hook allowed cannot reach an item that became shared in between. An approved
+    call passes `Decision.CONFIRM`.
+    """
     try:
         jsonschema.validate(tool_input, spec.input_schema)
     except jsonschema.ValidationError as exc:
         return Execution(ToolResult(f"Invalid input: {exc.message}", is_error=True))
     async with scope.sessions() as session:
+        context = scope.context(session)
         try:
-            result = await spec.run(scope.context(session), tool_input)
+            action_class = await spec.action_class_for(context, tool_input)
+            if decision is None:
+                decision = await PolicyService(session).decide(
+                    scope.user_id, spec.domain, action_class
+                )
+                if decision in (Decision.CONFIRM, Decision.DENY):
+                    # The PreToolUse hook decides; this only refuses what it should
+                    # have stopped, or what changed class since it looked.
+                    log.warning("tool %s refused after the policy hook", spec.qualified_name)
+                    return Execution(
+                        ToolResult(
+                            "This action is not allowed without the user's approval.",
+                            is_error=True,
+                        )
+                    )
+            # Described before the change, while the item still has its old state.
+            summary = None
+            if action_class is not ActionClass.READ:
+                summary = await spec.summary_for(context, tool_input)
+            result = await spec.run(context, tool_input)
             entry = None
-            if not result.is_error and spec.action_class is not ActionClass.READ:
+            if not result.is_error and action_class is not ActionClass.READ:
                 entry = AuditService(session).record(
                     scope.user_id,
                     spec,
@@ -80,6 +112,8 @@ async def execute(
                     decision,
                     result.change,
                     approval_id=approval_id,
+                    action_class=action_class,
+                    summary=summary,
                 )
             if result.is_error:
                 await session.rollback()
@@ -97,19 +131,8 @@ def _handler(
     spec: ToolSpec, scope: ToolScope
 ) -> Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]:
     async def handle(args: dict[str, Any]) -> dict[str, Any]:
-        async with scope.sessions() as session:
-            decision = await PolicyService(session).decide(
-                scope.user_id, spec.domain, spec.action_class
-            )
-        # The PreToolUse hook decides; this only refuses what it should have
-        # stopped, in case a call ever reaches a tool without it.
-        if decision in (Decision.CONFIRM, Decision.DENY):
-            log.error("tool %s reached without the policy hook", spec.qualified_name)
-            text, is_error = "This action is not allowed without the user's approval.", True
-        else:
-            execution = await execute(spec, scope, args, decision=decision)
-            text, is_error = execution.result.text, execution.result.is_error
-        return {"content": [{"type": "text", "text": text}], "is_error": is_error}
+        result = (await execute(spec, scope, args)).result
+        return {"content": [{"type": "text", "text": result.text}], "is_error": result.is_error}
 
     return handle
 

@@ -68,13 +68,27 @@ field.
 
 ## Agent tools
 
-| Tool | Action class |
-|---|---|
-| `tasks.list` / `tasks.search` / `tasks.get` | `read` |
-| `tasks.create` / `tasks.update` / `tasks.complete` | `write-internal` |
-| `projects.create` / `projects.update` / `projects.archive` | `write-internal` |
-| `tasks.delete` / `projects.delete` | `destructive` |
-| Any write to an item shared with another user | `external` |
+| Tool | Action class | Undo |
+|---|---|---|
+| `list_tasks` / `get_task` / `list_projects` | `read` | – |
+| `create_task` | `write-internal` | Deletes the task |
+| `update_task` / `complete_task` | `write-internal` | Restores the task; a completion also removes the next occurrence it created |
+| `create_project` | `write-internal` | Deletes the project while it has no tasks |
+| `update_project` (also archives and shares) | `write-internal` | Restores title, description, status and members |
+| `delete_task` / `delete_project` | `destructive` | – |
+| Any write to an item shared with another user | `external` | As above |
+
+- An item is shared when it is, or belongs to, a project with members, or when
+  its owner is someone else. Creating or changing a project so that it has
+  members counts too. The class is decided for each call from the item's
+  state when it runs, so the default policy asks before the agent changes
+  what others see.
+- Without a status filter `list_tasks` shows open tasks (`todo`, `doing`).
+- Times are given and shown in the user's time zone; a time without an offset
+  is read in that zone.
+- Members are named by username, as `list_members` shows them.
+- Undo restores the before state only while the item still has the state the
+  call left, and answers `409` otherwise.
 
 ## Acceptance criteria (v1)
 
