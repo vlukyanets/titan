@@ -14,7 +14,7 @@ from titan.embeddings import BATCH, EmbeddingsError, HttpEmbedder, from_settings
 from titan.settings import Settings
 
 URL = "postgresql+psycopg://user:pw@db/titan"
-MODEL = "intfloat/multilingual-e5-base"
+MODEL = "Snowflake/snowflake-arctic-embed-m-v2.0"
 
 
 def server(model: str = MODEL, status: int = 200) -> tuple[httpx.AsyncClient, list[dict[str, Any]]]:

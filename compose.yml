@@ -31,10 +31,10 @@ services:
       TITAN_DATABASE_URL: postgresql+psycopg://titan:${TITAN_DB_PASSWORD}@db:5432/titan
       # Semantic search (ADR 0014). An empty TITAN_EMBEDDINGS_URL turns it off.
       TITAN_EMBEDDINGS_URL: ${TITAN_EMBEDDINGS_URL-http://embeddings}
-      TITAN_EMBEDDINGS_MODEL: ${TITAN_EMBEDDINGS_MODEL:-intfloat/multilingual-e5-base}
+      TITAN_EMBEDDINGS_MODEL: ${TITAN_EMBEDDINGS_MODEL:-Snowflake/snowflake-arctic-embed-m-v2.0}
       TITAN_EMBEDDINGS_QUERY_PREFIX: "${TITAN_EMBEDDINGS_QUERY_PREFIX-query: }"
-      TITAN_EMBEDDINGS_DOCUMENT_PREFIX: "${TITAN_EMBEDDINGS_DOCUMENT_PREFIX-passage: }"
-      TITAN_EMBEDDINGS_MAX_DISTANCE: ${TITAN_EMBEDDINGS_MAX_DISTANCE:-0.2}
+      TITAN_EMBEDDINGS_DOCUMENT_PREFIX: "${TITAN_EMBEDDINGS_DOCUMENT_PREFIX-}"
+      TITAN_EMBEDDINGS_MAX_DISTANCE: ${TITAN_EMBEDDINGS_MAX_DISTANCE:-0.8}
     depends_on:
       db: {condition: service_healthy}
     restart: "no"
@@ -100,9 +100,12 @@ services:
     # down or still loading.
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4
     command:
-      - --model-id=${TITAN_EMBEDDINGS_MODEL:-intfloat/multilingual-e5-base}
-      - --revision=${TITAN_EMBEDDINGS_REVISION:-d128750597153bb5987e10b1c3493a34e5a4502a}
+      - --model-id=${TITAN_EMBEDDINGS_MODEL:-Snowflake/snowflake-arctic-embed-m-v2.0}
+      - --revision=${TITAN_EMBEDDINGS_REVISION:-95c2741480856aa9666782eb4afe11959938017f}
       - --auto-truncate
+      # Caps the input and the warm-up batch: at their full 8192-token context
+      # the larger models run out of memory while warming up on a node.
+      - --max-batch-tokens=2048
     volumes:
       - embeddings-models:/data
     restart: unless-stopped
