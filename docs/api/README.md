@@ -27,6 +27,12 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   platform); a missing, unknown or revoked token answers `401` with
   `WWW-Authenticate: Bearer`. Flows and rules:
   [accounts and devices](../spec/accounts.md).
+- Browsers instead sign in with `POST /api/v1/session` and send the
+  `__Host-TSID` cookie it sets; the bearer header wins when both are sent. A
+  cookie-authenticated request other than `GET`, `HEAD` or `OPTIONS`, and the
+  sign-in itself, must send `X-Titan-Request: 1`, and an `Origin`, if any, of
+  the node's own host, or it answers `403`
+  ([ADR 0012](../adr/0012-browser-sessions-for-the-web-ui.md)).
 - Timestamps are RFC 3339 in UTC. Recurrence rules are RFC 5545 RRULE strings.
 - Every API response carries `Cache-Control: no-store` and the security
   headers listed in the
@@ -36,8 +42,8 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
 - Errors use RFC 9457 problem details (`application/problem+json`). Validation
   errors list the failing fields but never echo submitted values.
 - `GET /api/v1/health` (process is up) and `GET /api/v1/health/ready` (database
-  reachable, current Alembic revision) and `POST /api/v1/devices/pair` are the
-  only unauthenticated endpoints.
+  reachable, current Alembic revision), `POST /api/v1/devices/pair` and
+  `POST /api/v1/session` are the only unauthenticated endpoints.
   Container health checks use them.
 - Push: a device registers its UnifiedPush endpoint with
   `PUT /api/v1/devices/current/push`. A push message is only
