@@ -27,6 +27,9 @@ MAX_FAILED_LOGINS = 10
 LOCKOUT = timedelta(minutes=15)
 # Coarse on purpose: every write replicates to all nodes (ADR 0006).
 LAST_SEEN_RESOLUTION = timedelta(hours=1)
+# Browser sessions (ADR 0012): unused this long, or this old, they expire.
+WEB_IDLE = timedelta(days=30)
+WEB_LIFETIME = timedelta(days=90)
 
 
 @dataclass(frozen=True)
@@ -41,6 +44,13 @@ class Principal:
     @property
     def is_owner(self) -> bool:
         return self.role is Role.OWNER
+
+
+@dataclass(frozen=True)
+class Resolved:
+    principal: Principal
+    # True when this request moved last_seen_at, so a browser's cookie is renewed.
+    seen: bool
 
 
 @dataclass(frozen=True)
@@ -149,8 +159,17 @@ class AccountsService:
         await self.session.commit()
         return PairedDevice(device=device, user=user, token=token)
 
+    async def sign_in(self, username: str, password: str, *, name: str) -> PairedDevice:
+        """A browser sign-in: a new `web` device whose token goes into a cookie."""
+        return await self.pair_device(username, password, name=name, platform=Platform.WEB)
+
     async def resolve_token(self, token: str) -> Principal | None:
         """Return the caller behind a device token, or None if it is not valid."""
+        resolved = await self.resolve(token)
+        return None if resolved is None else resolved.principal
+
+    async def resolve(self, token: str, *, platform: Platform | None = None) -> Resolved | None:
+        """Like resolve_token; `platform` accepts only devices of that platform."""
         if not token.startswith(credentials.TOKEN_PREFIX):
             return None
         row = (
@@ -165,13 +184,24 @@ class AccountsService:
         device, user = row
         if device.revoked_at is not None or user.disabled_at is not None:
             return None
+        if platform is not None and device.platform is not platform:
+            return None
         now = _now()
-        if device.last_seen_at is None or now - device.last_seen_at >= LAST_SEEN_RESOLUTION:
+        if device.platform is Platform.WEB and (
+            now - (device.last_seen_at or device.created_at) > WEB_IDLE
+            or now - device.created_at > WEB_LIFETIME
+        ):
+            device.revoked_at = now
+            await self.session.commit()
+            return None
+        seen = device.last_seen_at is None or now - device.last_seen_at >= LAST_SEEN_RESOLUTION
+        if seen:
             device.last_seen_at = now
             await self.session.commit()
-        return Principal(
+        principal = Principal(
             user_id=user.id, username=user.username, role=user.role, device_id=device.id
         )
+        return Resolved(principal, seen)
 
     # ---------------------------------------------------------------- devices
 

@@ -21,6 +21,7 @@ from titan.api import (
     problems,
     reminders,
     security,
+    session,
     tasks,
     trackers,
     usage,
@@ -67,6 +68,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.sessions = sessions
     app.state.pusher = UnifiedPushSender(push_client)
     app.state.embedder = embedder
+    app.state.sign_in_limiter = session.SignInLimiter()
     app.state.chat_runtime = ChatRuntime(
         settings, sessions, pusher=app.state.pusher, embedder=embedder
     )
@@ -74,6 +76,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     problems.install(app)
     app.include_router(health.router, prefix=API_PREFIX)
     app.include_router(accounts.router, prefix=API_PREFIX)
+    app.include_router(session.router, prefix=API_PREFIX)
     app.include_router(notifications.router, prefix=API_PREFIX)
     app.include_router(chat.router, prefix=API_PREFIX)
     app.include_router(autonomy.router, prefix=API_PREFIX)

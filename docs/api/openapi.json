@@ -129,6 +129,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -165,6 +168,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -180,6 +186,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -261,6 +270,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       },
@@ -323,6 +335,101 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/session": {
+      "post": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "Sign a browser in",
+        "description": "Creates a `web` device and sets its token in the `__Host-TSID` cookie; the token is never in the body. Needs the `X-Titan-Request: 1` header.",
+        "operationId": "sign_in_api_v1_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials or locked account",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "Cross-site request",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "429": {
+            "description": "Too many sign-in attempts from this address",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "Sign out: revoke the calling device and clear the cookie",
+        "operationId": "sign_out_api_v1_session_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -365,6 +472,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       },
@@ -388,6 +498,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -403,6 +516,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -512,6 +628,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -545,6 +664,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -559,6 +681,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -619,6 +744,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -679,6 +807,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "requestBody": {
@@ -733,6 +864,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -818,6 +952,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -876,6 +1013,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -930,6 +1070,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1024,6 +1167,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1177,6 +1323,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -1191,6 +1340,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1249,6 +1401,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1299,6 +1454,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1363,6 +1521,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1420,6 +1581,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1511,6 +1675,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1572,6 +1739,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1638,6 +1808,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1705,6 +1878,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1785,6 +1961,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1851,6 +2030,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1912,6 +2094,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2001,6 +2186,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -2043,6 +2231,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -2057,6 +2248,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2129,6 +2323,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2191,6 +2388,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "requestBody": {
@@ -2239,6 +2439,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2297,6 +2500,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2367,6 +2573,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2427,6 +2636,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2603,6 +2815,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "requestBody": {
@@ -2657,6 +2872,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2715,6 +2933,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2779,6 +3000,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2838,6 +3062,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2905,6 +3132,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -2994,6 +3224,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "requestBody": {
@@ -3042,6 +3275,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3100,6 +3336,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3164,6 +3403,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3218,6 +3460,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3297,6 +3542,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3358,6 +3606,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3424,6 +3675,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "requestBody": {
@@ -3472,6 +3726,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3530,6 +3787,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3600,6 +3860,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3659,6 +3922,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3745,6 +4011,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       },
@@ -3791,6 +4060,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -3823,6 +4095,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       },
@@ -3869,6 +4144,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -3905,6 +4183,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ]
       }
@@ -3919,6 +4200,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -3993,6 +4277,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "requestBody": {
@@ -4047,6 +4334,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4105,6 +4395,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4175,6 +4468,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4229,6 +4525,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4373,6 +4672,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4445,6 +4747,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4519,6 +4824,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4583,6 +4891,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4696,6 +5007,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4823,6 +5137,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "requestBody": {
@@ -4871,6 +5188,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4929,6 +5249,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -4999,6 +5322,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -5059,6 +5385,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -5152,6 +5481,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "requestBody": {
@@ -5200,6 +5532,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -5264,6 +5599,9 @@
         "security": [
           {
             "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -8001,6 +8339,44 @@
         ],
         "title": "Role"
       },
+      "SessionOut": {
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Device Id"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_id",
+          "user"
+        ],
+        "title": "SessionOut"
+      },
+      "SignInRequest": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 1024,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "SignInRequest"
+      },
       "Snooze": {
         "properties": {
           "minutes": {
@@ -9160,6 +9536,12 @@
         "type": "http",
         "description": "Device token from POST /devices/pair",
         "scheme": "bearer"
+      },
+      "APIKeyCookie": {
+        "type": "apiKey",
+        "description": "Set by POST /session; browsers only",
+        "in": "cookie",
+        "name": "__Host-TSID"
       }
     }
   }

@@ -38,6 +38,11 @@ not pair: its sign-in form sends username and password to
 `POST /api/v1/session`, which creates a `web` device and puts its token in an
 `HttpOnly` cookie that page scripts cannot read. Signing out revokes the
 device. A `web` device unused for 30 days, or 90 days after sign-in, expires.
+Requests that change something, and the sign-in itself, must carry the header
+`X-Titan-Request: 1` and come from the node's own origin, so another site
+cannot make the browser act. Sign-in attempts are limited per client address,
+and every browser sign-in sends the user a "New sign-in" notification naming
+the browser and the node.
 The UI is opened at the cluster address, so one sign-in works on every node
 ([ADR 0013](../adr/0013-one-cluster-address.md)).
 
