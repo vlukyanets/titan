@@ -43,16 +43,22 @@ Exit: an Android or CLI client can pair, chat with streaming, and approve a
 confirm-class action. Met on 2026-10-02 with the CLI against a live node in
 `oauth` mode.
 
-## M2: Thin domains
+## M2: Thin domains (done)
 
-- [x] Tasks and projects ([plan](plans/m2-tasks-projects.md)).
-- [x] Calendar and planner (daily plan, replanning) ([plan](plans/m2-calendar.md)).
+- [x] Tasks and projects.
+- [x] Calendar and planner (daily plan, replanning).
 - [x] Notes, memory and semantic search, with the embedding model and the
-      `embeddings` image ([plan](plans/m2-notes.md)).
-- [x] Trackers (habits, health, finance templates) ([plan](plans/m2-trackers.md)).
-- [x] Reminders with exactly-once firing ([plan](plans/m2-reminders.md)).
+      `embeddings` image.
+- [x] Trackers (habits, health, finance templates).
+- [x] Reminders with exactly-once firing.
 
 Exit: every acceptance criterion in `docs/spec/domains/` passes on one node.
+Met on 2026-10-03 with the CLI against a live node: logging to trackers in
+English, Russian and Ukrainian, tasks and reminders through the agent, notes
+and memories found from another language, streaming chat, usage and an
+approved action; the rest is covered by the test suite. Criteria that need
+several nodes or the clients (a reminder firing while its node is off, phone
+pushes and snoozing, "every surface") are checked in M3.
 
 ## M3: Surfaces and cluster
 
