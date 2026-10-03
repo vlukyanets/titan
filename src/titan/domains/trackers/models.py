@@ -6,6 +6,7 @@ import enum
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from sqlalchemy import (
     Boolean,
@@ -32,6 +33,19 @@ class TrackerKind(enum.StrEnum):
     HEALTH = "health"
     FINANCE = "finance"
     CUSTOM = "custom"
+
+
+# Kinds whose single entries agent tools may hide (ADR 0007).
+SENSITIVE = (TrackerKind.HEALTH, TrackerKind.FINANCE)
+
+
+class Exposure(enum.StrEnum):
+    """How much of a sensitive kind agent tools show (ADR 0007)."""
+
+    # Individual entries.
+    FULL = "full"
+    # Sums, averages, streaks and targets only.
+    AGGREGATES = "aggregates"
 
 
 class Period(enum.StrEnum):
@@ -89,3 +103,24 @@ class Entry(Base):
     category: Mapped[str | None] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ExposurePrefs(Base):
+    """A user's exposure levels for chat and for scheduled workflows. No row: the defaults."""
+
+    __tablename__ = "exposure_prefs"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    chat_health: Mapped[Exposure] = mapped_column(str_enum(Exposure, "chat_health"))
+    chat_finance: Mapped[Exposure] = mapped_column(str_enum(Exposure, "chat_finance"))
+    workflows_health: Mapped[Exposure] = mapped_column(str_enum(Exposure, "workflows_health"))
+    workflows_finance: Mapped[Exposure] = mapped_column(str_enum(Exposure, "workflows_finance"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    def aggregates_only(self, surface: Literal["chat", "workflows"]) -> frozenset[str]:
+        """The kinds whose tools show aggregates only on this surface."""
+        return frozenset(
+            kind
+            for kind in SENSITIVE
+            if getattr(self, f"{surface}_{kind.value}") is Exposure.AGGREGATES
+        )

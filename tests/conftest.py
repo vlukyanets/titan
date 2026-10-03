@@ -18,6 +18,7 @@ UNREACHABLE_DB = "postgresql+psycopg://nobody:nothing@127.0.0.1:1/none"
 TABLES = (
     "budgets",
     "embeddings",
+    "exposure_prefs",
     "memories",
     "note_shares",
     "notes",

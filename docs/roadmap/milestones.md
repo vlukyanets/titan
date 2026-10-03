@@ -49,7 +49,7 @@ confirm-class action. Met on 2026-10-02 with the CLI against a live node in
 - [x] Calendar and planner (daily plan, replanning) ([plan](plans/m2-calendar.md)).
 - [ ] Notes, memory and semantic search, with the embedding model and the
       `embeddings` image ([plan](plans/m2-notes.md)).
-- [ ] Trackers (habits, health, finance templates) ([plan](plans/m2-trackers.md)).
+- [x] Trackers (habits, health, finance templates) ([plan](plans/m2-trackers.md)).
 - [x] Reminders with exactly-once firing ([plan](plans/m2-reminders.md)).
 
 Exit: every acceptance criterion in `docs/spec/domains/` passes on one node.

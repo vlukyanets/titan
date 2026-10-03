@@ -11,6 +11,7 @@ kind of tracker needs no new code.
 |---|---|
 | `Tracker` | id, owner, name, kind (`habit`, `health`, `finance`, `custom`), unit (`count`, `kg`, `min`, `EUR`, …), min_value?, max_value?, target? (for example "8 glasses per day"), schedule (RRULE)?, archived |
 | `Entry` | id, tracker_id, at, value (number), note?, category? (finance: `groceries`, `transport`, …) |
+| `ExposurePrefs` | per user: the exposure level of `health` and of `finance` in chat and in scheduled workflows |
 
 Built-in templates for v1: habit check-in (`count`), weight (`kg`), sleep
 (`h`), workout (`min`), mood (1–5), expense (currency), income (currency).
@@ -82,6 +83,7 @@ Built-in templates for v1: habit check-in (`count`), weight (`kg`), sleep
 | Call | Purpose |
 |---|---|
 | `GET /api/v1/trackers/templates` | The built-in templates |
+| `GET`, `PUT /api/v1/trackers/exposure` | What the caller's agent sees of health and finance trackers |
 | `GET /api/v1/trackers?kind=&archived=` | The caller's trackers, by name; archived ones only when asked for |
 | `POST /api/v1/trackers` | Create a tracker, optionally from a `template` |
 | `GET`, `PATCH`, `DELETE /api/v1/trackers/{id}` | Read, change, delete with its entries |
@@ -112,8 +114,10 @@ field. Another user's tracker answers `404`.
   `full` (the default in the user's own chat) shows single entries;
   `aggregates` (the default in scheduled workflows) refuses `list_entries` and
   leaves the lowest and highest entry out of `tracker_stats`, which keeps
-  sums, averages, streaks and targets. Per-user settings for the levels come
-  with the settings screens.
+  sums, averages, streaks and targets. Each user sets the level per kind
+  (`health`, `finance`) and per surface (chat, scheduled workflows) with
+  `PUT /api/v1/trackers/exposure`; the change applies from the next chat turn
+  or workflow run.
 
 ## Acceptance criteria (v1)
 

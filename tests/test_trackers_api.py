@@ -221,3 +221,26 @@ async def test_other_users_trackers_do_not_exist_for_you(api: Api) -> None:
     assert (await api.client.get("/api/v1/trackers", headers=boris)).json() == []
     unauthenticated = await api.client.get("/api/v1/trackers")
     assert unauthenticated.status_code == 401
+
+
+async def test_exposure_settings_start_at_the_defaults_and_change(api: Api) -> None:
+    await api.create_user("anna", OWNER_PW, Role.OWNER)
+    anna = auth(await api.token("anna", OWNER_PW))
+    defaults = {
+        "chat_health": "full",
+        "chat_finance": "full",
+        "workflows_health": "aggregates",
+        "workflows_finance": "aggregates",
+    }
+    got = await api.client.get("/api/v1/trackers/exposure", headers=anna)
+    assert (got.status_code, got.json()) == (200, defaults)
+
+    changed = {**defaults, "chat_finance": "aggregates", "workflows_health": "full"}
+    put = await api.client.put("/api/v1/trackers/exposure", headers=anna, json=changed)
+    assert (put.status_code, put.json()) == (200, changed)
+    got = await api.client.get("/api/v1/trackers/exposure", headers=anna)
+    assert got.json() == changed
+
+    for bad in ({**changed, "chat_health": "none"}, {**changed, "notes": "full"}):
+        refused = await api.client.put("/api/v1/trackers/exposure", headers=anna, json=bad)
+        assert refused.status_code == 422

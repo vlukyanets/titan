@@ -20,4 +20,5 @@ Tasks:
 - [x] Trackers API, OpenAPI regenerated, docs updated.
 - [x] Agent tools with exposure levels (`feature/m2-trackers-agent-tools`): the
       tool context carries the level, `full` in chat.
-- [ ] Per-user exposure settings, with the settings API (W4, A4).
+- [x] Per-user exposure settings, with the settings API (W4, A4)
+      (`feature/m2-exposure-settings`). The screens come with W4 and A4.

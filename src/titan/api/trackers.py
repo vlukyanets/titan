@@ -12,7 +12,15 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, PlainSerialize
 
 from titan.api.deps import CurrentPrincipal, Session
 from titan.api.problems import PROBLEM_JSON
-from titan.domains.trackers.models import Direction, Entry, Period, Tracker, TrackerKind
+from titan.domains.trackers.models import (
+    Direction,
+    Entry,
+    Exposure,
+    ExposurePrefs,
+    Period,
+    Tracker,
+    TrackerKind,
+)
 from titan.domains.trackers.service import (
     CATEGORY_LENGTH,
     DEFAULT_PAGE,
@@ -147,6 +155,54 @@ class TrackerPatch(BaseModel):
     target: TargetIn | None = None
     schedule: str | None = Field(default=None, max_length=200, description=_SCHEDULE)
     archived: bool | None = Field(default=None, description="An archived tracker takes no entries")
+
+
+# -------------------------------------------------------------- exposure
+
+
+class ExposureIO(BaseModel):
+    """How much of health and finance trackers agent tools show (ADR 0007).
+
+    `full` shows single entries; `aggregates` only sums, averages, streaks and
+    targets. `chat_*` applies in the user's chat, `workflows_*` in scheduled
+    workflows such as the daily plan.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    chat_health: Exposure = Exposure.FULL
+    chat_finance: Exposure = Exposure.FULL
+    workflows_health: Exposure = Exposure.AGGREGATES
+    workflows_finance: Exposure = Exposure.AGGREGATES
+
+    @classmethod
+    def of(cls, prefs: ExposurePrefs) -> ExposureIO:
+        return cls(
+            chat_health=prefs.chat_health,
+            chat_finance=prefs.chat_finance,
+            workflows_health=prefs.workflows_health,
+            workflows_finance=prefs.workflows_finance,
+        )
+
+
+@router.get(
+    "/exposure",
+    summary="What the caller's agent sees of health and finance trackers",
+    responses={401: _PROBLEM},
+)
+async def get_exposure(principal: CurrentPrincipal, trackers: Trackers) -> ExposureIO:
+    return ExposureIO.of(await trackers.exposure(principal.user_id))
+
+
+@router.put(
+    "/exposure",
+    summary="Set what the caller's agent sees of health and finance trackers",
+    responses={401: _PROBLEM, 422: _PROBLEM},
+)
+async def put_exposure(
+    principal: CurrentPrincipal, trackers: Trackers, body: ExposureIO
+) -> ExposureIO:
+    return ExposureIO.of(await trackers.set_exposure(principal.user_id, **body.model_dump()))
 
 
 @router.get("/templates", summary="The built-in tracker templates", responses={401: _PROBLEM})

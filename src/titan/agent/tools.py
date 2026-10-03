@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from titan.domains.accounts import tools as accounts_tools
 from titan.domains.autonomy.models import ActionClass, Approval, Decision
 from titan.domains.autonomy.service import ApprovalsService, AuditService, PolicyService
-from titan.domains.autonomy.tools import Exposure, ToolContext, ToolResult, ToolSpec
+from titan.domains.autonomy.tools import ToolContext, ToolResult, ToolSpec
 from titan.domains.calendar import tools as calendar_tools
 from titan.domains.chat import tools as chat_tools
 from titan.domains.chat.service import ChatService
@@ -59,7 +59,7 @@ class ToolScope:
     thread_id: uuid.UUID | None = None
     pusher: Pusher | None = None
     push_origins: tuple[str, ...] = ()
-    exposure: Exposure = Exposure.FULL
+    aggregates_only: frozenset[str] = frozenset()
     embedder: Embedder | None = None
 
     def context(self, session: AsyncSession) -> ToolContext:
@@ -69,7 +69,7 @@ class ToolScope:
             self.thread_id,
             self.pusher,
             self.push_origins,
-            self.exposure,
+            self.aggregates_only,
             self.embedder,
         )
 

@@ -269,7 +269,7 @@ jobs run **at least once** and every effect is **idempotent**
   notification that says it failed, and is not retried that day.
 - **The daily plan** is a LangGraph graph of two nodes: an Agent SDK session
   on the `fast` tier with a few read tools and `plan_day`, under the policy
-  hook and the `aggregates` exposure ([ADR 0007](../adr/0007-sensitive-data-protection.md)),
+  hook and the user's workflow exposure, `aggregates` by default ([ADR 0007](../adr/0007-sensitive-data-protection.md)),
   then a `plan` notification with its summary. It is due on a working day from
   the user's `daily_plan_at` (07:00 by default) until the end of working
   hours, once they have an open task. Plans run as tasks of their own, so a
