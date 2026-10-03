@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from urllib.parse import urlsplit
 
@@ -12,6 +12,7 @@ from fastapi.security import APIKeyCookie, HTTPAuthorizationCredentials, HTTPBea
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.agent.runtime import ChatRuntime
+from titan.api.problems import ConfirmPasswordError
 from titan.domains.accounts.models import Platform
 from titan.domains.accounts.service import WEB_IDLE, AccountsService, Principal
 from titan.domains.chat.service import ChatService
@@ -108,6 +109,28 @@ async def require_principal(
 
 
 CurrentPrincipal = Annotated[Principal, Depends(require_principal)]
+
+# Sensitive changes from a browser need a password given this recently (ADR 0012).
+RECENT_SIGN_IN = timedelta(minutes=15)
+
+
+def require_recent_sign_in(principal: Principal) -> None:
+    """Browser sessions only: other clients keep their own device protection."""
+    if principal.platform is not Platform.WEB:
+        return
+    signed_in = principal.signed_in_at
+    if signed_in is None or datetime.now(UTC) - signed_in > RECENT_SIGN_IN:
+        raise ConfirmPasswordError(
+            "confirm your password with POST /api/v1/session/confirm, then try again"
+        )
+
+
+async def require_recent_principal(principal: CurrentPrincipal) -> Principal:
+    require_recent_sign_in(principal)
+    return principal
+
+
+RecentPrincipal = Annotated[Principal, Depends(require_recent_principal)]
 
 
 def get_notifications(request: Request, session: Session) -> NotificationsService:

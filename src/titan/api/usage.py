@@ -9,7 +9,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from titan.api.deps import CurrentPrincipal, Notifications, Session
+from titan.api.deps import CurrentPrincipal, Notifications, RecentPrincipal, Session
 from titan.api.problems import PROBLEM_JSON
 from titan.domains.usage.budget import (
     MAX_LIMIT,
@@ -190,7 +190,7 @@ async def household_budgets(principal: CurrentPrincipal, budgets: Budgets) -> li
     responses={401: _PROBLEM, 403: _PROBLEM, 404: _PROBLEM, 422: _PROBLEM},
 )
 async def set_budget(
-    principal: CurrentPrincipal, budgets: Budgets, user_id: uuid.UUID, body: BudgetIn
+    principal: RecentPrincipal, budgets: Budgets, user_id: uuid.UUID, body: BudgetIn
 ) -> MemberBudgetOut:
     limit = None if body.limit_usd is None else Decimal(str(body.limit_usd))
     member = await budgets.set_limit(principal, user_id, limit, owner_alerts=body.owner_alerts)

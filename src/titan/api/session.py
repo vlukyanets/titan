@@ -127,6 +127,28 @@ async def sign_in(
     return SessionOut(device_id=signed_in.device.id, user=UserOut.model_validate(signed_in.user))
 
 
+class ConfirmRequest(BaseModel):
+    password: str = Field(max_length=1024)
+
+
+@router.post(
+    "/session/confirm",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Confirm the password before a sensitive change",
+    description=(
+        "Renews the sign-in time of the calling device, without a new device. Sensitive "
+        "changes from a browser signed in more than 15 minutes ago answer `403` with the "
+        "problem type `urn:titan:problem:confirm-password` until this is called."
+    ),
+    responses={401: _PROBLEM, 403: _PROBLEM},
+)
+async def confirm(
+    body: ConfirmRequest, principal: CurrentPrincipal, accounts: Accounts
+) -> Response:
+    await accounts.confirm_password(principal, body.password)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.delete(
     "/session",
     status_code=status.HTTP_204_NO_CONTENT,

@@ -434,6 +434,61 @@
         ]
       }
     },
+    "/api/v1/session/confirm": {
+      "post": {
+        "tags": [
+          "accounts"
+        ],
+        "summary": "Confirm the password before a sensitive change",
+        "description": "Renews the sign-in time of the calling device, without a new device. Sensitive changes from a browser signed in more than 15 minutes ago answer `403` with the problem type `urn:titan:problem:confirm-password` until this is called.",
+        "operationId": "confirm_api_v1_session_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ]
+      }
+    },
     "/api/v1/devices/current/push": {
       "put": {
         "tags": [
@@ -6138,6 +6193,20 @@
           "next"
         ],
         "title": "CompletionOut"
+      },
+      "ConfirmRequest": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 1024,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "ConfirmRequest"
       },
       "CreateUserRequest": {
         "properties": {

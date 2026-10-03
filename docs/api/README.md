@@ -32,7 +32,10 @@ Decision: [ADR 0004](../adr/0004-openapi-from-fastapi.md).
   cookie-authenticated request other than `GET`, `HEAD` or `OPTIONS`, and the
   sign-in itself, must send `X-Titan-Request: 1`, and an `Origin`, if any, of
   the node's own host, or it answers `403`
-  ([ADR 0012](../adr/0012-browser-sessions-for-the-web-ui.md)).
+  ([ADR 0012](../adr/0012-browser-sessions-for-the-web-ui.md)). Sensitive
+  changes from a browser signed in more than 15 minutes ago answer `403` with
+  the problem type `urn:titan:problem:confirm-password`; after
+  `POST /api/v1/session/confirm` with the password they go through.
 - Timestamps are RFC 3339 in UTC. Recurrence rules are RFC 5545 RRULE strings.
 - Every API response carries `Cache-Control: no-store` and the security
   headers listed in the

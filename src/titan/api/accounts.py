@@ -9,7 +9,7 @@ from typing import Any
 from fastapi import APIRouter, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
-from titan.api.deps import Accounts, CurrentPrincipal
+from titan.api.deps import Accounts, CurrentPrincipal, RecentPrincipal, require_recent_sign_in
 from titan.api.problems import PROBLEM_JSON
 from titan.domains.accounts.models import Device, Platform, Role, User
 
@@ -105,6 +105,9 @@ async def list_devices(principal: CurrentPrincipal, accounts: Accounts) -> list[
 async def revoke_device(
     device_id: uuid.UUID, principal: CurrentPrincipal, accounts: Accounts
 ) -> Response:
+    if device_id not in {d.id for d in await accounts.list_devices(principal)}:
+        # Another user's device: a sensitive change (ADR 0012).
+        require_recent_sign_in(principal)
     await accounts.revoke_device(principal, device_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -121,7 +124,7 @@ async def list_users(principal: CurrentPrincipal, accounts: Accounts) -> list[Us
     responses={401: _PROBLEM, 403: _PROBLEM, 409: _PROBLEM},
 )
 async def create_user(
-    body: CreateUserRequest, principal: CurrentPrincipal, accounts: Accounts
+    body: CreateUserRequest, principal: RecentPrincipal, accounts: Accounts
 ) -> UserOut:
     user: User = await accounts.create_user(
         body.username, body.password, display_name=body.display_name, actor=principal
