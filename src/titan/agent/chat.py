@@ -39,6 +39,7 @@ from titan.domains.autonomy.models import Approval
 from titan.domains.calendar.zones import user_zone
 from titan.domains.chat.models import ChatMessage, MessageRole
 from titan.domains.chat.service import ChatService, TurnUsage
+from titan.domains.trackers.service import TrackersService
 from titan.domains.usage.budget import BudgetService
 from titan.embeddings import Embedder
 from titan.notify import Pusher
@@ -172,12 +173,14 @@ async def reply(state: ChatTurnState, runtime: Runtime[ChatContext]) -> dict[str
         )
         budget = await BudgetService(session).status(user_id)
         zone = await user_zone(session, user_id)
+        exposure = await TrackersService(session).exposure(user_id)
     scope = ToolScope(
         context.sessions,
         user_id,
         turn.thread_id,
         context.pusher,
         settings.push_allowed_origins,
+        aggregates_only=exposure.aggregates_only("chat"),
         embedder=context.embedder,
     )
     options = agent_options(

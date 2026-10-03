@@ -3795,6 +3795,84 @@
         ]
       }
     },
+    "/api/v1/trackers/exposure": {
+      "get": {
+        "tags": [
+          "trackers"
+        ],
+        "summary": "What the caller's agent sees of health and finance trackers",
+        "operationId": "get_exposure_api_v1_trackers_exposure_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposureIO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "trackers"
+        ],
+        "summary": "Set what the caller's agent sees of health and finance trackers",
+        "operationId": "put_exposure_api_v1_trackers_exposure_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExposureIO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposureIO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {}
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {}
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/trackers/templates": {
       "get": {
         "tags": [
@@ -6399,6 +6477,39 @@
         "type": "object",
         "title": "EventPatch",
         "description": "Only the fields sent change; `null` clears an optional field."
+      },
+      "Exposure": {
+        "type": "string",
+        "enum": [
+          "full",
+          "aggregates"
+        ],
+        "title": "Exposure",
+        "description": "How much of a sensitive kind agent tools show (ADR 0007)."
+      },
+      "ExposureIO": {
+        "properties": {
+          "chat_health": {
+            "$ref": "#/components/schemas/Exposure",
+            "default": "full"
+          },
+          "chat_finance": {
+            "$ref": "#/components/schemas/Exposure",
+            "default": "full"
+          },
+          "workflows_health": {
+            "$ref": "#/components/schemas/Exposure",
+            "default": "aggregates"
+          },
+          "workflows_finance": {
+            "$ref": "#/components/schemas/Exposure",
+            "default": "aggregates"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ExposureIO",
+        "description": "How much of health and finance trackers agent tools show (ADR 0007).\n\n`full` shows single entries; `aggregates` only sums, averages, streaks and\ntargets. `chat_*` applies in the user's chat, `workflows_*` in scheduled\nworkflows such as the daily plan."
       },
       "HTTPValidationError": {
         "properties": {

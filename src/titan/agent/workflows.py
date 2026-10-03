@@ -34,13 +34,13 @@ from titan.agent.usage import record_usage
 from titan.domains.accounts.models import User
 from titan.domains.autonomy.models import ActionClass, Decision
 from titan.domains.autonomy.service import ApprovalsService, PolicyService
-from titan.domains.autonomy.tools import Exposure
 from titan.domains.calendar.models import Event, EventKind, PlanningPrefs
 from titan.domains.calendar.service import zone
 from titan.domains.calendar.tools import REPLAN_BLOCK
 from titan.domains.notifications.models import Notification, NotificationKind
 from titan.domains.notifications.service import NotificationsService
 from titan.domains.tasks.models import Task, TaskStatus
+from titan.domains.trackers.service import TrackersService
 from titan.domains.usage.budget import BudgetService
 from titan.notify import Pusher
 from titan.settings import Settings
@@ -113,14 +113,16 @@ async def _plan(state: DailyPlanState, runtime: Runtime[WorkflowContext]) -> dic
     context = runtime.context
     settings = context.settings
     user_id = uuid.UUID(state["user_id"])
+    async with context.sessions() as session:
+        exposure = await TrackersService(session).exposure(user_id)
     scope = ToolScope(
         context.sessions,
         user_id,
         None,
         context.pusher,
         settings.push_allowed_origins,
-        # Health and finance show only sums here (ADR 0007).
-        exposure=Exposure.AGGREGATES,
+        # By default health and finance show only sums here (ADR 0007).
+        aggregates_only=exposure.aggregates_only("workflows"),
     )
     options = agent_options(
         settings,

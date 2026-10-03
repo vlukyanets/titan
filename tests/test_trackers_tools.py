@@ -14,8 +14,7 @@ from titan.agent.tools import REGISTRY, ToolScope, execute
 from titan.domains.autonomy.errors import UndoConflictError
 from titan.domains.autonomy.models import AuditEntry, Decision
 from titan.domains.autonomy.service import AuditService
-from titan.domains.autonomy.tools import Exposure
-from titan.domains.trackers.models import Entry, Tracker
+from titan.domains.trackers.models import Entry, Exposure, Tracker
 from titan.domains.trackers.service import TrackersService
 
 pytestmark = pytest.mark.db
@@ -100,7 +99,9 @@ async def test_aggregates_exposure_hides_single_health_entries(world: World) -> 
     tracker = await weight(world)
     async with world.sessions() as session:
         await TrackersService(session).log(world.anna.user_id, tracker.id, "72.5", note="after run")
-    scope = ToolScope(world.sessions, world.anna.user_id, exposure=Exposure.AGGREGATES)
+    scope = ToolScope(
+        world.sessions, world.anna.user_id, aggregates_only=frozenset({"health", "finance"})
+    )
     listed = await execute(REGISTRY[ENTRIES], scope, {"tracker": "Weight"})
     assert listed.result.is_error
     assert "72.5" not in listed.result.text
@@ -111,6 +112,29 @@ async def test_aggregates_exposure_hides_single_health_entries(world: World) -> 
 
     full = await execute(REGISTRY[ENTRIES], world.scope(), {"tracker": "Weight"})
     assert "72.5 kg “after run”" in full.result.text
+
+
+async def test_chat_follows_the_users_exposure_settings(world: World) -> None:
+    tracker = await weight(world)
+    async with world.sessions() as session:
+        service = TrackersService(session)
+        defaults = await service.exposure(world.anna.user_id)
+        assert defaults.aggregates_only("chat") == frozenset()
+        assert defaults.aggregates_only("workflows") == {"health", "finance"}
+        await service.log(world.anna.user_id, tracker.id, "72.5")
+        prefs = await service.set_exposure(
+            world.anna.user_id,
+            chat_health=Exposure.AGGREGATES,
+            chat_finance=Exposure.FULL,
+            workflows_health=Exposure.AGGREGATES,
+            workflows_finance=Exposure.AGGREGATES,
+        )
+        assert prefs.aggregates_only("chat") == {"health"}
+    fake = FakeClaude([(ENTRIES, {"tracker": "Weight"}), (STATS, {"tracker": "Weight"})])
+    await world.turn(fake)
+    listed, stats = fake.outcomes
+    assert listed.is_error
+    assert not stats.is_error
 
 
 async def test_deleting_a_tracker_asks_and_unknown_names_fail(world: World) -> None:

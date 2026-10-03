@@ -21,7 +21,6 @@ from titan.domains.autonomy.errors import UndoConflictError
 from titan.domains.autonomy.models import ActionClass
 from titan.domains.autonomy.tools import (
     Change,
-    Exposure,
     RunFn,
     ToolContext,
     ToolResult,
@@ -48,7 +47,6 @@ from titan.domains.trackers.service import (
 from titan.domains.trackers.templates import TEMPLATES
 
 DOMAIN = "trackers"
-SENSITIVE = (TrackerKind.HEALTH, TrackerKind.FINANCE)
 DEFAULT_ENTRIES = 20
 
 # ------------------------------------------------------------------ helpers
@@ -104,7 +102,7 @@ async def _tracker(context: ToolContext, ref: object, *, lock: bool = False) -> 
 
 
 def _hides_entries(context: ToolContext, tracker: Tracker) -> bool:
-    return context.exposure is Exposure.AGGREGATES and tracker.kind in SENSITIVE
+    return tracker.kind in context.aggregates_only
 
 
 def _target_text(tracker: Tracker) -> str:

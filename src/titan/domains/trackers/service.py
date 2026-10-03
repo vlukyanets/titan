@@ -27,7 +27,15 @@ from titan.domains.trackers.errors import (
     InvalidTrackerError,
     NotFoundError,
 )
-from titan.domains.trackers.models import Direction, Entry, Period, Tracker, TrackerKind
+from titan.domains.trackers.models import (
+    Direction,
+    Entry,
+    Exposure,
+    ExposurePrefs,
+    Period,
+    Tracker,
+    TrackerKind,
+)
 from titan.domains.trackers.templates import TEMPLATES
 
 DEFAULT_PAGE = 50
@@ -303,6 +311,43 @@ class TrackersService:
             await self.session.commit()
         else:
             await self.session.flush()
+
+    # -------------------------------------------------------------- exposure
+
+    async def exposure(self, actor: uuid.UUID) -> ExposurePrefs:
+        """The user's levels; without a row, the defaults of ADR 0007."""
+        stored = await self.session.get(ExposurePrefs, actor)
+        if stored is not None:
+            return stored
+        return ExposurePrefs(
+            user_id=actor,
+            chat_health=Exposure.FULL,
+            chat_finance=Exposure.FULL,
+            workflows_health=Exposure.AGGREGATES,
+            workflows_finance=Exposure.AGGREGATES,
+            updated_at=_now(),
+        )
+
+    async def set_exposure(
+        self,
+        actor: uuid.UUID,
+        *,
+        chat_health: Exposure,
+        chat_finance: Exposure,
+        workflows_health: Exposure,
+        workflows_finance: Exposure,
+    ) -> ExposurePrefs:
+        stored = await self.session.get(ExposurePrefs, actor, with_for_update=True)
+        if stored is None:
+            stored = ExposurePrefs(user_id=actor)
+            self.session.add(stored)
+        stored.chat_health = Exposure(chat_health)
+        stored.chat_finance = Exposure(chat_finance)
+        stored.workflows_health = Exposure(workflows_health)
+        stored.workflows_finance = Exposure(workflows_finance)
+        stored.updated_at = _now()
+        await self._done()
+        return stored
 
     # -------------------------------------------------------------- trackers
 
