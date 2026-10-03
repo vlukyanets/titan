@@ -15,7 +15,7 @@ Branch `feature/m4-budget-caps`, stacked on `feature/m2-notes`.
 - Scheduled workflows do not exist yet. The common runner that will start them
   checks `BudgetService.status()` before each run and notifies the user of a
   skipped run; that lands with the first workflow (`daily_plan`, see the
-  [calendar plan](m2-calendar.md)).
+  [calendar spec](../../spec/domains/calendar.md)).
 - API under `/api/v1/usage`, `titan budget list|set` on a node.
 
 Tasks:
