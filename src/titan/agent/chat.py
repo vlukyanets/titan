@@ -40,6 +40,7 @@ from titan.domains.calendar.zones import user_zone
 from titan.domains.chat.models import ChatMessage, MessageRole
 from titan.domains.chat.service import ChatService, TurnUsage
 from titan.domains.usage.budget import BudgetService
+from titan.embeddings import Embedder
 from titan.notify import Pusher
 from titan.settings import Settings
 
@@ -99,6 +100,7 @@ class ChatContext:
     query_fn: QueryFn = query
     environ: Mapping[str, str] | None = None
     pusher: Pusher | None = None
+    embedder: Embedder | None = None
 
 
 def render_prompt(history: Sequence[ChatMessage], message: str, now: datetime) -> str:
@@ -176,6 +178,7 @@ async def reply(state: ChatTurnState, runtime: Runtime[ChatContext]) -> dict[str
         turn.thread_id,
         context.pusher,
         settings.push_allowed_origins,
+        embedder=context.embedder,
     )
     options = agent_options(
         settings,

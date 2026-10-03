@@ -84,7 +84,7 @@ Status: **Draft v1 (thin)**. Part of the [product spec](../product.md).
 
 `PATCH` changes only the fields it sends. With `q`, lists come best match
 first and are not paged: `limit` caps them, and `before` together with `q`
-answers `400`.
+answers `422`.
 
 ## Agent tools
 

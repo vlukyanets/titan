@@ -4613,7 +4613,7 @@
           "notes"
         ],
         "summary": "Notes the caller owns or that are shared with them, most recently changed first",
-        "description": "Page with `before`: pass the id of the last note you have.",
+        "description": "Page with `before`: pass the id of the last note you have. With `q`, best match first and not paged: `limit` caps the list and `before` is refused.",
         "operationId": "list_notes_api_v1_notes_get",
         "security": [
           {
@@ -4635,10 +4635,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Every word must appear, also inside longer words; case is ignored",
+              "description": "Finds items containing every word, also inside longer words and ignoring case, and, when the node has an embeddings server, items close in meaning in any language. Results come best match first and are not paged.",
               "title": "Q"
             },
-            "description": "Every word must appear, also inside longer words; case is ignored"
+            "description": "Finds items containing every word, also inside longer words and ignoring case, and, when the node has an embeddings server, items close in meaning in any language. Results come best match first and are not paged."
           },
           {
             "name": "tag",
@@ -4976,7 +4976,7 @@
           "notes"
         ],
         "summary": "The caller's memories, newest first",
-        "description": "Page with `before`: pass the id of the last memory you have.",
+        "description": "Page with `before`: pass the id of the last memory you have. With `q`, best match first and not paged: `limit` caps the list and `before` is refused.",
         "operationId": "list_memories_api_v1_memories_get",
         "security": [
           {
@@ -4998,10 +4998,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Every word must appear, also inside longer words; case is ignored",
+              "description": "Finds items containing every word, also inside longer words and ignoring case, and, when the node has an embeddings server, items close in meaning in any language. Results come best match first and are not paged.",
               "title": "Q"
             },
-            "description": "Every word must appear, also inside longer words; case is ignored"
+            "description": "Finds items containing every word, also inside longer words and ignoring case, and, when the node has an embeddings server, items close in meaning in any language. Results come best match first and are not paged."
           },
           {
             "name": "before",

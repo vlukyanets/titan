@@ -5,9 +5,10 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 
-from titan import __version__
+from titan import __version__, embeddings
 from titan.agent.runtime import ChatRuntime
 from titan.api import (
     accounts,
@@ -37,6 +38,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     engine = create_engine(settings)
     push_client = new_client(settings.push_timeout_seconds)
     sessions = session_factory(engine)
+    embeddings_client = httpx.AsyncClient(trust_env=False)
+    embedder = embeddings.from_settings(settings, embeddings_client)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -46,6 +49,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         yield
         await app.state.chat_runtime.aclose()
         await push_client.aclose()
+        await embeddings_client.aclose()
         await engine.dispose()
 
     app = FastAPI(
@@ -62,7 +66,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.state.sessions = sessions
     app.state.pusher = UnifiedPushSender(push_client)
-    app.state.chat_runtime = ChatRuntime(settings, sessions, pusher=app.state.pusher)
+    app.state.embedder = embedder
+    app.state.chat_runtime = ChatRuntime(
+        settings, sessions, pusher=app.state.pusher, embedder=embedder
+    )
     app.add_middleware(security.SecurityHeadersMiddleware)
     problems.install(app)
     app.include_router(health.router, prefix=API_PREFIX)

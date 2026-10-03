@@ -23,6 +23,7 @@ def hashed(text: str) -> list[float]:
 @dataclass
 class FakeEmbedder:
     model: str = "fake/model-a"
+    max_distance: float = 0.5
     # Texts (without prefixes) with chosen vectors; the rest get hashed ones.
     vectors: dict[str, list[float]] = field(default_factory=dict)
     failing: bool = False

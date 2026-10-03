@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from titan.api.deps import CurrentPrincipal, Session
@@ -34,15 +34,19 @@ notes_router = APIRouter(prefix="/notes", tags=["notes"])
 memories_router = APIRouter(prefix="/memories", tags=["notes"])
 
 _PROBLEM: dict[str, Any] = {"content": {PROBLEM_JSON: {}}}
-_WORDS = "Every word must appear, also inside longer words; case is ignored"
+_SEARCH = (
+    "Finds items containing every word, also inside longer words and ignoring case, "
+    "and, when the node has an embeddings server, items close in meaning in any "
+    "language. Results come best match first and are not paged."
+)
 
 
-def get_notes(session: Session) -> NotesService:
-    return NotesService(session)
+def get_notes(session: Session, request: Request) -> NotesService:
+    return NotesService(session, embedder=request.app.state.embedder)
 
 
-def get_memory(session: Session) -> MemoryService:
-    return MemoryService(session)
+def get_memory(session: Session, request: Request) -> MemoryService:
+    return MemoryService(session, embedder=request.app.state.embedder)
 
 
 Notes = Annotated[NotesService, Depends(get_notes)]
@@ -126,13 +130,16 @@ class NotePatch(BaseModel):
 @notes_router.get(
     "",
     summary="Notes the caller owns or that are shared with them, most recently changed first",
-    description="Page with `before`: pass the id of the last note you have.",
+    description=(
+        "Page with `before`: pass the id of the last note you have. With `q`, best match "
+        "first and not paged: `limit` caps the list and `before` is refused."
+    ),
     responses={401: _PROBLEM, 422: _PROBLEM},
 )
 async def list_notes(
     principal: CurrentPrincipal,
     notes: Notes,
-    q: Annotated[str | None, Query(max_length=QUERY_LENGTH, description=_WORDS)] = None,
+    q: Annotated[str | None, Query(max_length=QUERY_LENGTH, description=_SEARCH)] = None,
     tag: Annotated[str | None, Query(max_length=TAG_LENGTH)] = None,
     shared: Annotated[
         NoteScope | None, Query(description="Only the caller's notes, or only others' shared")
@@ -215,13 +222,16 @@ class MemoryIn(BaseModel):
 @memories_router.get(
     "",
     summary="The caller's memories, newest first",
-    description="Page with `before`: pass the id of the last memory you have.",
+    description=(
+        "Page with `before`: pass the id of the last memory you have. With `q`, best match "
+        "first and not paged: `limit` caps the list and `before` is refused."
+    ),
     responses={401: _PROBLEM, 422: _PROBLEM},
 )
 async def list_memories(
     principal: CurrentPrincipal,
     memory: Memories,
-    q: Annotated[str | None, Query(max_length=QUERY_LENGTH, description=_WORDS)] = None,
+    q: Annotated[str | None, Query(max_length=QUERY_LENGTH, description=_SEARCH)] = None,
     before: Annotated[uuid.UUID | None, Query(description="Only older than this memory")] = None,
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE)] = DEFAULT_PAGE,
 ) -> list[MemoryOut]:

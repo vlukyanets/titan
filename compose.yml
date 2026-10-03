@@ -34,6 +34,7 @@ services:
       TITAN_EMBEDDINGS_MODEL: ${TITAN_EMBEDDINGS_MODEL:-intfloat/multilingual-e5-base}
       TITAN_EMBEDDINGS_QUERY_PREFIX: "${TITAN_EMBEDDINGS_QUERY_PREFIX-query: }"
       TITAN_EMBEDDINGS_DOCUMENT_PREFIX: "${TITAN_EMBEDDINGS_DOCUMENT_PREFIX-passage: }"
+      TITAN_EMBEDDINGS_MAX_DISTANCE: ${TITAN_EMBEDDINGS_MAX_DISTANCE:-0.2}
     depends_on:
       db: {condition: service_healthy}
     restart: "no"

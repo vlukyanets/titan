@@ -20,6 +20,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from titan.domains.autonomy.models import ActionClass
+from titan.embeddings import Embedder
 from titan.notify import Pusher
 
 
@@ -42,6 +43,8 @@ class ToolContext:
     pusher: Pusher | None = None
     push_origins: tuple[str, ...] = ()
     exposure: Exposure = Exposure.FULL
+    # For search by meaning; None searches by words only.
+    embedder: Embedder | None = None
 
 
 @dataclass(frozen=True)
