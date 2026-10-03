@@ -17,6 +17,7 @@ UNREACHABLE_DB = "postgresql+psycopg://nobody:nothing@127.0.0.1:1/none"
 # Emptied before every database test. Add new tables here.
 TABLES = (
     "budgets",
+    "embeddings",
     "memories",
     "note_shares",
     "notes",
