@@ -87,9 +87,9 @@ Tasks:
 - [x] Tables, migration and service for notes and memories.
 - [x] Notes and memories API, OpenAPI regenerated, docs updated.
 - [x] Spec, ADR 0014 (Proposed) and this plan (`spec/m2-embeddings`).
-- [ ] Benchmark on a node, presets chosen, ADR 0014 accepted. Postponed:
-      until then the default is `intfloat/multilingual-e5-base`, the
-      mid-size candidate with good cross-language retrieval.
+- [x] Benchmark on a node, presets chosen, ADR 0014 accepted
+      (`research/m2-embedding-model`): the default is
+      `snowflake-arctic-embed-m-v2.0`, the other preset `bge-m3`.
 - [x] Compose service, settings, `embeddings` table and migration.
 - [x] Client, chunking and the indexing sweep.
 - [x] Hybrid search in notes and memories, API rules for `q`, OpenAPI

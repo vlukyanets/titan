@@ -52,11 +52,11 @@ class Settings(BaseSettings):
     # node. Empty turns it off and search matches words only. The model, its
     # prefixes and the cut-off belong together; all nodes use the same model.
     embeddings_url: str | None = None
-    embeddings_model: str = "intfloat/multilingual-e5-base"
+    embeddings_model: str = "Snowflake/snowflake-arctic-embed-m-v2.0"
     embeddings_query_prefix: str = "query: "
-    embeddings_document_prefix: str = "passage: "
-    # Measured on e5-base: matches fall within 0.15-0.2, unrelated texts beyond 0.2.
-    embeddings_max_distance: float = Field(default=0.2, gt=0, le=2)
+    embeddings_document_prefix: str = ""
+    # The presets of ADR 0014 give each model's cut-off.
+    embeddings_max_distance: float = Field(default=0.8, gt=0, le=2)
 
     # Scheduler (docs/architecture/overview.md#scheduler-and-reminders).
     node_name: str = Field(default_factory=socket.gethostname, min_length=1, max_length=64)

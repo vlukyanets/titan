@@ -1,6 +1,6 @@
 # Milestones
 
-Last updated: 2026-10-02. Client milestones live in the client repositories and
+Last updated: 2026-10-03. Client milestones live in the client repositories and
 are aligned with these.
 
 ## M0: Research and spikes (done)
@@ -47,7 +47,7 @@ confirm-class action. Met on 2026-10-02 with the CLI against a live node in
 
 - [x] Tasks and projects ([plan](plans/m2-tasks-projects.md)).
 - [x] Calendar and planner (daily plan, replanning) ([plan](plans/m2-calendar.md)).
-- [ ] Notes, memory and semantic search, with the embedding model and the
+- [x] Notes, memory and semantic search, with the embedding model and the
       `embeddings` image ([plan](plans/m2-notes.md)).
 - [x] Trackers (habits, health, finance templates) ([plan](plans/m2-trackers.md)).
 - [x] Reminders with exactly-once firing ([plan](plans/m2-reminders.md)).
