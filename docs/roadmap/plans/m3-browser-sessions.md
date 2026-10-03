@@ -46,5 +46,5 @@ comes first:
 - [x] `feature/m3-browser-sessions`: the session endpoints, cookie
       authentication, cross-site checks, expiry, the limit, the notice, tests,
       OpenAPI and docs.
-- [ ] `feature/m3-recent-sign-in`: sign-in time on devices, the `403` problem
+- [x] `feature/m3-recent-sign-in`: sign-in time on devices, the `403` problem
       type, password confirmation, the sensitive endpoints, tests and docs.

@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response, status
 from pydantic import BaseModel, Field
 
 from titan.agent.tools import REGISTRY, ToolScope, run_approved
-from titan.api.deps import CurrentPrincipal, Session
+from titan.api.deps import CurrentPrincipal, RecentPrincipal, Session, require_recent_sign_in
 from titan.api.problems import PROBLEM_JSON
 from titan.domains.autonomy.models import (
     ActionClass,
@@ -91,7 +91,7 @@ async def set_rule(
     domain: str,
     action_class: ActionClass,
     body: PolicyRuleIn,
-    principal: CurrentPrincipal,
+    principal: RecentPrincipal,
     policy: Policy,
 ) -> Response:
     await policy.set_rule(principal, domain, action_class, body.decision)
@@ -105,7 +105,7 @@ async def set_rule(
     responses={401: _PROBLEM, 422: _PROBLEM},
 )
 async def remove_rule(
-    domain: str, action_class: ActionClass, principal: CurrentPrincipal, policy: Policy
+    domain: str, action_class: ActionClass, principal: RecentPrincipal, policy: Policy
 ) -> Response:
     await policy.remove_rule(principal, domain, action_class)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -121,7 +121,7 @@ async def set_household_rule(
     domain: str,
     action_class: ActionClass,
     body: PolicyRuleIn,
-    principal: CurrentPrincipal,
+    principal: RecentPrincipal,
     policy: Policy,
 ) -> Response:
     await policy.set_rule(principal, domain, action_class, body.decision, household=True)
@@ -135,7 +135,7 @@ async def set_household_rule(
     responses={401: _PROBLEM, 403: _PROBLEM, 422: _PROBLEM},
 )
 async def remove_household_rule(
-    domain: str, action_class: ActionClass, principal: CurrentPrincipal, policy: Policy
+    domain: str, action_class: ActionClass, principal: RecentPrincipal, policy: Policy
 ) -> Response:
     await policy.remove_rule(principal, domain, action_class, household=True)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -227,6 +227,8 @@ async def approve(
     principal: CurrentPrincipal,
     approvals: Approvals,
 ) -> ApprovalOut:
+    if (await approvals.get(principal, approval_id)).action_class is ActionClass.DESTRUCTIVE:
+        require_recent_sign_in(principal)
     claimed = await approvals.claim(principal, approval_id)
     scope = _scope(request, principal.user_id, claimed.thread_id)
     return ApprovalOut.of(await run_approved(claimed, scope))

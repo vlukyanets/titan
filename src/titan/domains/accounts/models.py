@@ -53,6 +53,11 @@ class Device(Base):
     # SHA-256 hex digest of the token; the token itself is never stored.
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # When the user last gave their password on this device: pairing, sign-in or
+    # a confirmation (ADR 0012).
+    signed_in_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

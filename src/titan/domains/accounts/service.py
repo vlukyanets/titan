@@ -40,6 +40,8 @@ class Principal:
     username: str
     role: Role
     device_id: uuid.UUID
+    platform: Platform = Platform.OTHER
+    signed_in_at: datetime | None = None
 
     @property
     def is_owner(self) -> bool:
@@ -153,6 +155,7 @@ class AccountsService:
             name=name.strip()[:64] or "device",
             platform=platform,
             token_hash=credentials.token_digest(token),
+            signed_in_at=_now(),
             last_seen_at=_now(),
         )
         self.session.add(device)
@@ -199,9 +202,24 @@ class AccountsService:
             device.last_seen_at = now
             await self.session.commit()
         principal = Principal(
-            user_id=user.id, username=user.username, role=user.role, device_id=device.id
+            user_id=user.id,
+            username=user.username,
+            role=user.role,
+            device_id=device.id,
+            platform=device.platform,
+            signed_in_at=device.signed_in_at,
         )
         return Resolved(principal, seen)
+
+    async def confirm_password(self, actor: Principal, password: str) -> None:
+        """Renew the sign-in time of the actor's device, without a new device."""
+        user = await self.get_user(actor.user_id)
+        await self.authenticate(user.username, password)
+        device = await self.session.get(Device, actor.device_id)
+        if device is None:
+            raise NotFoundError("device not found")
+        device.signed_in_at = _now()
+        await self.session.commit()
 
     # ---------------------------------------------------------------- devices
 

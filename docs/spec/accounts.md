@@ -7,7 +7,7 @@ Status: **Draft v1**. Part of the [product spec](product.md#users-and-roles).
 | Entity | Key fields |
 |---|---|
 | `User` | id, username, display_name, role (`owner`, `member`), password hash, failed_logins, locked_until?, created_at, disabled_at? |
-| `Device` | id, user_id, name, platform (`android`, `web`, `cli`, `other`), token hash, created_at, last_seen_at?, revoked_at? |
+| `Device` | id, user_id, name, platform (`android`, `web`, `cli`, `other`), token hash, created_at, signed_in_at, last_seen_at?, revoked_at? |
 
 - Usernames are 3–32 characters: lowercase letters, digits, `.`, `_`, `-`.
   They are unique across the household.
@@ -57,6 +57,12 @@ any device. A revoked token fails on the next request.
 - `last_seen_at` is updated at most once per hour per device, so ordinary
   requests do not turn into replicated writes
   ([ADR 0006](../adr/0006-replicated-database-with-vectors.md)).
+- **Recent sign-in.** From a browser whose password was given more than 15
+  minutes ago, creating users, revoking another user's device, changing
+  policies or budgets and approving `destructive` actions answer `403` with
+  the problem type `urn:titan:problem:confirm-password`. The UI then asks for
+  the password and sends it to `POST /api/v1/session/confirm`, which renews
+  `signed_in_at` without a new device. Paired clients are not asked.
 - Ownership is checked in the service layer: a member cannot see or revoke
   another member's devices.
 

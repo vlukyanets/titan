@@ -19,6 +19,12 @@ from titan.domains.trackers import errors as trackers_errors
 from titan.domains.usage import errors as usage_errors
 
 PROBLEM_JSON = "application/problem+json"
+# Sensitive changes from an older browser session (ADR 0012).
+SIGN_IN_AGAIN = "urn:titan:problem:confirm-password"
+
+
+class ConfirmPasswordError(Exception):
+    """Answered as 403 with the SIGN_IN_AGAIN problem type."""
 
 
 def problem(status: int, title: str, detail: str | None = None, **extra: object) -> JSONResponse:
@@ -54,6 +60,10 @@ def install(app: FastAPI) -> None:
     app.add_exception_handler(calendar_errors.CalendarError, _domain)
     app.add_exception_handler(trackers_errors.TrackersError, _domain)
     app.add_exception_handler(notes_errors.NotesError, _domain)
+
+    @app.exception_handler(ConfirmPasswordError)
+    async def _confirm(_: Request, exc: ConfirmPasswordError) -> JSONResponse:
+        return problem(403, "Confirm your password", str(exc), type=SIGN_IN_AGAIN)
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
