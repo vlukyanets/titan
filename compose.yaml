@@ -1,0 +1,43 @@
+# The node: the app and its database. Set POSTGRES_PASSWORD in .env first.
+services:
+  app:
+    build: backend
+    container_name: titan-app
+    ports:
+      - "8000:8000"
+    environment:
+      TITAN_DATABASE_URL: postgresql+psycopg://titan@db/titan
+      # libpq reads the password from here: it needs no escaping and stays
+      # out of the URL.
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:18@sha256:1267c7e692de235fda2a50dbcdbcbca4672ea6a0298576a6bd9d07cafc319b32
+    container_name: titan-db
+    environment:
+      POSTGRES_USER: titan
+      POSTGRES_DB: titan
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db:/var/lib/postgresql
+    healthcheck:
+      # TCP, not the socket: the first start runs a socket-only server
+      # while it creates the database, and restarts it after.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "titan", "-d", "titan"]
+      # Failures while the database is created do not count, and the app
+      # starts as soon as it is ready instead of after the default 30 s.
+      start_period: 1m
+      start_interval: 1s
+    restart: unless-stopped
+
+volumes:
+  db:
+    name: titan-db-data
+
+networks:
+  default:
+    name: titan

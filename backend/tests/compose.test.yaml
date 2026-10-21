@@ -1,0 +1,23 @@
+# A throwaway database for the tests, kept in memory: make check starts it
+# and removes it, with its network, after the tests.
+name: titan-test
+services:
+  db:
+    image: postgres:18@sha256:1267c7e692de235fda2a50dbcdbcbca4672ea6a0298576a6bd9d07cafc319b32
+    container_name: titan-test-db
+    environment:
+      POSTGRES_USER: titan
+      POSTGRES_DB: titan
+      POSTGRES_PASSWORD: test
+    ports:
+      - "127.0.0.1:55432:5432"
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      # Same check as in the node's compose.yaml.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "titan", "-d", "titan"]
+      start_period: 1m
+      start_interval: 1s
+networks:
+  default:
+    name: titan-test
