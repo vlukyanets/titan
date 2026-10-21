@@ -62,6 +62,13 @@ class ReplyCut(Exception):
     """The model's stream ended before it said the reply was done."""
 
 
+# Seconds the model may stay silent between two chunks of a reply.
+MODEL_SILENCE = 300.0
+# Seconds to connect to the model, send to it or wait for a free
+# connection: httpx2's default.
+MODEL_CONNECT = 5.0
+
+
 def create_app(
     database_url: str | None = None,
     key_file: str | None = None,
@@ -73,7 +80,8 @@ def create_app(
     # limit on the whole reply; a model may think for minutes before it
     # writes. Redirects are not followed, so the key goes to no other host.
     models = httpx2.AsyncClient(
-        transport=model_transport, timeout=httpx2.Timeout(5.0, read=300.0)
+        transport=model_transport,
+        timeout=httpx2.Timeout(MODEL_CONNECT, read=MODEL_SILENCE),
     )
 
     @asynccontextmanager
