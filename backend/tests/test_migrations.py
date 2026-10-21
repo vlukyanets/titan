@@ -1,11 +1,7 @@
-from pathlib import Path
-
 import pytest
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect
-
-BACKEND = Path(__file__).parent.parent
 
 
 def tables(url: str) -> list[str]:
@@ -17,11 +13,14 @@ def tables(url: str) -> list[str]:
 
 
 def test_upgrade_twice_changes_nothing(
-    database_url: str, monkeypatch: pytest.MonkeyPatch
+    alembic_config: Config, database_url: str
 ) -> None:
-    monkeypatch.setenv("TITAN_DATABASE_URL", database_url)
-    config = Config(toml_file=str(BACKEND / "pyproject.toml"))
-    command.upgrade(config, "head")
+    command.upgrade(alembic_config, "head")
     before = tables(database_url)
-    command.upgrade(config, "head")
+    command.upgrade(alembic_config, "head")
     assert tables(database_url) == before
+
+
+@pytest.mark.usefixtures("migrated")
+def test_migrations_match_the_models(alembic_config: Config) -> None:
+    command.check(alembic_config)

@@ -1,7 +1,7 @@
 # Architecture
 
 How TITAN is built and why. Read it before changing how the parts fit
-together. It describes the prototype; nothing is built yet.
+together. It describes the prototype; most of it is not built yet.
 
 Draft: the owner has not approved it yet.
 
@@ -29,7 +29,7 @@ call tools that read and change the user's tasks and facts.
     memory;
   - the database: tables and migrations;
   - the admin command that adds users.
-- `cli/`: the `titan` command: `login`, `settings`, `chat`.
+- `cli/`: the `titan` command: `login`, `whoami`, `settings`, `chat`.
 - `compose.yaml`: the node, the app and Postgres.
 
 ## A chat message
@@ -118,6 +118,9 @@ code is our own.
 - **SQLAlchemy inside the data module.** Async, with the `psycopg` 3
   driver, which also serves the sync scripts; migrations with Alembic.
   SQLAlchemy objects and sessions never leave the module.
+- **Sign-in by a one-time code, for now.** The admin adds a user and
+  hands them a code; the CLI trades it for a token. Codes and tokens are
+  long and random, so the node keeps only their SHA-256.
 - **Postgres for everything.** Users, threads, tasks and facts live in one
   database, backed up with one `pg_dump`.
 - **The user brings the model.** TITAN ships no model; any
