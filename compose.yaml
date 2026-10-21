@@ -1,7 +1,12 @@
 # The node: the app and its database. Set POSTGRES_PASSWORD in .env first.
+# The project has a name of its own, not the folder's, so a checkout in
+# another folder runs the same node.
+name: titan
+
 services:
   app:
     build: backend
+    image: titan-app
     container_name: titan-app
     ports:
       - "8000:8000"
