@@ -1,0 +1,22 @@
+# Version updates wait until a release is 14 days old; security updates
+# do not wait.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+  - package-ecosystem: uv
+    directory: /backend
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+  - package-ecosystem: gomod
+    directory: /cli
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
