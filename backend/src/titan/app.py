@@ -1,7 +1,5 @@
 """The HTTP API of the node."""
 
-import itertools
-import json
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -15,7 +13,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from pydantic import AfterValidator, BaseModel, StringConstraints
 
-from titan import db, keys, tools
+from titan import agent, db, keys
 
 
 class SignIn(BaseModel):
@@ -59,58 +57,11 @@ class ChatIn(BaseModel):
     message: NotEmpty
 
 
-class ReplyCut(Exception):
-    """The model's stream ended before it said the reply was done."""
-
-
 # Seconds the model may stay silent between two chunks of a reply.
 MODEL_SILENCE = 300.0
 # Seconds to connect to the model, send to it or wait for a free
 # connection: httpx2's default.
 MODEL_CONNECT = 5.0
-
-
-class TooManyToolRounds(Exception):
-    """The model kept calling tools instead of answering."""
-
-
-# Rounds of tool calls in one message; a model past it is stuck in a loop.
-MAX_TOOL_ROUNDS = 10
-
-
-async def read_reply(
-    response: httpx2.Response, calls: dict[int, dict[str, Any]]
-) -> AsyncIterator[str]:
-    """Yields the text of a streamed reply and gathers its tool calls.
-
-    A tool call comes in pieces; calls keeps each one, by its index, in the
-    form the model takes back.
-    """
-    try:
-        async for event in httpx2.EventSource(response):
-            if event.data == "[DONE]":
-                return
-            for choice in json.loads(event.data)["choices"]:
-                delta = choice["delta"]
-                if text := delta.get("content"):
-                    yield text
-                for piece in delta.get("tool_calls") or []:
-                    call = calls.setdefault(
-                        piece["index"],
-                        {
-                            "id": "",
-                            "type": "function",
-                            "function": {"name": "", "arguments": ""},
-                        },
-                    )
-                    call["id"] += piece.get("id") or ""
-                    function = piece.get("function") or {}
-                    for field in ("name", "arguments"):
-                        call["function"][field] += function.get(field) or ""
-        # Raising cuts the connection, so the CLI sees it too.
-        raise ReplyCut
-    finally:
-        await response.aclose()
 
 
 def create_app(
@@ -225,21 +176,19 @@ def create_app(
                     " add the model again",
                 ) from None
             headers["Authorization"] = f"Bearer {key}"
-        messages: list[dict[str, Any]] = [
-            {"role": m.role, "content": m.content} for m in [*history, question]
-        ]
+        messages = agent.conversation(history, question)
 
-        async def ask() -> httpx2.Response:
+        async def ask(
+            messages: list[agent.Message], tools: list[dict[str, Any]] | None
+        ) -> httpx2.Response:
+            body: dict[str, Any] = {"model": model.name, "messages": messages}
+            if tools:
+                body["tools"] = tools
             request = models.build_request(
                 "POST",
                 model.url.rstrip("/") + "/chat/completions",
                 headers=headers,
-                json={
-                    "model": model.name,
-                    "messages": messages,
-                    "tools": tools.SCHEMAS,
-                    "stream": True,
-                },
+                json={**body, "stream": True},
             )
             try:
                 response = await models.send(request, stream=True)
@@ -251,48 +200,10 @@ def create_app(
             return response
 
         # Sent before the reply starts, so a refusal is still an HTTP status.
-        response = await ask()
-
-        async def reply() -> AsyncIterator[str]:
-            nonlocal response
-            parts = []
-            # One transaction for the whole message: a cut reply undoes its
-            # tool calls too, and only a whole reply is kept.
-            async with db.transaction(engine):
-                for tool_rounds in itertools.count():
-                    calls: dict[int, dict[str, Any]] = {}
-                    said = []
-                    async for text in read_reply(response, calls):
-                        said.append(text)
-                        yield text
-                    parts += said
-                    if not calls:
-                        break
-                    if tool_rounds == MAX_TOOL_ROUNDS:
-                        raise TooManyToolRounds
-                    messages.append(
-                        {
-                            "role": "assistant",
-                            "content": "".join(said) or None,
-                            "tool_calls": list(calls.values()),
-                        }
-                    )
-                    for call in calls.values():
-                        function = call["function"]
-                        result = await tools.run(
-                            user_id, function["name"], function["arguments"]
-                        )
-                        messages.append(
-                            {
-                                "role": "tool",
-                                "tool_call_id": call["id"],
-                                "content": result,
-                            }
-                        )
-                    response = await ask()
-                answer = db.Message("assistant", "".join(parts))
-                await db.add_messages(user_id, question, answer)
-
-        return StreamingResponse(reply(), media_type="text/plain; charset=utf-8")
+        response = await ask(messages, [agent.RUN_PLAN])
+        return StreamingResponse(
+            agent.converse(engine, user_id, question, messages, ask, response),
+            media_type="text/plain; charset=utf-8",
+        )
 
     return app

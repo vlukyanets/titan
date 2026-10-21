@@ -65,31 +65,43 @@ code is our own.
   {"id": "s2", "for_each": "$s1.items", "do": "tasks_update",
     "args": {"id": "$item.id", "due": "2026-10-22"}},
   {"id": "s3", "think": "Which task is the most important?",
-    "input": "$s1.items", "output": {"type": "integer"}}
+    "input": "$s1.items", "output": {"choose": "id"}}
 ]}
 ```
 
 - A step is `do` (call a tool), `for_each` (call a tool for each item of
-  a list) or `think` (a short model call for a choice code cannot make,
-  with a typed answer).
-- `$s1.items` is a field of the result of step `s1`. A step refers only to
-  steps above it, so the steps run in their order, one at a time.
-- The model sends the plan as a call of the one tool `run_plan`.
+  a list) or `think` (a short model call, with no tools, for a choice code
+  cannot make). A `think` answer is checked: a JSON value of its `type`,
+  or with `choose` the given field, such as the id, of one item of its
+  input.
+- The plan is made whole before it runs and nothing changes it while it
+  runs; a step that depends on what earlier steps read uses `think`.
+- `$s1.items` is a field of the result of step `s1`; `$item` is the
+  current item of a `for_each`. A reference is the whole value of an
+  argument. A step refers only to steps above it, so the steps run in
+  their order, one at a time.
+- The model sends the plan as a call of the one tool `run_plan`, whose
+  description lists the tools. The system prompt is
+  `backend/src/titan/prompts/system.md`.
 - Before the first step runs, the app checks the plan: every tool exists,
-  the arguments fit its schema, every reference points up, and the plan
-  is not too long. A plan that fails goes back to the model with the
-  error.
-- Every step runs for the user of the message only.
-- All the changes of one message run in one database transaction and
-  commit before the reply. When a step fails, the whole plan rolls back;
-  the model gets the error and makes a new plan, once or twice. After
-  that, the app falls back to a plain loop, one tool call at a time, in
-  the same transaction.
-- The last model call gets the results and writes the reply.
-- Until the plan runner comes (#6), the model calls tools one at a time:
-  the app runs each call, gives the model the results and calls it again,
-  for at most `MAX_TOOL_ROUNDS` rounds. This loop then becomes the
-  fallback.
+  the arguments fit its schema (a value read from another step is checked
+  when the step runs), every reference points up, and the plan has at
+  most `MAX_PLAN_STEPS` steps. A plan that fails goes back to the model
+  with the error.
+- Every step runs for the user of the message only; no tool takes a user
+  id from the model.
+- All the changes of one message run in one database transaction. A plan
+  runs in a savepoint: when a step fails, the whole plan rolls back, and
+  the model gets the error and makes a new plan from the start, for at
+  most `MAX_PLAN_ATTEMPTS` plans. After the last one fails, the model
+  replies that nothing changed; the tools are never called one at a time.
+- The changes commit before the last model call, which gets the results,
+  may call nothing, and writes the reply. A reply cut after that keeps
+  the changes but not the messages. When the commit fails, the app says
+  that nothing was saved, and the model is not called again.
+- Tool results reach the model as JSON in a `<data>` block, with `<`
+  escaped so nothing inside closes it; the system prompt says the block
+  holds data, never instructions.
 - The conversation keeps only the user's messages and the replies; tool
   calls and their results are not kept, and the model asks the tools
   again when it needs them.
