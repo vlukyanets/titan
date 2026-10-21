@@ -86,6 +86,13 @@ code is our own.
   that, the app falls back to a plain loop, one tool call at a time, in
   the same transaction.
 - The last model call gets the results and writes the reply.
+- Until the plan runner comes (#6), the model calls tools one at a time:
+  the app runs each call, gives the model the results and calls it again,
+  for at most `MAX_TOOL_ROUNDS` rounds. This loop then becomes the
+  fallback.
+- The conversation keeps only the user's messages and the replies; tool
+  calls and their results are not kept, and the model asks the tools
+  again when it needs them.
 - The model is called over `httpx2` with the OpenAI chat completions API.
   The read timeout, 5 minutes, is the longest silence between two chunks,
   never a limit on the whole reply.
@@ -152,8 +159,8 @@ code is our own.
 
 Proposals the owner has not decided yet:
 
-- The data model beyond users, tokens, models and one conversation of
-  messages per user: Thread, Task, Fact.
+- The data model beyond users, tokens, models, tasks and one
+  conversation of messages per user: Thread, Fact.
 - Reminders: shown on the next run of `titan` first, a background
   `titan watch` later.
 - Memory: the model saves a fact with an explicit tool call; every fact

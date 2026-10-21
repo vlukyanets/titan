@@ -98,6 +98,24 @@ class MessageRow(Base):
     )
 
 
+class TaskRow(Base):
+    __tablename__ = "tasks"
+    __table_args__ = (
+        CheckConstraint("status IN ('open', 'done')", name="tasks_status"),
+        # The chat lists a user's open or done tasks in order.
+        Index("tasks_of_user", "user_id", "status", "id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    title: Mapped[str]
+    note: Mapped[str | None]
+    status: Mapped[str] = mapped_column(server_default="open")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 @dataclass(frozen=True)
 class Message:
     role: str
@@ -110,6 +128,18 @@ class Model:
     url: str
     encrypted_key: bytes | None
     current: bool = False
+
+
+@dataclass(frozen=True)
+class Task:
+    id: int
+    title: str
+    note: str | None
+    status: str
+
+
+def _task(row: TaskRow) -> Task:
+    return Task(row.id, row.title, row.note, row.status)
 
 
 class NameTaken(Exception):
@@ -293,3 +323,35 @@ async def add_messages(user_id: int, *messages: Message) -> None:
     _session.get().add_all(
         MessageRow(user_id=user_id, role=m.role, content=m.content) for m in messages
     )
+
+
+async def add_task(user_id: int, title: str, note: str | None) -> Task:
+    session = _session.get()
+    row = TaskRow(user_id=user_id, title=title, note=note, status="open")
+    session.add(row)
+    await session.flush()
+    return _task(row)
+
+
+async def tasks_of(user_id: int, status: str) -> list[Task]:
+    """The user's tasks of that status, oldest first."""
+    rows = await _session.get().scalars(
+        select(TaskRow)
+        .where(TaskRow.user_id == user_id, TaskRow.status == status)
+        .order_by(TaskRow.id)
+    )
+    return [_task(r) for r in rows]
+
+
+async def update_task(
+    user_id: int, task_id: int, changes: dict[str, str]
+) -> Task | None:
+    """Changes the user's task; None when they have no task of that id."""
+    mine = [TaskRow.id == task_id, TaskRow.user_id == user_id]
+    statement = (
+        update(TaskRow).where(*mine).values(**changes).returning(TaskRow)
+        if changes
+        else select(TaskRow).where(*mine)
+    )
+    row = await _session.get().scalar(statement)
+    return None if row is None else _task(row)

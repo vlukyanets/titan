@@ -70,6 +70,10 @@ titan chat "<message>"
 `titan chat` reads a message per line until the input ends (Ctrl-D). A
 reply that was cut off is not kept; send the message again.
 
+Ask in your own words to add, list, change or complete your tasks, such
+as "add a task to buy milk", "what are my tasks" or "I bought the milk".
+The model needs to support tool calls.
+
 ## Licence
 
 MIT, see [LICENSE](LICENSE).
