@@ -1,0 +1,43 @@
+name: Bug
+description: Something that does not work as its issue or the documents say.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Title: what is wrong, at most 72 characters, no prefix.
+        Never post secrets, tokens or personal data. Remove them from logs first.
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: What you saw, with the exact error message.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: What should have happened, and where that is written.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest way to see it, from a clean start.
+      placeholder: |
+        1.
+        2.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      placeholder: git rev-parse --short HEAD
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      render: text

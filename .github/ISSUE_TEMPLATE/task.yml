@@ -1,0 +1,23 @@
+name: Task
+description: Work that is not a feature or a bug, such as a refactor, CI, a dependency or the documents.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Title: what to do, at most 72 characters, no prefix.
+        Never post secrets, tokens or personal data.
+  - type: textarea
+    id: what
+    attributes:
+      label: What and why
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: How to tell the task is finished.
+      placeholder: |
+        - [ ]
+    validations:
+      required: true
