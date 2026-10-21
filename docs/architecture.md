@@ -29,7 +29,9 @@ call tools that read and change the user's tasks and facts.
     memory;
   - the database: tables and migrations;
   - the admin command that adds users.
-- `cli/`: the `titan` command: `login`, `whoami`, `settings`, `chat`.
+- `cli/`: the `titan` command: `login`, `whoami`, `settings`,
+  `settings model`, `chat`. A user may have several models; the chat uses
+  the current one.
 - `compose.yaml`: the node, the app and Postgres.
 
 ## A chat message
@@ -121,6 +123,9 @@ code is our own.
 - **Sign-in by a one-time code, for now.** The admin adds a user and
   hands them a code; the CLI trades it for a token. Codes and tokens are
   long and random, so the node keeps only their SHA-256.
+- **Model keys with Fernet.** From `cryptography`; the app encrypts a key
+  before it reaches the data module, which stores only the bytes. The node
+  key file is created on the first start, in a volume of its own.
 - **Postgres for everything.** Users, threads, tasks and facts live in one
   database, backed up with one `pg_dump`.
 - **The user brings the model.** TITAN ships no model; any
@@ -142,7 +147,8 @@ code is our own.
 
 Proposals the owner has not decided yet:
 
-- The data model: User, Token, Provider, Thread, Message, Task, Fact.
+- The data model beyond users, tokens and models: Thread, Message, Task,
+  Fact.
 - Reminders: shown on the next run of `titan` first, a background
   `titan watch` later.
 - Memory: the model saves a fact with an explicit tool call; every fact

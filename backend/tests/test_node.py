@@ -43,6 +43,15 @@ def test_database_keeps_its_data_in_a_volume() -> None:
     ]
 
 
+def test_node_key_lives_outside_the_database() -> None:
+    services = compose_config()["services"]
+    key_dir = str(Path(services["app"]["environment"]["TITAN_KEY_FILE"]).parent)
+    app_volumes = {v["target"]: v["source"] for v in services["app"]["volumes"]}
+    db_volumes = {v["source"] for v in services["db"]["volumes"]}
+    assert key_dir in app_volumes
+    assert app_volumes[key_dir] not in db_volumes
+
+
 def test_app_runs_as_a_non_root_user() -> None:
     lines = (ROOT / "backend" / "Dockerfile").read_text().splitlines()
     users = [line.split()[1] for line in lines if line.startswith("USER ")]

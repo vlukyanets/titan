@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -22,9 +23,72 @@ func TestNoCommandPrintsUsage(t *testing.T) {
 }
 
 // fakeNode signs in alice with the code "c0de" and knows the token "t0ken".
+// It keeps her models as the node would: the first one added is current.
 func fakeNode(t *testing.T) *httptest.Server {
 	t.Helper()
+	models := map[string]model{}
+	current := ""
+	authorized := func(w http.ResponseWriter, r *http.Request) bool {
+		if r.Header.Get("Authorization") != "Bearer t0ken" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return false
+		}
+		return true
+	}
 	mux := http.NewServeMux()
+	mux.HandleFunc("PUT /settings/models/{name...}", func(w http.ResponseWriter, r *http.Request) {
+		if !authorized(w, r) {
+			return
+		}
+		var body map[string]string
+		json.NewDecoder(r.Body).Decode(&body)
+		name := r.PathValue("name")
+		models[name] = model{Name: name, URL: body["url"], HasKey: body["key"] != ""}
+		if current == "" {
+			current = name
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("DELETE /settings/models/{name...}", func(w http.ResponseWriter, r *http.Request) {
+		if !authorized(w, r) {
+			return
+		}
+		name := r.PathValue("name")
+		if _, ok := models[name]; !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		delete(models, name)
+		if current == name {
+			current = ""
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("PUT /settings/current-model", func(w http.ResponseWriter, r *http.Request) {
+		if !authorized(w, r) {
+			return
+		}
+		var body map[string]string
+		json.NewDecoder(r.Body).Decode(&body)
+		if _, ok := models[body["name"]]; !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		current = body["name"]
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("GET /settings", func(w http.ResponseWriter, r *http.Request) {
+		if !authorized(w, r) {
+			return
+		}
+		list := []model{}
+		for _, m := range models {
+			m.Current = m.Name == current
+			list = append(list, m)
+		}
+		sort.Slice(list, func(i, j int) bool { return list[i].Name < list[j].Name })
+		json.NewEncoder(w).Encode(map[string]any{"models": list})
+	})
 	mux.HandleFunc("POST /sign-in", func(w http.ResponseWriter, r *http.Request) {
 		var body map[string]string
 		json.NewDecoder(r.Body).Decode(&body)

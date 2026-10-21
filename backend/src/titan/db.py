@@ -5,12 +5,26 @@ import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
+from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, func, select, text, update
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Index,
+    UniqueConstraint,
+    delete,
+    false,
+    func,
+    select,
+    text,
+    update,
+)
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.sql.elements import ColumnElement
 
 
 class Base(DeclarativeBase):
@@ -38,6 +52,40 @@ class Token(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class ModelRow(Base):
+    __tablename__ = "models"
+    __table_args__ = (
+        UniqueConstraint("user_id", "name"),
+        # At most one current model per user.
+        Index(
+            "models_one_current_per_user",
+            "user_id",
+            unique=True,
+            postgresql_where=text("current"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    name: Mapped[str]
+    url: Mapped[str]
+    # Encrypted with the node key; None for a model that needs no key.
+    encrypted_key: Mapped[bytes | None]
+    # The model the chat uses.
+    current: Mapped[bool] = mapped_column(server_default=false())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+@dataclass(frozen=True)
+class Model:
+    name: str
+    url: str
+    encrypted_key: bytes | None
+    current: bool = False
 
 
 class NameTaken(Exception):
@@ -125,3 +173,73 @@ async def user_of_token(token: str) -> int | None:
 async def user_name(user_id: int) -> str:
     result = await _session.get().execute(select(User.name).where(User.id == user_id))
     return result.scalar_one()
+
+
+def _of_user(user_id: int, name: str) -> list[ColumnElement[bool]]:
+    return [ModelRow.user_id == user_id, ModelRow.name == name]
+
+
+async def _lock_models(user_id: int) -> None:
+    # Changes to which model is current wait for each other, so two of them
+    # at once cannot both make a model current.
+    await _session.get().execute(
+        select(User.id).where(User.id == user_id).with_for_update()
+    )
+
+
+async def save_model(user_id: int, model: Model) -> None:
+    """Adds a model, or replaces the user's model of the same name.
+
+    The user's first model becomes the current one.
+    """
+    await _lock_models(user_id)
+    has_current = (
+        select(ModelRow.id)
+        .where(ModelRow.user_id == user_id, ModelRow.current)
+        .exists()
+    )
+    values = {"url": model.url, "encrypted_key": model.encrypted_key}
+    # One statement, so two saves of one name at once cannot both insert.
+    await _session.get().execute(
+        insert(ModelRow)
+        .values(user_id=user_id, name=model.name, current=~has_current, **values)
+        .on_conflict_do_update(
+            index_elements=[ModelRow.user_id, ModelRow.name], set_=values
+        )
+    )
+
+
+async def models_of(user_id: int) -> list[Model]:
+    rows = await _session.get().scalars(
+        select(ModelRow).where(ModelRow.user_id == user_id).order_by(ModelRow.name)
+    )
+    return [Model(r.name, r.url, r.encrypted_key, r.current) for r in rows]
+
+
+async def remove_model(user_id: int, name: str) -> bool:
+    """Removes the user's model; False when they have none of that name."""
+    removed = await _session.get().scalar(
+        delete(ModelRow).where(*_of_user(user_id, name)).returning(ModelRow.id)
+    )
+    return removed is not None
+
+
+async def use_model(user_id: int, name: str) -> bool:
+    """Makes the model current; False when the user has none of that name."""
+    session = _session.get()
+    await _lock_models(user_id)
+    if (
+        await session.scalar(select(ModelRow.id).where(*_of_user(user_id, name)))
+        is None
+    ):
+        return False
+    # Two statements: the index allows one current model at any moment.
+    await session.execute(
+        update(ModelRow)
+        .where(ModelRow.user_id == user_id, ModelRow.current)
+        .values(current=False)
+    )
+    await session.execute(
+        update(ModelRow).where(*_of_user(user_id, name)).values(current=True)
+    )
+    return True

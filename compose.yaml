@@ -10,6 +10,11 @@ services:
       # libpq reads the password from here: it needs no escaping and stays
       # out of the URL.
       PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      # Encrypts the users' model keys; kept apart from the database, so a
+      # dump alone does not reveal them. Back up both volumes.
+      TITAN_KEY_FILE: /var/lib/titan/node.key
+    volumes:
+      - key:/var/lib/titan
     depends_on:
       db:
         condition: service_healthy
@@ -37,6 +42,8 @@ services:
 volumes:
   db:
     name: titan-db-data
+  key:
+    name: titan-node-key
 
 networks:
   default:
