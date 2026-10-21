@@ -14,6 +14,18 @@ updates:
       interval: weekly
     cooldown:
       default-days: 14
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+  - package-ecosystem: docker-compose
+    directories: [/, /backend/tests]
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
   - package-ecosystem: gomod
     directory: /cli
     schedule:
