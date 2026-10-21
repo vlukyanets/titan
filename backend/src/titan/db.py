@@ -118,6 +118,11 @@ class NameTaken(Exception):
 
 _session: ContextVar[AsyncSession] = ContextVar("session")
 
+# Random bytes in a sign-in code, which is typed once, and in a token,
+# which lives in a file.
+CODE_BYTES = 16
+TOKEN_BYTES = 32
+
 
 def make_engine(url: str) -> AsyncEngine:
     # Keeps SQL parameters out of error messages and debug logs.
@@ -156,7 +161,7 @@ def _hash(secret: str) -> str:
 async def add_user(name: str) -> str:
     """Adds a user and returns their one-time sign-in code."""
     session = _session.get()
-    code = secrets.token_urlsafe(16)
+    code = secrets.token_urlsafe(CODE_BYTES)
     session.add(User(name=name, code_hash=_hash(code)))
     try:
         await session.flush()
@@ -181,7 +186,7 @@ async def sign_in(name: str, code: str) -> str | None:
     )
     if user_id is None:
         return None
-    token = secrets.token_urlsafe(32)
+    token = secrets.token_urlsafe(TOKEN_BYTES)
     session.add(Token(user_id=user_id, token_hash=_hash(token)))
     await session.flush()
     return token
