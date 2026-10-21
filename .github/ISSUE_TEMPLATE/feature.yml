@@ -1,0 +1,38 @@
+name: Feature
+description: Something TITAN should do. The issue holds everything needed to build and test it.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Title: what the user can do, at most 72 characters, no prefix.
+        Never post secrets, tokens or personal data.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What the user can do when this is done, and why it matters.
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      description: >-
+        One checkbox per behavior; each one becomes a test. Name the edge
+        cases and what must never happen.
+      placeholder: |
+        - [ ] Given ..., when ..., then ...
+        - [ ] A user never sees ...
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: What this issue does not do, so the change stays small.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: >-
+        Design ideas, changes to the HTTP API or the database, open
+        questions, links to other issues.
