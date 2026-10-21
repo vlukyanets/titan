@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import (
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
@@ -78,6 +79,29 @@ class ModelRow(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class MessageRow(Base):
+    __tablename__ = "messages"
+    __table_args__ = (
+        CheckConstraint("role IN ('user', 'assistant')", name="messages_role"),
+        # The chat reads a user's messages in order on every message.
+        Index("messages_of_user", "user_id", "id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    role: Mapped[str]
+    content: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+@dataclass(frozen=True)
+class Message:
+    role: str
+    content: str
 
 
 @dataclass(frozen=True)
@@ -243,3 +267,24 @@ async def use_model(user_id: int, name: str) -> bool:
         update(ModelRow).where(*_of_user(user_id, name)).values(current=True)
     )
     return True
+
+
+async def current_model(user_id: int) -> Model | None:
+    row = await _session.get().scalar(
+        select(ModelRow).where(ModelRow.user_id == user_id, ModelRow.current)
+    )
+    return None if row is None else Model(row.name, row.url, row.encrypted_key, True)
+
+
+async def messages_of(user_id: int) -> list[Message]:
+    """The user's conversation, oldest message first."""
+    rows = await _session.get().scalars(
+        select(MessageRow).where(MessageRow.user_id == user_id).order_by(MessageRow.id)
+    )
+    return [Message(r.role, r.content) for r in rows]
+
+
+async def add_messages(user_id: int, *messages: Message) -> None:
+    _session.get().add_all(
+        MessageRow(user_id=user_id, role=m.role, content=m.content) for m in messages
+    )

@@ -86,9 +86,9 @@ code is our own.
   that, the app falls back to a plain loop, one tool call at a time, in
   the same transaction.
 - The last model call gets the results and writes the reply.
-- The model is called over `httpx` with the OpenAI chat completions API.
-  The read timeout is the longest silence between two chunks, never a
-  limit on the whole reply.
+- The model is called over `httpx2` with the OpenAI chat completions API.
+  The read timeout, 5 minutes, is the longest silence between two chunks,
+  never a limit on the whole reply.
 
 ## Invariants
 
@@ -130,8 +130,13 @@ code is our own.
   database, backed up with one `pg_dump`.
 - **The user brings the model.** TITAN ships no model; any
   OpenAI-compatible endpoint works, local or in the cloud.
+- **Replies stream as plain text.** The app reads the model's stream
+  (`stream: true`) and sends the CLI only the text, in chunks as they
+  come; no server-sent events. A refusal before the first chunk is an
+  HTTP status; a model stream that breaks cuts the connection. A
+  question is kept only with its whole reply.
 - **Our own plan runner, not LangGraph.** It needs about 150 lines on
-  `httpx`, which the app has anyway. LangGraph would bring about 46
+  `httpx2`, which the app has anyway. LangGraph would bring about 46
   packages, keep threads in its own tables without a `user_id`, and its
   checkpoint loading has had several deserialization flaws.
 - **Plans, not one tool call at a time.** A plan takes two model calls
@@ -147,8 +152,8 @@ code is our own.
 
 Proposals the owner has not decided yet:
 
-- The data model beyond users, tokens and models: Thread, Message, Task,
-  Fact.
+- The data model beyond users, tokens, models and one conversation of
+  messages per user: Thread, Task, Fact.
 - Reminders: shown on the next run of `titan` first, a background
   `titan watch` later.
 - Memory: the model saves a fact with an explicit tool call; every fact

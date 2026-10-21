@@ -56,6 +56,20 @@ The node encrypts the keys with its node key, kept in the volume
 `titan-node-key`, apart from the database. Back up both volumes: without
 the node key, every user has to enter their key again.
 
+## Chat
+
+Talk with your current model; the reply appears as the model writes it.
+The node keeps the conversation, and the model gets the earlier messages
+each time:
+
+```sh
+titan chat
+titan chat "<message>"
+```
+
+`titan chat` reads a message per line until the input ends (Ctrl-D). A
+reply that was cut off is not kept; send the message again.
+
 ## Licence
 
 MIT, see [LICENSE](LICENSE).

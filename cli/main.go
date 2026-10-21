@@ -16,6 +16,8 @@ commands:
   settings model add           add a model: its URL, name and key
   settings model use <name>    make a model the current one
   settings model remove <name> remove a model
+  chat                         talk with your current model
+  chat <message>               send one message and print the reply
 `
 
 func main() {
@@ -38,6 +40,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		err = useModel(args[3])
 	case len(args) == 4 && args[0] == "settings" && args[1] == "model" && args[2] == "remove":
 		err = removeModel(args[3])
+	case len(args) == 1 && args[0] == "chat":
+		err = chatLoop(stdin, stdout, stderr)
+	case len(args) == 2 && args[0] == "chat":
+		err = chat(args[1], stdout)
 	default:
 		fmt.Fprint(stderr, usage)
 		return 2
