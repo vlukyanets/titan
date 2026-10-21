@@ -1,6 +1,5 @@
 """The tools the model may call, and how the node runs them."""
 
-import json
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict
 from typing import Annotated, Any, Literal
@@ -32,19 +31,25 @@ class TasksUpdate(BaseModel):
     status: Status | None = None
 
 
+class ToolError(Exception):
+    """A call the tool cannot take; the message says why, for the model."""
+
+
 async def tasks_add(user_id: int, args: TasksAdd) -> object:
     return asdict(await db.add_task(user_id, args.title, args.note))
 
 
 async def tasks_list(user_id: int, args: TasksList) -> object:
-    return [asdict(t) for t in await db.tasks_of(user_id, args.status)]
+    return {"items": [asdict(t) for t in await db.tasks_of(user_id, args.status)]}
 
 
 async def tasks_update(user_id: int, args: TasksUpdate) -> object:
     changes = args.model_dump(exclude={"id"}, exclude_none=True)
     task = await db.update_task(user_id, args.id, changes)
-    # The same answer for another user's task, so ids reveal nothing.
-    return {"error": "not found"} if task is None else asdict(task)
+    if task is None:
+        # The same answer for another user's task, so ids reveal nothing.
+        raise ToolError("not found")
+    return asdict(task)
 
 
 Run = Callable[[int, Any], Awaitable[object]]
@@ -63,33 +68,22 @@ TOOLS: dict[str, tuple[type[BaseModel], Run, str]] = {
     ),
 }
 
-# The tools as the OpenAI chat completions API takes them.
-SCHEMAS = [
-    {
-        "type": "function",
-        "function": {
-            "name": name,
-            "description": description,
-            "parameters": args.model_json_schema(),
-        },
-    }
-    for name, (args, _, description) in TOOLS.items()
-]
+
+def problems(error: ValidationError) -> str:
+    """What is wrong with the arguments, without their values."""
+    return "; ".join(
+        f"{'.'.join(map(str, p['loc']))}: {p['msg']}"
+        for p in error.errors(include_url=False, include_input=False)
+    )
 
 
-async def run(user_id: int, name: str, arguments: str) -> str:
-    """Runs a tool call of the model for the user and returns its result.
-
-    A call the tool cannot take gets an error the model can read and fix.
-    """
+async def call(user_id: int, name: str, arguments: object) -> object:
+    """Runs a tool for the user; raises ToolError for a call it cannot take."""
     if name not in TOOLS:
-        return json.dumps({"error": f"no tool {name!r}"})
-    args, call, _ = TOOLS[name]
+        raise ToolError(f"no tool {name!r}")
+    args, tool, _ = TOOLS[name]
     try:
-        parsed = args.model_validate_json(arguments or "{}")
+        parsed = args.model_validate(arguments)
     except ValidationError as error:
-        problems = error.errors(include_url=False, include_input=False)
-        return json.dumps(
-            {"error": [f"{'.'.join(map(str, p['loc']))}: {p['msg']}" for p in problems]}
-        )
-    return json.dumps(await call(user_id, parsed), ensure_ascii=False)
+        raise ToolError(problems(error)) from None
+    return await tool(user_id, parsed)

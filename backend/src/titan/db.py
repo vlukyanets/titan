@@ -169,18 +169,39 @@ async def ping(engine: AsyncEngine) -> bool:
     return True
 
 
+class CommitFailed(Exception):
+    """The database did not take the changes of a transaction."""
+
+
 @asynccontextmanager
 async def transaction(engine: AsyncEngine) -> AsyncIterator[None]:
     """Runs the data functions called inside it in one transaction.
 
-    It commits when the block ends and rolls back when the block raises.
+    It commits when the block ends and rolls back when the block raises. A
+    commit that fails raises CommitFailed, so the caller can tell it from
+    an error inside the block.
     """
-    async with AsyncSession(engine) as session, session.begin():
+    async with AsyncSession(engine) as session:
         reset = _session.set(session)
         try:
             yield
+        except BaseException:
+            await session.rollback()
+            raise
+        else:
+            try:
+                await session.commit()
+            except SQLAlchemyError as error:
+                raise CommitFailed from error
         finally:
             _session.reset(reset)
+
+
+@asynccontextmanager
+async def savepoint() -> AsyncIterator[None]:
+    """Undoes the changes made inside it when it raises, and only those."""
+    async with _session.get().begin_nested():
+        yield
 
 
 def _hash(secret: str) -> str:

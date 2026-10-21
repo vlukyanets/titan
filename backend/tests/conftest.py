@@ -4,9 +4,11 @@ import uuid
 from collections.abc import Callable, Iterator
 from pathlib import Path
 
+import httpx2
 import pytest
 from alembic import command
 from alembic.config import Config
+from fake_model import KEY, URL, FakeModel
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -73,8 +75,13 @@ def add_user(migrated: str) -> Callable[[str], str]:
 
 
 @pytest.fixture
-def app(migrated: str, key_file: str) -> FastAPI:
-    return create_app(migrated, key_file)
+def model() -> FakeModel:
+    return FakeModel()
+
+
+@pytest.fixture
+def app(migrated: str, key_file: str, model: FakeModel) -> FastAPI:
+    return create_app(migrated, key_file, httpx2.MockTransport(model))
 
 
 @pytest.fixture
@@ -98,3 +105,14 @@ def sign_in(
         return {"Authorization": f"Bearer {token}"}
 
     return sign_in
+
+
+@pytest.fixture
+def user(client: TestClient, sign_in: Callable[[], dict[str, str]]) -> dict[str, str]:
+    """A signed-in user whose current model is "big" at URL."""
+    headers = sign_in()
+    put = client.put(
+        "/settings/models/big", json={"url": URL, "key": KEY}, headers=headers
+    )
+    assert put.status_code == 204
+    return headers
