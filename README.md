@@ -7,8 +7,8 @@ of each user apart from the others.
 Each user brings their own model: any OpenAI-compatible provider, with
 their own key.
 
-The project is an early prototype: a node starts and users sign in,
-nothing more yet.
+The project is an early prototype: a node starts, users sign in and set
+their models, nothing more yet.
 
 ## Run a node
 
@@ -38,6 +38,23 @@ The user signs in once from the CLI; later runs use the saved token:
 titan login http://localhost:8000
 titan whoami
 ```
+
+## Set your models
+
+Each user brings their own OpenAI-compatible models: for each, its URL,
+its name and, unless it is a local one, a key. The key is typed without
+echo. The first model added is the current one, which the chat uses:
+
+```sh
+titan settings model add
+titan settings
+titan settings model use <name>
+titan settings model remove <name>
+```
+
+The node encrypts the keys with its node key, kept in the volume
+`titan-node-key`, apart from the database. Back up both volumes: without
+the node key, every user has to enter their key again.
 
 ## Licence
 

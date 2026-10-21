@@ -10,7 +10,8 @@ RUN uv sync --locked --no-dev --no-install-project
 COPY . .
 RUN uv sync --locked --no-dev
 
-RUN useradd --system --no-create-home titan
+RUN useradd --system --no-create-home titan \
+    && install -d -o titan -g titan -m 700 /var/lib/titan
 USER titan
 
 EXPOSE 8000
