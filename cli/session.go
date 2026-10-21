@@ -75,14 +75,18 @@ func ask(in *bufio.Scanner, prompts io.Writer, prompt string) string {
 	return strings.TrimSpace(in.Text())
 }
 
+func isTerminal(r io.Reader) bool {
+	f, ok := r.(*os.File)
+	return ok && term.IsTerminal(int(f.Fd()))
+}
+
 // askSecret reads a line without echo when stdin is a terminal.
 func askSecret(in *bufio.Scanner, stdin io.Reader, prompts io.Writer, prompt string) (string, error) {
-	f, ok := stdin.(*os.File)
-	if !ok || !term.IsTerminal(int(f.Fd())) {
+	if !isTerminal(stdin) {
 		return ask(in, prompts, prompt), nil
 	}
 	fmt.Fprint(prompts, prompt)
-	secret, err := term.ReadPassword(int(f.Fd()))
+	secret, err := term.ReadPassword(int(stdin.(*os.File).Fd()))
 	fmt.Fprintln(prompts)
 	return strings.TrimSpace(string(secret)), err
 }
@@ -129,26 +133,30 @@ func load() (session, error) {
 	return s, json.Unmarshal(data, &s)
 }
 
-var errNotFound = errors.New("not found")
+var (
+	errNotFound = errors.New("not found")
+	errConflict = errors.New("conflict")
+)
 
-// call sends a request with the saved token. It sends body as JSON unless
-// it is nil, and decodes the answer into out unless out is nil.
-func call(method, path string, body, out any) error {
+// send sends a request with the saved token, and body as JSON unless it is
+// nil. It returns the answer only when the node accepted the request; the
+// caller closes its body.
+func send(method, path string, body any) (*http.Response, error) {
 	s, err := load()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var reader io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		reader = bytes.NewReader(data)
 	}
 	req, err := http.NewRequest(method, s.URL+path, reader)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+s.Token)
 	if body != nil {
@@ -156,17 +164,55 @@ func call(method, path string, body, out any) error {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode/100 == 2 {
+		return resp, nil
+	}
+	defer resp.Body.Close()
+	switch resp.StatusCode {
+	case http.StatusUnauthorized:
+		return nil, errors.New("the node refused the saved token; run titan login <node-url>")
+	case http.StatusNotFound:
+		return nil, errNotFound
+	case http.StatusConflict:
+		return nil, errConflict
+	}
+	if reason := reasonOf(resp.Body); reason != "" {
+		return nil, fmt.Errorf("the node answered %s: %s", resp.Status, reason)
+	}
+	return nil, fmt.Errorf("the node answered %s", resp.Status)
+}
+
+// reasonOf reads the reason from the node's detail: text, or for a 422 a
+// list of problems, of which it takes the first.
+func reasonOf(body io.Reader) string {
+	var reply struct {
+		Detail json.RawMessage `json:"detail"`
+	}
+	json.NewDecoder(body).Decode(&reply)
+	var text string
+	if json.Unmarshal(reply.Detail, &text) == nil {
+		return text
+	}
+	var problems []struct {
+		Msg string `json:"msg"`
+	}
+	if json.Unmarshal(reply.Detail, &problems) == nil && len(problems) > 0 {
+		return problems[0].Msg
+	}
+	return ""
+}
+
+// call sends a request as send does and decodes the answer into out unless
+// out is nil.
+func call(method, path string, body, out any) error {
+	resp, err := send(method, path, body)
+	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	switch {
-	case resp.StatusCode == http.StatusUnauthorized:
-		return errors.New("the node refused the saved token; run titan login <node-url>")
-	case resp.StatusCode == http.StatusNotFound:
-		return errNotFound
-	case resp.StatusCode/100 != 2:
-		return fmt.Errorf("the node answered %s", resp.Status)
-	case out != nil:
+	if out != nil {
 		return json.NewDecoder(resp.Body).Decode(out)
 	}
 	return nil

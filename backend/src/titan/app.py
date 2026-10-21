@@ -1,5 +1,6 @@
 """The HTTP API of the node."""
 
+import json
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -7,7 +8,10 @@ from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlsplit
 
+import httpx2
+from cryptography.fernet import InvalidToken
 from fastapi import Depends, FastAPI, Header, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from pydantic import AfterValidator, BaseModel, StringConstraints
 
 from titan import db, keys
@@ -50,13 +54,32 @@ class CurrentModel(BaseModel):
     name: NotEmpty
 
 
-def create_app(database_url: str | None = None, key_file: str | None = None) -> FastAPI:
+class ChatIn(BaseModel):
+    message: NotEmpty
+
+
+class ReplyCut(Exception):
+    """The model's stream ended before it said the reply was done."""
+
+
+def create_app(
+    database_url: str | None = None,
+    key_file: str | None = None,
+    model_transport: httpx2.AsyncBaseTransport | None = None,
+) -> FastAPI:
     engine = db.make_engine(database_url or os.environ["TITAN_DATABASE_URL"])
     node_key = keys.load_or_create(Path(key_file or os.environ["TITAN_KEY_FILE"]))
+    # The read timeout is the longest silence between two chunks, never a
+    # limit on the whole reply; a model may think for minutes before it
+    # writes. Redirects are not followed, so the key goes to no other host.
+    models = httpx2.AsyncClient(
+        transport=model_transport, timeout=httpx2.Timeout(5.0, read=300.0)
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
+        await models.aclose()
         await engine.dispose()
 
     # No /docs or /openapi.json: they would be routes without a token.
@@ -129,5 +152,68 @@ def create_app(database_url: str | None = None, key_file: str | None = None) -> 
         async with db.transaction(engine):
             if not await db.use_model(user_id, body.name):
                 raise HTTPException(404, "no model of that name")
+
+    @app.post("/chat")
+    async def chat(user_id: User, body: ChatIn) -> StreamingResponse:
+        async with db.transaction(engine):
+            model = await db.current_model(user_id)
+            history = await db.messages_of(user_id)
+        if model is None:
+            raise HTTPException(409, "no current model")
+        question = db.Message("user", body.message)
+        headers = {}
+        if model.encrypted_key is not None:
+            try:
+                key = node_key.decrypt(model.encrypted_key).decode()
+            except InvalidToken:
+                # The node key changed, as when its volume was lost.
+                raise HTTPException(
+                    500,
+                    f'the key of model "{model.name}" cannot be read;'
+                    " add the model again",
+                ) from None
+            headers["Authorization"] = f"Bearer {key}"
+        request = models.build_request(
+            "POST",
+            model.url.rstrip("/") + "/chat/completions",
+            headers=headers,
+            json={
+                "model": model.name,
+                "messages": [
+                    {"role": m.role, "content": m.content} for m in [*history, question]
+                ],
+                "stream": True,
+            },
+        )
+        # Sent before the reply starts, so a refusal is still an HTTP status.
+        try:
+            response = await models.send(request, stream=True)
+        except httpx2.TransportError:
+            raise HTTPException(502, "the model is unreachable") from None
+        if response.status_code != 200:
+            await response.aclose()
+            raise HTTPException(502, f"the model answered {response.status_code}")
+
+        async def reply() -> AsyncIterator[str]:
+            parts = []
+            try:
+                async for event in httpx2.EventSource(response):
+                    if event.data == "[DONE]":
+                        break
+                    for choice in json.loads(event.data)["choices"]:
+                        if text := choice["delta"].get("content"):
+                            parts.append(text)
+                            yield text
+                else:
+                    # Raising cuts the connection, so the CLI sees it too.
+                    raise ReplyCut
+            finally:
+                await response.aclose()
+            # Only a whole reply is kept; after a cut the user asks again.
+            async with db.transaction(engine):
+                answer = db.Message("assistant", "".join(parts))
+                await db.add_messages(user_id, question, answer)
+
+        return StreamingResponse(reply(), media_type="text/plain; charset=utf-8")
 
     return app
